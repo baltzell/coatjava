@@ -114,6 +114,20 @@
 	    {"name":"RecLayersTrk",  "type":"L",  "info":"layers of tracker detectors (mostly) that, the matched RecParticle picked hits from"},
 	    {"name":"RecLayersNeut", "type":"L",  "info":"layers of detectors (mostly) that, the matched RecParticle picked hits from"}
         ]
+    },
+        {
+        "name": "MC::IsRecParticleMatched",
+        "group": 40,
+        "item" : 6,
+        "info": "Rec Particle - MC matching.",
+        "entries": [
+	    {"name":"pindex",	     "type":"S",  "info":"REC particle index"},
+            {"name":"mcTindex",      "type":"S",  "info":"MC Particle index, as in tid"},
+	    {"name":"RecLayersTrk",   "type":"L",  "info":"layers of tracker (mostly) detectors that a given Rec::Particle hit. Each layer corresponds to a specific bit in this variable"},
+	    {"name":"RecLayersNeut",  "type":"L",  "info":"layers of detectors (non tracker) that a givem Rec::Particle hit. Each layer corresponds to a specific bit in this variable"},
+	    {"name":"MCLayersTrk",  "type":"L",  "info":"layers of tracker detectors (mostly) that, the matched MC::Particle picked hits from"},
+	    {"name":"MCLayersNeut", "type":"L",  "info":"layers of detectors (mostly) that, the matched MC::Particle picked hits from"}
+        ]
     }
     
 ]
