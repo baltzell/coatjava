@@ -5,6 +5,8 @@ import org.jlab.detector.base.DetectorType;
 import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -67,6 +69,7 @@ public class TruthMatch extends ReconstructionEngine {
         // <index, MCPart>
         Map<Short, MCPart> mcp = getMCparticles(event.getBank("MC::Particle"));
 
+        // <index, RecPart>
         Map<Short, RecPart> recp = getRecparticles(event.getBank("REC::Particle"));
 
         /**
@@ -92,7 +95,8 @@ public class TruthMatch extends ReconstructionEngine {
          * cluster to which the hit belogs to - pindex : pindex of the particle
          * that the current cluster belongs to.
          */
-        Map< Short, List<RecHit>> ecalHits = getECalHits(event, mchits.get((byte) DetectorType.ECAL.getDetectorId()));
+        // <clID, List of RecHits> 
+        Map<Short, List<RecHit>> ecalHits = getECalHits(event, mchits.get((byte) DetectorType.ECAL.getDetectorId()));
         List<RecCluster> ecalClusters = getECalClusters(event);
 
         /**
@@ -199,14 +203,20 @@ public class TruthMatch extends ReconstructionEngine {
             allCls.addAll(dcClusters);
         }
 
-        /**
-         * Mapping Clusters to MCParticle
-         */
-        Map<Short, List<RecCluster>> clsPerMCp = mapClustersToMCParticles(mcp.keySet(), allCls);
-
-        //PrintClsPerMc(clsPerMCp);
-        List<MCRecMatch> MCRecMatches = MakeMCRecMatch(mcp, recp, clsPerMCp);
-        bankWriter(event, MCRecMatches, allCls);
+        try {
+            /**
+             * Mapping Clusters to MCParticle
+             */
+            Map<Short, List<RecCluster>> clsPerMCp = mapClustersToParticles(mcp.keySet(), allCls, "MC");
+            Map<Short, List<RecCluster>> clsPerRecp = mapClustersToParticles(recp.keySet(), allCls, "Rec");
+            //PrintClsPerMc(clsPerMCp);
+            List<MCRecMatch> MCRecMatches = MakeMCRecMatch(mcp, recp, clsPerMCp);
+            List<MCRecMatch> RecMCMatches = MakeRecMCMatch(recp, clsPerRecp);
+            bankWriter(event, MCRecMatches, RecMCMatches);
+        } catch (Exception ex) {
+            System.err.println("The DataSet in the  mapClustersToParticles should be either 'Rec' or 'MC' ");
+            Logger.getLogger(TruthMatch.class.getName()).log(Level.SEVERE, null, ex);
+        }
         return true;
 
     }
@@ -242,6 +252,7 @@ public class TruthMatch extends ReconstructionEngine {
 
         public RecPart() {
             RecLayersTrk = 0;
+            MCLayersTrk = new HashMap<>();
         }
 
         public int id;      // index of the MC particle (it should correspond of tid/otid
@@ -252,6 +263,7 @@ public class TruthMatch extends ReconstructionEngine {
         // *********************************************** Description of "LayersTrk" ************************************************************
         //**** BMT Layer ****|*** BST Layer **** | ******************************************* DC layers *******************************************
         // 47 46 45 44 43 42 | 41 40 39 38 37 36 | 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 3 2 0
+        public Map<Integer, Long> MCLayersTrk;
     }
 
 // True hit information from the MC::True banl
@@ -869,6 +881,16 @@ public class TruthMatch extends ReconstructionEngine {
                 mcp.get((short) mchitsInBST.get(hitID).otid).MCLayersTrk |= 1L << layerBit;
                 if (pindex >= 0) {
 
+                    recp.get(pindex).RecLayersTrk |= 1L << layerBit;
+
+                    if (!recp.get(pindex).MCLayersTrk.containsKey(mchitsInBST.get(hitID).otid)) {
+                        recp.get(pindex).MCLayersTrk.put(mchitsInBST.get(hitID).otid, 0L);
+                    }
+
+                    Long tmpMCWord = recp.get(pindex).MCLayersTrk.get(mchitsInBST.get(hitID).otid);
+                    tmpMCWord |= 1L << layerBit;
+                    recp.get(pindex).MCLayersTrk.put(mchitsInBST.get(hitID).otid, tmpMCWord);
+
                     if (!mcp.get((short) mchitsInBST.get(hitID).otid).RecLayersTrk.containsKey((int) pindex)) {
                         mcp.get((short) mchitsInBST.get(hitID).otid).RecLayersTrk.put((int) pindex, 0L);
                     }
@@ -1395,26 +1417,37 @@ public class TruthMatch extends ReconstructionEngine {
 
     /**
      *
-     * @param mcpKeys: Set of MCparticle iDs,
+     * @param pKeys: Set of Particle iDs, // For MCParticle it is id, and for
+     * RecParticle it is pindex
      * @param cls : List of clusters
      * @return : Map<MCPId, List<Clusters>>, returns list of RecClusters for
      * each MC particle
      */
-    Map<Short, List<RecCluster>> mapClustersToMCParticles(Set<Short> mcpKeys, List<RecCluster> cls) {
+    Map<Short, List<RecCluster>> mapClustersToParticles(Set<Short> pKeys, List<RecCluster> cls, String DataSet) throws Exception {
         Map<Short, List<RecCluster>> map = new HashMap<>();
 
-        for (short theKey : mcpKeys) {
+        for (short theKey : pKeys) {
             map.put(theKey, new ArrayList<>());
         }
 
         for (RecCluster curCl : cls) {
 
-            if (map.get(curCl.mcotid) == null) {
-                // Should not happen, but just in case
-                map.put(curCl.mcotid, new ArrayList<>());
+            short partId;
+            if (DataSet == "MC") {
+                partId = curCl.mcotid;
+            } else if (DataSet == "Rec") {
+                partId = curCl.pindex;
+            } else {
+                System.out.println("The dataSet provided is " + DataSet);
+                throw new RuntimeException("The Data set should be 'MC' or 'Rec' ");
             }
 
-            map.get(curCl.mcotid).add(curCl);
+            if (map.get(partId) == null) {
+                // Should not happen, but just in case
+                map.put(partId, new ArrayList<>());
+            }
+
+            map.get(partId).add(curCl);
         }
 
         return map;
@@ -1529,7 +1562,53 @@ public class TruthMatch extends ReconstructionEngine {
         return recMatch;
     }
 
-    void bankWriter(DataEvent event, List<MCRecMatch> mcp, List<RecCluster> cls) {
+    List<MCRecMatch> MakeRecMCMatch(Map<Short, RecPart> recp, Map<Short, List<RecCluster>> clsPerRecP) {
+
+        List<MCRecMatch> recMatch = new ArrayList<>();
+
+        for (short iRec : recp.keySet()) {
+
+            MCRecMatch match = new MCRecMatch();
+
+            match.pindex = iRec;
+            match.RecLayersTrk = recp.get(iRec).RecLayersTrk;
+
+            /**
+             * Generally speaking it is possible that all clusters of a given MC
+             * particles will not have the same Rec::Particle. So we will make a
+             * map here Map<pindex, count>, and the matched Rec::Particle will
+             * be the one with highest count.
+             */
+            Map<Short, Integer> matched_counts = new HashMap<>();
+
+            /**
+             * Making sure there are clusters created from the given MCParticle
+             */
+            if (!clsPerRecP.get(iRec).isEmpty()) {
+
+                for (RecCluster curCl : clsPerRecP.get(iRec)) {
+                    incrementMap(matched_counts, curCl.id);
+                }
+
+                match.id = getMaxEntryKey(matched_counts);
+                match.MCLayersTrk = 0L;
+                if (recp.get(iRec).MCLayersTrk.containsKey((int) match.id)) {
+                    match.MCLayersTrk = recp.get(iRec).MCLayersTrk.get((int) match.id);
+                }
+
+            } else {
+                match.id = -1;
+                match.MCLayersTrk = 0L;
+
+            }
+
+            recMatch.add(match);
+        }
+
+        return recMatch;
+    }
+
+    void bankWriter(DataEvent event, List<MCRecMatch> mcp, List<MCRecMatch> recp) {
 
         DataBank bank = event.createBank("MC::IsParticleMatched", mcp.size());
 
@@ -1542,6 +1621,18 @@ public class TruthMatch extends ReconstructionEngine {
         }
 
         event.appendBanks(bank);
+
+        DataBank bankRecMatch = event.createBank("MC::IsRecParticleMatched", recp.size());
+
+        for (int j = 0; j < recp.size(); j++) {
+            MCRecMatch p = recp.get(j);
+            bankRecMatch.setShort("pindex", j, p.pindex);
+            bankRecMatch.setShort("mcTindex", j, p.id);
+            bankRecMatch.setLong("RecLayersTrk", j, p.RecLayersTrk);
+            bankRecMatch.setLong("MCLayersTrk", j, p.MCLayersTrk);
+        }
+
+        event.appendBank(bankRecMatch);
     }
 
     /**
