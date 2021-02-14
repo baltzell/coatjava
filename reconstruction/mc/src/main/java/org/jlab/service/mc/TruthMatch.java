@@ -203,6 +203,7 @@ public class TruthMatch extends ReconstructionEngine {
             allCls.addAll(dcClusters);
         }
 
+
         try {
             /**
              * Mapping Clusters to MCParticle
@@ -252,6 +253,7 @@ public class TruthMatch extends ReconstructionEngine {
 
         public RecPart() {
             RecLayersTrk = 0;
+
             MCLayersTrk = new HashMap<>();
         }
 
@@ -263,6 +265,7 @@ public class TruthMatch extends ReconstructionEngine {
         // *********************************************** Description of "LayersTrk" ************************************************************
         //**** BMT Layer ****|*** BST Layer **** | ******************************************* DC layers *******************************************
         // 47 46 45 44 43 42 | 41 40 39 38 37 36 | 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 3 2 0
+
         public Map<Integer, Long> MCLayersTrk;
     }
 
@@ -881,6 +884,7 @@ public class TruthMatch extends ReconstructionEngine {
                 mcp.get((short) mchitsInBST.get(hitID).otid).MCLayersTrk |= 1L << layerBit;
                 if (pindex >= 0) {
 
+
                     recp.get(pindex).RecLayersTrk |= 1L << layerBit;
 
                     if (!recp.get(pindex).MCLayersTrk.containsKey(mchitsInBST.get(hitID).otid)) {
@@ -890,6 +894,7 @@ public class TruthMatch extends ReconstructionEngine {
                     Long tmpMCWord = recp.get(pindex).MCLayersTrk.get(mchitsInBST.get(hitID).otid);
                     tmpMCWord |= 1L << layerBit;
                     recp.get(pindex).MCLayersTrk.put(mchitsInBST.get(hitID).otid, tmpMCWord);
+
 
                     if (!mcp.get((short) mchitsInBST.get(hitID).otid).RecLayersTrk.containsKey((int) pindex)) {
                         mcp.get((short) mchitsInBST.get(hitID).otid).RecLayersTrk.put((int) pindex, 0L);
@@ -1427,6 +1432,7 @@ public class TruthMatch extends ReconstructionEngine {
         Map<Short, List<RecCluster>> map = new HashMap<>();
 
         for (short theKey : pKeys) {
+
             map.put(theKey, new ArrayList<>());
         }
 
@@ -1448,6 +1454,7 @@ public class TruthMatch extends ReconstructionEngine {
             }
 
             map.get(partId).add(curCl);
+
         }
 
         return map;
@@ -1610,6 +1617,7 @@ public class TruthMatch extends ReconstructionEngine {
 
     void bankWriter(DataEvent event, List<MCRecMatch> mcp, List<MCRecMatch> recp) {
 
+
         DataBank bank = event.createBank("MC::IsParticleMatched", mcp.size());
 
         for (int j = 0; j < mcp.size(); j++) {
@@ -1633,6 +1641,7 @@ public class TruthMatch extends ReconstructionEngine {
         }
 
         event.appendBank(bankRecMatch);
+
     }
 
     /**
