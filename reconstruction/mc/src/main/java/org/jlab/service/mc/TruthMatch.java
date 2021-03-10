@@ -96,7 +96,7 @@ public class TruthMatch extends ReconstructionEngine {
          * that the current cluster belongs to.
          */
         // <clID, List of RecHits> 
-        Map<Short, List<RecHit>> ecalHits = getECalHits(event, mchits.get((byte) DetectorType.ECAL.getDetectorId()));
+        Map<Short, List<RecHit>> ecalHits = getECalHits(event, mchits.get((byte) DetectorType.ECAL.getDetectorId()), mcp, recp);
         List<RecCluster> ecalClusters = getECalClusters(event);
 
         /**
@@ -567,7 +567,7 @@ public class TruthMatch extends ReconstructionEngine {
      * @return Map<clusterID, List<RecHit>>, Map, where the Key is the
      * clusterID, and the value is a list of hits having the same clusterID
      */
-    Map< Short, List<RecHit>> getECalHits(DataEvent event, Map<Integer, MCHit> mchitsInECal) {
+    Map< Short, List<RecHit>> getECalHits(DataEvent event, Map<Integer, MCHit> mchitsInECal, Map<Short, MCPart> mcp, Map<Short, RecPart> recp) {
 
         /**
          * We need two banks to be present in the event: ECAL::hits and
@@ -614,11 +614,39 @@ public class TruthMatch extends ReconstructionEngine {
 
             curHit.id = hitsBank.getShort("id", ihit) - 1;   // -1 for starting from 0
             curHit.cid = (short) (hitsBank.getShort("clusterId", ihit) - 1);  // -1 for starting from 0
+
+            int layer = (hitsBank.getInt("layer", ihit) - 1) / 3;  // PCAL 1(U)2(V)3(W), ECIN 4(U)5(V)6(W). ECOut 7(U)8(V)9(W)
+
+            int ECalLayerBit = ECalStartBit + layer;
+
+            mcp.get((short) mchitsInECal.get(curHit.id).otid).MCLayersNeut |= 1L << ECalLayerBit;
+
             if (curHit.cid == -2 || !mchitsInECal.containsKey(curHit.id)) {
                 continue; // The hit is not part of any cluster, or the hit it's corresponding MC hit is ignored
             }
             curHit.pindex = clId2Pindex.get(curHit.cid);
             curHit.detector = (byte) DetectorType.ECAL.getDetectorId();
+
+            if (curHit.pindex >= 0) {
+
+                recp.get(curHit.pindex).RecLayersNeut = ECalLayerBit;
+
+                if (!recp.get(curHit.pindex).MCLayersNeut.containsKey(mchitsInECal.get(curHit.id).otid)) {
+                    recp.get(curHit.pindex).MCLayersNeut.put(mchitsInECal.get(curHit.id).otid, 0L);
+                }
+
+                Long tmpMCWord = recp.get(curHit.pindex).MCLayersNeut.get(mchitsInECal.get(curHit.id).otid);
+                tmpMCWord |= 1L << ECalLayerBit;
+                recp.get(curHit.pindex).MCLayersNeut.put(mchitsInECal.get(curHit.id).otid, tmpMCWord);
+
+                if (!mcp.get((short) mchitsInECal.get(curHit.id).otid).RecLayersNeut.containsKey((int) curHit.pindex)) {
+                    mcp.get((short) mchitsInECal.get(curHit.id).otid).RecLayersNeut.put((int) curHit.pindex, 0L);
+                }
+
+                Long tmp = mcp.get((short) mchitsInECal.get(curHit.id).otid).RecLayersNeut.get((int) curHit.pindex);
+                tmp |= 1L << ECalLayerBit;
+                mcp.get((short) mchitsInECal.get(curHit.id).otid).RecLayersNeut.put((int) curHit.pindex, tmp);
+            }
 
             if (recHits.get(curHit.cid) == null) {
                 recHits.put(curHit.cid, new ArrayList<>());
