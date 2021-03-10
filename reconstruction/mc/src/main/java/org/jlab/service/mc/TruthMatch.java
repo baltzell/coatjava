@@ -402,7 +402,9 @@ public class TruthMatch extends ReconstructionEngine {
     private final int BSTStartBit = 36;
     private final int BMTStartBit = 42;
     private final int DCStartBit = 0;
-    private final int CTOFBit = 3;
+    private final int ECalStartBit = 0;
+    private final int CTOFBit = 6;
+    private final int CNDStartBit = 3;
 
     private final List<Integer> chargedPIDs;
 
@@ -744,7 +746,10 @@ public class TruthMatch extends ReconstructionEngine {
             curHit.id = (int) hitsBank.getShort("indexLtdc", ihit) / 2;   // We should devide to 2, as each MC::True hit is digitized into two ADC/TDC hits.
             curHit.cid = (short) (hitsBank.getShort("clusterid", ihit) - 1);  // -1 for starting from 0
 
-            mcp.get((short) mchitsInCND.get(curHit.id).otid).MCLayersNeut |= 1L << CTOFBit;
+            int layer = hitsBank.getInt("layer", ihit) - 1;
+
+            int CNDLayerBit = CNDStartBit + layer;
+            mcp.get((short) mchitsInCND.get(curHit.id).otid).MCLayersNeut |= 1L << CNDLayerBit;
 
             if (curHit.cid == -2 || !mchitsInCND.containsKey(curHit.id)) {
                 continue; // The hit is not part of any cluster, or the hit it's corresponding MC hit is ignored
@@ -752,6 +757,27 @@ public class TruthMatch extends ReconstructionEngine {
 
             curHit.pindex = clId2Pindex.get(curHit.cid);
             curHit.detector = (byte) DetectorType.CND.getDetectorId();
+
+            if (curHit.pindex >= 0) {
+                recp.get(curHit.pindex).RecLayersNeut |= 1L << CNDLayerBit;
+
+                if (!recp.get(curHit.pindex).MCLayersNeut.containsKey(mchitsInCND.get(curHit.id).otid)) {
+                    recp.get(curHit.pindex).MCLayersNeut.put(mchitsInCND.get(curHit.id).otid, 0L);
+                }
+
+                Long tmpMCWord = recp.get(curHit.pindex).MCLayersNeut.get(mchitsInCND.get(curHit.id).otid);
+                tmpMCWord |= 1L << CNDLayerBit;
+                recp.get(curHit.pindex).MCLayersNeut.put(mchitsInCND.get(curHit.id).otid, tmpMCWord);
+
+                if (!mcp.get((short) mchitsInCND.get(curHit.id).otid).RecLayersNeut.containsKey((int) curHit.pindex)) {
+                    mcp.get((short) mchitsInCND.get(curHit.id).otid).RecLayersNeut.put((int) curHit.pindex, 0L);
+                }
+
+                Long tmp = mcp.get((short) mchitsInCND.get(curHit.id).otid).RecLayersNeut.get((int) curHit.pindex);
+                tmp |= 1L << CNDLayerBit;
+                mcp.get((short) mchitsInCND.get(curHit.id).otid).RecLayersNeut.put((int) curHit.pindex, tmp);
+
+            }
 
             if (recHits.get(curHit.cid) == null) {
                 recHits.put(curHit.cid, new ArrayList<>());
