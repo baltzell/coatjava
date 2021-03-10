@@ -108,7 +108,7 @@ public class TruthMatch extends ReconstructionEngine {
         /**
          * Getting CND Hits and Clusters
          */
-        Map<Short, List<RecHit>> cndHits = getCNDHits(event, mchits.get((byte) DetectorType.CND.getDetectorId()));
+        Map<Short, List<RecHit>> cndHits = getCNDHits(event, mchits.get((byte) DetectorType.CND.getDetectorId()), mcp, recp);
         List<RecCluster> cndClusters = getCNDClusters(event);
 
 //        if (cndClusters != null && cndClusters.size() > 0 && cndHits.isEmpty()) {
@@ -118,7 +118,7 @@ public class TruthMatch extends ReconstructionEngine {
         /**
          * Getting CTOF Hits and Clusters
          */
-        Map<Short, List<RecHit>> ctofHits = getCTOFHits(event, mchits.get((byte) DetectorType.CTOF.getDetectorId()));
+        Map<Short, List<RecHit>> ctofHits = getCTOFHits(event, mchits.get((byte) DetectorType.CTOF.getDetectorId()), mcp, recp);
         List<RecCluster> ctofClusters = getCTOFClusters(event);
 
         /**
@@ -203,14 +203,17 @@ public class TruthMatch extends ReconstructionEngine {
             allCls.addAll(dcClusters);
         }
 
-
         try {
             /**
              * Mapping Clusters to MCParticle
              */
             Map<Short, List<RecCluster>> clsPerMCp = mapClustersToParticles(mcp.keySet(), allCls, "MC");
+            /**
+             * Mapping Clusters to RecParticle
+             */
             Map<Short, List<RecCluster>> clsPerRecp = mapClustersToParticles(recp.keySet(), allCls, "Rec");
             //PrintClsPerMc(clsPerMCp);
+
             List<MCRecMatch> MCRecMatches = MakeMCRecMatch(mcp, recp, clsPerMCp);
             List<MCRecMatch> RecMCMatches = MakeRecMCMatch(recp, clsPerRecp);
             bankWriter(event, MCRecMatches, RecMCMatches);
@@ -232,7 +235,9 @@ public class TruthMatch extends ReconstructionEngine {
 
         public MCPart() {
             MCLayersTrk = 0;
+            MCLayersNeut = 0;
             RecLayersTrk = new HashMap<>();
+            RecLayersNeut = new HashMap<>();
         }
 
         public int id;      // index of the MC particle (it should correspond of tid/otid
@@ -244,8 +249,12 @@ public class TruthMatch extends ReconstructionEngine {
         //**** BMT Layer ****|*** BST Layer **** | ******************************************* DC layers *******************************************
         // 47 46 45 44 43 42 | 41 40 39 38 37 36 | 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 3 2 0
 
+        public long MCLayersNeut;   // This is not really MCParticle property, bu we know that each MCParticle should have this so, attaching this to MCPart object
+
         // In the following map, the key is the pindex of the matched particle, and the value is the    
         public Map<Integer, Long> RecLayersTrk;
+        // In the following map, the key is the pindex of the matched particle, and the value is the    
+        public Map<Integer, Long> RecLayersNeut;
     }
 
     // MCParticle from MC::Particle bank
@@ -253,8 +262,10 @@ public class TruthMatch extends ReconstructionEngine {
 
         public RecPart() {
             RecLayersTrk = 0;
+            RecLayersNeut = 0;
 
             MCLayersTrk = new HashMap<>();
+            MCLayersNeut = new HashMap<>();
         }
 
         public int id;      // index of the MC particle (it should correspond of tid/otid
@@ -262,11 +273,13 @@ public class TruthMatch extends ReconstructionEngine {
 
         public int pid;     // PDG ID code
         public long RecLayersTrk;    // This is not really RecParticle property, but we know that each RecParticle should have this so, attaching this to RecPart object
+        public long RecLayersNeut;    // This is not really RecParticle property, but we know that each RecParticle should have this so, attaching this to RecPart object
         // *********************************************** Description of "LayersTrk" ************************************************************
         //**** BMT Layer ****|*** BST Layer **** | ******************************************* DC layers *******************************************
         // 47 46 45 44 43 42 | 41 40 39 38 37 36 | 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 3 2 0
 
         public Map<Integer, Long> MCLayersTrk;
+        public Map<Integer, Long> MCLayersNeut;
     }
 
 // True hit information from the MC::True banl
@@ -350,7 +363,9 @@ public class TruthMatch extends ReconstructionEngine {
         public short id;            // MC particle id
         public short pindex;        // pindex index of the rec particle in the REC::Particle bank
         public long MCLayersTrk;    // See description below
-        public long RecLayersTrk;   // See description below
+        public long MCLayersNeut;    // See description below
+        public long RecLayersTrk;    // See description below
+        public long RecLayersNeut;   // See description below
 
         // *********************************************** Description of "MCLayersTrk" ************************************************************
         //**** BMT Layer ****|*** BST Layer **** | ******************************************* DC layers *******************************************
@@ -387,6 +402,7 @@ public class TruthMatch extends ReconstructionEngine {
     private final int BSTStartBit = 36;
     private final int BMTStartBit = 42;
     private final int DCStartBit = 0;
+    private final int CTOFBit = 3;
 
     private final List<Integer> chargedPIDs;
 
@@ -643,7 +659,6 @@ public class TruthMatch extends ReconstructionEngine {
             Short index = RecFTBank.getShort("index", iFT);
 
             clId2Pindex.put(index, pindex);
-
         }
 
         DataBank hitsBank = event.getBank("FTCAL::hits");
@@ -679,7 +694,7 @@ public class TruthMatch extends ReconstructionEngine {
         return recHits;
     }
 
-    Map< Short, List<RecHit>> getCNDHits(DataEvent event, Map<Integer, MCHit> mchitsInCND) {
+    Map< Short, List<RecHit>> getCNDHits(DataEvent event, Map<Integer, MCHit> mchitsInCND, Map<Short, MCPart> mcp, Map<Short, RecPart> recp) {
         Map< Short, List<RecHit>> recHits = new HashMap<>();
 
         if (mchitsInCND == null) {
@@ -746,7 +761,7 @@ public class TruthMatch extends ReconstructionEngine {
         return recHits;
     }
 
-    Map< Short, List<RecHit>> getCTOFHits(DataEvent event, Map<Integer, MCHit> mchitsInCTOF) {
+    Map< Short, List<RecHit>> getCTOFHits(DataEvent event, Map<Integer, MCHit> mchitsInCTOF, Map<Short, MCPart> mcp, Map<Short, RecPart> recp) {
         Map< Short, List<RecHit>> recHits = new HashMap<>();
 
         if (mchitsInCTOF == null) {
@@ -788,12 +803,10 @@ public class TruthMatch extends ReconstructionEngine {
         for (int ihit = 0; ihit < hitsBank.rows(); ihit++) {
             RecHit curHit = new RecHit();
 
-            /**
-             * The following line is *WRONG*, variable *id* is not correct,
-             * instead we should use indexLadc(tdc) curHit.id =
-             * hitsBank.getShort("id", ihit) - 1; // -1, as id starts from 1
-             */
+
             curHit.id = (int) hitsBank.getShort("tdc_idx1", ihit) / 2;   // We should devide to 2, as each MC::True hit is digitized into two ADC/TDC hits.
+
+            mcp.get((short) mchitsInCTOF.get(curHit.id).otid).MCLayersNeut |= 1L << CTOFBit;
 
             curHit.cid = (short) (hitsBank.getShort("clusterid", ihit) - 1);  // -1 for starting from 0
             if (curHit.cid == -1 || !mchitsInCTOF.containsKey(curHit.id)) {
@@ -804,6 +817,27 @@ public class TruthMatch extends ReconstructionEngine {
 
             curHit.pindex = clId2Pindex.get(curHit.cid);
             curHit.detector = (byte) DetectorType.CTOF.getDetectorId();
+
+            if (curHit.pindex >= 0) {
+
+                recp.get(curHit.pindex).RecLayersNeut |= 1L << CTOFBit;
+
+                if (!recp.get(curHit.pindex).MCLayersNeut.containsKey(mchitsInCTOF.get(curHit.id).otid)) {
+                    recp.get(curHit.pindex).MCLayersNeut.put(mchitsInCTOF.get(curHit.id).otid, 0L);
+                }
+
+                Long tmpMCWord = recp.get(curHit.pindex).MCLayersNeut.get(mchitsInCTOF.get(curHit.id).otid);
+                tmpMCWord |= 1L << CTOFBit;
+                recp.get(curHit.pindex).MCLayersNeut.put(mchitsInCTOF.get(curHit.id).otid, tmpMCWord);
+
+                if (!mcp.get((short) mchitsInCTOF.get(curHit.id).otid).RecLayersNeut.containsKey((int) curHit.pindex)) {
+                    mcp.get((short) mchitsInCTOF.get(curHit.id).otid).RecLayersNeut.put((int) curHit.pindex, 0L);
+                }
+                
+                Long tmp = mcp.get((short) mchitsInCTOF.get(curHit.id).otid).RecLayersNeut.get((int) curHit.pindex);
+                tmp |= 1L << CTOFBit;
+                mcp.get((short) mchitsInCTOF.get(curHit.id).otid).RecLayersNeut.put((int) curHit.pindex, tmp);
+            }
 
             if (recHits.get(curHit.cid) == null) {
                 recHits.put(curHit.cid, new ArrayList<>());
@@ -854,21 +888,11 @@ public class TruthMatch extends ReconstructionEngine {
             short clID = (short) iCL;
             short trkID = (short) (clBank.getShort("trkID", iCL) - 1);
 
-            //short pindex = trkID >= 0 ? trkBank.getShort("pindex", trkID) : -1;  // THIS IS WRONG, the line below is correct way
-//            System.out.println("============================== Inside getBSTHits ==============================");
-//            System.out.println("clID = " + clID);
-//            System.out.println("trkID = " + trkID);
-//            System.out.println("DetType = " + DetectorType.CVT.getDetectorId());
-//            for( Map.Entry<Integer, Map<Short, Integer>> entry1 : trkID2Index.entrySet() ){
-//                
-//                System.out.println("***** The Entry Key (Detector ID) is " + entry1.getKey());
-//                
-//                for( Map.Entry<Short, Integer> entry2 : entry1.getValue().entrySet() ){
-//                    System.out.print("[" + entry2.getKey() + "," + entry2.getValue() + "] ");
-//                }
-//                System.out.println("");
-//            }
-//            System.out.println("============================== End in getBSTHits ==============================");
+            /**
+             * The following line sometimes throws exception. The cluster's
+             * associated track doesn't exist in the Rec::Track bank. Yuri knows
+             * this they were working on this.
+             */
             short pindex = trkID >= 0 ? trkBank.getShort("pindex", trkID2Index.get(DetectorType.CVT.getDetectorId()).get(trkID)) : -1;
 
             // The hardcoded 5 is the Max number of hits per Cl
@@ -884,8 +908,8 @@ public class TruthMatch extends ReconstructionEngine {
                 mcp.get((short) mchitsInBST.get(hitID).otid).MCLayersTrk |= 1L << layerBit;
                 if (pindex >= 0) {
 
-
                     recp.get(pindex).RecLayersTrk |= 1L << layerBit;
+                    
 
                     if (!recp.get(pindex).MCLayersTrk.containsKey(mchitsInBST.get(hitID).otid)) {
                         recp.get(pindex).MCLayersTrk.put(mchitsInBST.get(hitID).otid, 0L);
@@ -894,7 +918,6 @@ public class TruthMatch extends ReconstructionEngine {
                     Long tmpMCWord = recp.get(pindex).MCLayersTrk.get(mchitsInBST.get(hitID).otid);
                     tmpMCWord |= 1L << layerBit;
                     recp.get(pindex).MCLayersTrk.put(mchitsInBST.get(hitID).otid, tmpMCWord);
-
 
                     if (!mcp.get((short) mchitsInBST.get(hitID).otid).RecLayersTrk.containsKey((int) pindex)) {
                         mcp.get((short) mchitsInBST.get(hitID).otid).RecLayersTrk.put((int) pindex, 0L);
@@ -964,6 +987,16 @@ public class TruthMatch extends ReconstructionEngine {
                 mcp.get((short) mchitsInBMT.get(hitID).otid).MCLayersTrk |= 1L << layerBit;
                 if (pindex >= 0) {
 
+                    recp.get(pindex).RecLayersTrk |= 1L << layerBit;
+
+                    if (!recp.get(pindex).MCLayersTrk.containsKey(mchitsInBMT.get(hitID).otid)) {
+                        recp.get(pindex).MCLayersTrk.put(mchitsInBMT.get(hitID).otid, 0L);
+                    }
+
+                    Long tmpMCWord = recp.get(pindex).MCLayersTrk.get(mchitsInBMT.get(hitID).otid);
+                    tmpMCWord |= 1L << layerBit;
+                    recp.get(pindex).MCLayersTrk.put(mchitsInBMT.get(hitID).otid, tmpMCWord);
+
                     if (!mcp.get((short) mchitsInBMT.get(hitID).otid).RecLayersTrk.containsKey((int) pindex)) {
                         mcp.get((short) mchitsInBMT.get(hitID).otid).RecLayersTrk.put((int) pindex, 0L);
                     }
@@ -1009,6 +1042,7 @@ public class TruthMatch extends ReconstructionEngine {
             return null;
         }
 
+        DataBank tbtrkBank = event.getBank("TimeBasedTrkg::TBTracks");
         DataBank trkBank = event.getBank("REC::Track");
         DataBank tdcBank = event.getBank("DC::tdc");
         DataBank tbHitsBank = event.getBank("TimeBasedTrkg::TBHits");
@@ -1019,12 +1053,29 @@ public class TruthMatch extends ReconstructionEngine {
          * part of any track
          */
         //List<Integer> tbHitIDs = new ArrayList<>();
+        Map<Short, Short> tbTrkID2RecTrInd = new HashMap();
+        for (short iRec = 0; iRec < trkBank.rows(); iRec++) {
+            Byte det = trkBank.getByte("detector", iRec);
+            Short index = trkBank.getShort("index", iRec);
+
+            if (det == DetectorType.DC.getDetectorId()) {
+                tbTrkID2RecTrInd.put(tbtrkBank.getShort("id", index), iRec);
+            }
+        }
+
         Map<Integer, Short> tbHitIDs = new HashMap<>();
         for (int itbHit = 0; itbHit < tbHitsBank.rows(); itbHit++) {
             //tbHitIDs.put(tbHitsBank.getInt("id", itbHit) - 1, (short)tbHitsBank.getShort("trkID", itbHit) - 1);
-            tbHitIDs.put(tbHitsBank.getInt("id", itbHit) - 1, (short) (tbHitsBank.getByte("trkID", itbHit) - 1));
+            //tbHitIDs.put(tbHitsBank.getInt("id", itbHit) - 1, (short)(tbHitsBank.getByte("trkID", itbHit) - 1));
+
+            if (tbTrkID2RecTrInd.containsKey((short) tbHitsBank.getByte("trkID", itbHit))) {
+                tbHitIDs.put(tbHitsBank.getInt("id", itbHit) - 1, (short) tbTrkID2RecTrInd.get((short) tbHitsBank.getByte("trkID", itbHit)));
+            }
         }
 
+//        tbHitsBank.show();
+//        tbtrkBank.show();
+//        trkBank.show();
         for (int iHit = 0; iHit < tdcBank.rows(); iHit++) {
             RecHit curHit = new RecHit();
 
@@ -1036,13 +1087,27 @@ public class TruthMatch extends ReconstructionEngine {
             curHit.cid = (short) iHit;
 
             if (tbHitIDs.containsKey(curHit.id)) {
+                //System.out.println("======== siz of trkBanks is " + trkBank.rows() + "  hitid is " + curHit.id + "   tbHitIDs.get(curHit.id) is " + tbHitIDs.get(curHit.id) + "   the Pindex is " + trkBank.getShort("pindex", tbHitIDs.get(curHit.id)));
+
                 curHit.pindex = trkBank.getShort("pindex", tbHitIDs.get(curHit.id));
             } else {
                 curHit.pindex = -1;
             }
 
             mcp.get((short) mchitsInDC.get(curHit.id).otid).MCLayersTrk |= 1L << layerBit;
+
             if (curHit.pindex >= 0) {
+
+                //System.out.println("N_Rec_Part = " + recp.size() + "    pindex = " + curHit.pindex);
+                recp.get(curHit.pindex).RecLayersTrk |= 1L << layerBit;
+
+                if (!recp.get(curHit.pindex).MCLayersTrk.containsKey(mchitsInDC.get(curHit.id).otid)) {
+                    recp.get(curHit.pindex).MCLayersTrk.put(mchitsInDC.get(curHit.id).otid, 0L);
+                }
+
+                Long tmpMCWord = recp.get(curHit.pindex).MCLayersTrk.get(mchitsInDC.get(curHit.id).otid);
+                tmpMCWord |= 1L << layerBit;
+                recp.get(curHit.pindex).MCLayersTrk.put(mchitsInDC.get(curHit.id).otid, tmpMCWord);
 
                 if (!mcp.get((short) mchitsInDC.get(curHit.id).otid).RecLayersTrk.containsKey((int) curHit.pindex)) {
                     mcp.get((short) mchitsInDC.get(curHit.id).otid).RecLayersTrk.put((int) curHit.pindex, 0L);
@@ -1479,6 +1544,7 @@ public class TruthMatch extends ReconstructionEngine {
 
             match.id = imc;
             match.MCLayersTrk = mcp.get(imc).MCLayersTrk;
+            match.MCLayersNeut = mcp.get(imc).MCLayersNeut;
 
             /**
              * Generally speaking it is possible that all clusters of a given MC
@@ -1553,14 +1619,19 @@ public class TruthMatch extends ReconstructionEngine {
 
                 match.pindex = getMaxEntryKey(matched_counts);
                 match.RecLayersTrk = 0L;
+                match.RecLayersNeut = 0L;
                 if (mcp.get(imc).RecLayersTrk.containsKey((int) match.pindex)) {
                     match.RecLayersTrk = mcp.get(imc).RecLayersTrk.get((int) match.pindex);
+                }
+                if (mcp.get(imc).RecLayersNeut.containsKey((int) match.pindex)) {
+                    match.RecLayersNeut = mcp.get(imc).RecLayersNeut.get((int) match.pindex);
                 }
                 //match.RecLayersTrk = recp.get(match.pindex).RecLayersTrk;
 
             } else {
                 match.pindex = -1;
                 match.RecLayersTrk = 0L;
+                match.RecLayersNeut = 0L;
             }
 
             recMatch.add(match);
@@ -1579,6 +1650,7 @@ public class TruthMatch extends ReconstructionEngine {
 
             match.pindex = iRec;
             match.RecLayersTrk = recp.get(iRec).RecLayersTrk;
+            match.RecLayersNeut = recp.get(iRec).RecLayersNeut;
 
             /**
              * Generally speaking it is possible that all clusters of a given MC
@@ -1594,19 +1666,24 @@ public class TruthMatch extends ReconstructionEngine {
             if (!clsPerRecP.get(iRec).isEmpty()) {
 
                 for (RecCluster curCl : clsPerRecP.get(iRec)) {
-                    incrementMap(matched_counts, curCl.id);
+                    incrementMap(matched_counts, curCl.mcotid);
                 }
 
                 match.id = getMaxEntryKey(matched_counts);
                 match.MCLayersTrk = 0L;
+                match.MCLayersNeut = 0L;
                 if (recp.get(iRec).MCLayersTrk.containsKey((int) match.id)) {
                     match.MCLayersTrk = recp.get(iRec).MCLayersTrk.get((int) match.id);
                 }
+                
+                if (recp.get(iRec).MCLayersNeut.containsKey((int) match.id)) {
+                    match.MCLayersNeut = recp.get(iRec).MCLayersNeut.get((int) match.id);
+                }                              
 
             } else {
                 match.id = -1;
                 match.MCLayersTrk = 0L;
-
+                match.MCLayersNeut = 0L;
             }
 
             recMatch.add(match);
@@ -1617,7 +1694,6 @@ public class TruthMatch extends ReconstructionEngine {
 
     void bankWriter(DataEvent event, List<MCRecMatch> mcp, List<MCRecMatch> recp) {
 
-
         DataBank bank = event.createBank("MC::IsParticleMatched", mcp.size());
 
         for (int j = 0; j < mcp.size(); j++) {
@@ -1625,7 +1701,9 @@ public class TruthMatch extends ReconstructionEngine {
             bank.setShort("mcTindex", j, p.id);
             bank.setShort("pindex", j, p.pindex);
             bank.setLong("MCLayersTrk", j, p.MCLayersTrk);
+            bank.setLong("MCLayersNeut", j, p.MCLayersNeut);
             bank.setLong("RecLayersTrk", j, p.RecLayersTrk);
+            bank.setLong("RecLayersNeut", j, p.RecLayersNeut);
         }
 
         event.appendBanks(bank);
@@ -1637,7 +1715,9 @@ public class TruthMatch extends ReconstructionEngine {
             bankRecMatch.setShort("pindex", j, p.pindex);
             bankRecMatch.setShort("mcTindex", j, p.id);
             bankRecMatch.setLong("RecLayersTrk", j, p.RecLayersTrk);
+            bankRecMatch.setLong("RecLayersNeut", j, p.RecLayersNeut);
             bankRecMatch.setLong("MCLayersTrk", j, p.MCLayersTrk);
+            bankRecMatch.setLong("MCLayersNeut", j, p.MCLayersNeut);
         }
 
         event.appendBank(bankRecMatch);
