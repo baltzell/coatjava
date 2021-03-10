@@ -743,6 +743,9 @@ public class TruthMatch extends ReconstructionEngine {
              */
             curHit.id = (int) hitsBank.getShort("indexLtdc", ihit) / 2;   // We should devide to 2, as each MC::True hit is digitized into two ADC/TDC hits.
             curHit.cid = (short) (hitsBank.getShort("clusterid", ihit) - 1);  // -1 for starting from 0
+
+            mcp.get((short) mchitsInCND.get(curHit.id).otid).MCLayersNeut |= 1L << CTOFBit;
+
             if (curHit.cid == -2 || !mchitsInCND.containsKey(curHit.id)) {
                 continue; // The hit is not part of any cluster, or the hit it's corresponding MC hit is ignored
             }
@@ -803,8 +806,7 @@ public class TruthMatch extends ReconstructionEngine {
         for (int ihit = 0; ihit < hitsBank.rows(); ihit++) {
             RecHit curHit = new RecHit();
 
-
-            curHit.id = (int) hitsBank.getShort("tdc_idx1", ihit) / 2;   // We should devide to 2, as each MC::True hit is digitized into two ADC/TDC hits.
+            curHit.id = (int) hitsBank.getShort("tdc_idx1", ihit);
 
             mcp.get((short) mchitsInCTOF.get(curHit.id).otid).MCLayersNeut |= 1L << CTOFBit;
 
@@ -833,7 +835,7 @@ public class TruthMatch extends ReconstructionEngine {
                 if (!mcp.get((short) mchitsInCTOF.get(curHit.id).otid).RecLayersNeut.containsKey((int) curHit.pindex)) {
                     mcp.get((short) mchitsInCTOF.get(curHit.id).otid).RecLayersNeut.put((int) curHit.pindex, 0L);
                 }
-                
+
                 Long tmp = mcp.get((short) mchitsInCTOF.get(curHit.id).otid).RecLayersNeut.get((int) curHit.pindex);
                 tmp |= 1L << CTOFBit;
                 mcp.get((short) mchitsInCTOF.get(curHit.id).otid).RecLayersNeut.put((int) curHit.pindex, tmp);
@@ -909,7 +911,6 @@ public class TruthMatch extends ReconstructionEngine {
                 if (pindex >= 0) {
 
                     recp.get(pindex).RecLayersTrk |= 1L << layerBit;
-                    
 
                     if (!recp.get(pindex).MCLayersTrk.containsKey(mchitsInBST.get(hitID).otid)) {
                         recp.get(pindex).MCLayersTrk.put(mchitsInBST.get(hitID).otid, 0L);
@@ -1675,10 +1676,10 @@ public class TruthMatch extends ReconstructionEngine {
                 if (recp.get(iRec).MCLayersTrk.containsKey((int) match.id)) {
                     match.MCLayersTrk = recp.get(iRec).MCLayersTrk.get((int) match.id);
                 }
-                
+
                 if (recp.get(iRec).MCLayersNeut.containsKey((int) match.id)) {
                     match.MCLayersNeut = recp.get(iRec).MCLayersNeut.get((int) match.id);
-                }                              
+                }
 
             } else {
                 match.id = -1;
