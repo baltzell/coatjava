@@ -289,6 +289,18 @@ public class TruthMatch extends ReconstructionEngine {
         public int otid;     // id of the original (gernerated) particle that eventually caused the hit
         public int hitn;     // Hit id: it corresponds to the position of rec hits.
         public byte detector; // Detector code descriptor
+
+        @Override
+        public String toString() {
+            String str = "***** RecHit object ******\n";
+
+            str += "* pid = " + String.valueOf(pid) + "\n";
+            str += "* otid = " + String.valueOf(otid) + "\n";
+            str += "* hitn = " + String.valueOf(hitn) + "\n";
+            str += "* detector = " + String.valueOf(detector) + "\n";
+
+            return str;
+        }
     }
 
 // RecHit object
@@ -1101,6 +1113,7 @@ public class TruthMatch extends ReconstructionEngine {
         DataBank trkBank = event.getBank("REC::Track");
         DataBank tdcBank = event.getBank("DC::tdc");
         DataBank tbHitsBank = event.getBank("TimeBasedTrkg::TBHits");
+        DataBank tbMCTrue = event.getBank("MC::True");
 
         /**
          * We need to link the hit to a pindex, if the the hit is part of a
@@ -1128,9 +1141,16 @@ public class TruthMatch extends ReconstructionEngine {
             }
         }
 
+        System.out.println(" ======== Beginning ========");
+        tbMCTrue.show();
+        tdcBank.show();
 //        tbHitsBank.show();
 //        tbtrkBank.show();
 //        trkBank.show();
+
+//        for( Map.Entry<Integer, MCHit> entry: mchitsInDC.entrySet() ){
+//            System.out.println( "The Key is " + entry.getKey() + "   The value is " + entry.getValue().toString() );
+//        }
         for (int iHit = 0; iHit < tdcBank.rows(); iHit++) {
             RecHit curHit = new RecHit();
 
@@ -1149,6 +1169,10 @@ public class TruthMatch extends ReconstructionEngine {
                 curHit.pindex = -1;
             }
 
+//            System.out.println(" layerBit = " + layerBit + "   The size of mcp is " + mcp.size() );
+              System.out.println(" curHit.id = " + curHit.id);
+//            System.out.println(" otid is " + mchitsInDC.get(curHit.id).otid);
+//            System.out.println(" MCLayersTrk is " + mcp.get( (short) mchitsInDC.get(curHit.id).otid).MCLayersTrk + "   layerBit = " + layerBit );
             mcp.get((short) mchitsInDC.get(curHit.id).otid).MCLayersTrk |= 1L << layerBit;
 
             if (curHit.pindex >= 0) {
@@ -1179,6 +1203,7 @@ public class TruthMatch extends ReconstructionEngine {
             recHits.get(curHit.cid).add(curHit);
         }
 
+        System.out.println(" ========    End    ========");
         return recHits;
     }
 
