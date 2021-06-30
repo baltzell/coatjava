@@ -1,4 +1,5 @@
 package org.jlab.rec.rich;
+import org.jlab.detector.geom.RICH.RICHIntersection;
 import org.jlab.geom.prim.Line3D;
 import org.jlab.geom.prim.Point3D;
 import org.jlab.geom.prim.Vector3D;

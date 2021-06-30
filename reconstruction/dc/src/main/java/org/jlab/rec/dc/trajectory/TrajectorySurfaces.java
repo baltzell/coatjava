@@ -14,11 +14,13 @@ import org.jlab.detector.base.DetectorType;
 
 import org.jlab.detector.geant4.v2.DCGeant4Factory;
 import org.jlab.detector.geant4.v2.FTOFGeant4Factory;
+import org.jlab.detector.geom.RICH.RICHGeomFactory;
 import org.jlab.geom.base.Detector;
 import org.jlab.geom.prim.Vector3D;
 import org.jlab.rec.dc.Constants;
 
 import java.io.PrintWriter;
+
 /**
  * A class to load the geometry constants used in the DC reconstruction. The
  * coordinate system used in the Tilted Sector coordinate system.
@@ -43,7 +45,8 @@ public class TrajectorySurfaces {
     public void LoadSurfaces(double targetPosition, double targetLength,
             DCGeant4Factory dcDetector,
             FTOFGeant4Factory ftofDetector,
-            Detector ecalDetector) {
+            Detector ecalDetector,
+            RICHGeomFactory richDetector) {
         // creating Boundaries for MS 
         Constants.Z[0]= targetPosition;
         Constants.Z[1]= dcDetector.getWireMidpoint(0, 0, 0, 0).z;
@@ -133,6 +136,15 @@ public class TrajectorySurfaces {
             d = P.dot(n);
 //            System.out.println("ECout " + d + " " + P1.dot(n));
             this._DetectorPlanes.get(is).add(new Surface(DetectorType.ECAL, DetectorLayer.EC_OUTER_U, d, n.x(), n.y(), n.z())); 
+            // RICH  
+            if((is+1)==4) {
+                for(int i=0; i<3; i++) {
+                    P = richDetector.get_AeroforTraj(i).point().toVector3D();
+                    n = richDetector.get_AeroforTraj(i).normal().multiply(-1);
+                    d = P.dot(n);
+                    this._DetectorPlanes.get(is).add(new Surface(DetectorType.RICH, i, d, n.x(), n.y(), n.z())); 
+                }
+            }
         }
     }
 //    private Point3D RotateFromTSCtoLabC(double X, double Y, double Z, int sector) {

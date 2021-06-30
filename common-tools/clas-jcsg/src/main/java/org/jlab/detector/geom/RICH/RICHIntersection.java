@@ -1,7 +1,8 @@
-package org.jlab.rec.rich;
+package org.jlab.detector.geom.RICH;
 
 import org.jlab.geom.prim.Vector3D;
 import org.jlab.geom.prim.Point3D;
+
 
 // ----------------
 public class RICHIntersection{
@@ -32,8 +33,8 @@ public class RICHIntersection{
         this.normal   = vno;
 
         // default values to be updated for aerogel
-        this.nin = (float) RICHConstants.RICH_AIR_INDEX;
-        this.nout = (float) RICHConstants.RICH_AIR_INDEX;
+        this.nin = (float) RICHGeoConstants.RICH_AIR_INDEX;
+        this.nout = (float) RICHGeoConstants.RICH_AIR_INDEX;
     }
 
     // ----------------

@@ -1,4 +1,4 @@
-package org.jlab.rec.rich;
+package org.jlab.detector.geom.RICH;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,8 +21,8 @@ public class RICHLayer extends ArrayList<RICHComponent> {
      * A layer in the RICH consists of an array of components
      */
 
-    private static double MRAD = 1000.;
-    private static double RAD = 180./Math.PI;
+    private static final double MRAD = 1000.;
+    private static final double RAD = 180./Math.PI;
 
     private int id;         // layer id
     private String name;    // layer name
@@ -424,7 +424,7 @@ public class RICHLayer extends ArrayList<RICHComponent> {
         for (int ic=0; ic<ncross; ic++){
             Point3D new_point = crosses.get(ic);
             if(debugMode>=1)System.out.format(" cross with sphere %s --> %7.2f \n",new_point.toStringBrief(2),new_point.distance(pary));
-            if(new_point.distance(pary)<RICHConstants.PHOTON_DISTMIN_SPHERE){
+            if(new_point.distance(pary)<RICHGeoConstants.PHOTON_DISTMIN_SPHERE){
                  
                 return new_point.toVector3D();
 
@@ -717,7 +717,7 @@ public class RICHLayer extends ArrayList<RICHComponent> {
                               this.get_id(),ifacompo,iface,G4inter.toStringBrief(2),ray.origin().z(),point.z(),vers,Delta_z, norm.toStringBrief(3),
                               glnorm.toStringBrief(3));
 
-            if(G4inter.distance(ray.origin())<RICHConstants.PHOTON_DISTMIN_TRACING){if(debugMode>=1)System.out.format("     --> too close \n"); continue;}
+            if(G4inter.distance(ray.origin())<RICHGeoConstants.PHOTON_DISTMIN_TRACING){if(debugMode>=1)System.out.format("     --> too close \n"); continue;}
             if(post==1){
                 if(vers*Delta_z<0){if(debugMode>=1)System.out.format("     --> wrong progression \n"); continue;}
             }else{
@@ -776,7 +776,7 @@ public class RICHLayer extends ArrayList<RICHComponent> {
             for (int ic=0; ic<ncross; ic++){
                 Point3D new_point = crosses.get(ic);
                 if(debugMode>=1)System.out.format(" cross with sphere %s \n",new_point.toStringBrief(2));
-                if(new_point.distance(intersection.get_pos())<RICHConstants.PHOTON_DISTMIN_SPHERE){
+                if(new_point.distance(intersection.get_pos())<RICHGeoConstants.PHOTON_DISTMIN_SPHERE){
 
                     Vector3D new_norm = sphere.getNormal(new_point.x(), new_point.y(), new_point.z()).asUnit().multiply(-1.0);
                     new_inter = new RICHIntersection(ilay, icompo, 0, exit, new_point, new_norm);

@@ -10,6 +10,7 @@ import org.jlab.detector.base.DetectorType;
 import org.jlab.detector.base.GeometryFactory;
 import org.jlab.detector.geant4.v2.DCGeant4Factory;
 import org.jlab.detector.geant4.v2.FTOFGeant4Factory;
+import org.jlab.detector.geom.RICH.RICHGeomFactory;
 import org.jlab.geom.base.ConstantProvider;
 import org.jlab.geom.base.Detector;
 import org.jlab.io.base.DataEvent;
@@ -21,9 +22,10 @@ public class DCEngine extends ReconstructionEngine {
 
     //String FieldsConfig="";
     //AtomicInteger Run = new AtomicInteger(0);
-    DCGeant4Factory dcDetector;
+    DCGeant4Factory   dcDetector;
     FTOFGeant4Factory ftofDetector;
     Detector          ecalDetector = null;
+    RICHGeomFactory   richDetector = null;
     TrajectorySurfaces tSurf;
     String clasDictionaryPath ;
     String variationName;
@@ -190,8 +192,9 @@ public class DCEngine extends ReconstructionEngine {
         ftofDetector = new FTOFGeant4Factory(providerFTOF);        
         ConstantProvider providerEC = GeometryFactory.getConstants(DetectorType.ECAL, 11, geoVariation);
         ecalDetector =  GeometryFactory.getDetector(DetectorType.ECAL, 11, geoVariation);
+        richDetector = new RICHGeomFactory(1, this.getConstantsManager(), 11);
         System.out.println(" -- Det Geometry constants are Loaded " );
-
+        
         // create the surfaces
         tSurf = new TrajectorySurfaces();
         // for debugging the end plates bowing:
@@ -201,7 +204,7 @@ public class DCEngine extends ReconstructionEngine {
         //} catch (FileNotFoundException ex) {
         //    Logger.getLogger(DCEngine.class.getName()).log(Level.SEVERE, null, ex);
         //}
-        tSurf.LoadSurfaces(targetPosition, targetLength,dcDetector, ftofDetector, ecalDetector);
+        tSurf.LoadSurfaces(targetPosition, targetLength,dcDetector, ftofDetector, ecalDetector, richDetector);
         
         // Get the constants for the correct variation
         String ccDBVar = this.getEngineConfigString("variation");

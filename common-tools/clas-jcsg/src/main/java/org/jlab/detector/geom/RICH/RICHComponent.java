@@ -1,10 +1,8 @@
-package org.jlab.rec.rich;
+package org.jlab.detector.geom.RICH;
 
-import org.jlab.detector.geant4.v2.RICHGeant4Factory;
 import org.jlab.detector.volume.G4Stl;
 import org.jlab.detector.volume.G4Box;
 
-import eu.mihosoft.vrl.v3d.Vector3d;
 import eu.mihosoft.vrl.v3d.CSG;
 
 import org.jlab.geom.prim.Sphere3D;

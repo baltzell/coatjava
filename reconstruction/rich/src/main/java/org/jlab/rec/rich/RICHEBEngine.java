@@ -161,7 +161,7 @@ public class RICHEBEngine extends ReconstructionEngine {
         RICHio              richio = new RICHio();
         RICHPMTReconstruction rpmt = new RICHPMTReconstruction(richevent, tool, richio);
         RICHEventBuilder       reb = new RICHEventBuilder(richevent, tool, richio);
-
+        
 	/*
 	Initialize the RICH event
 	*/
