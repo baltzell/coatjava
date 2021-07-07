@@ -38,7 +38,7 @@ public class TruthMatch extends ReconstructionEngine {
 
     @Override
     public boolean init() {
-        return true;
+        return true; 
     }
 
     @Override
