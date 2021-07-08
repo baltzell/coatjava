@@ -16,10 +16,13 @@ import org.jlab.detector.geant4.v2.DCGeant4Factory;
 import org.jlab.detector.geant4.v2.FTOFGeant4Factory;
 import org.jlab.detector.geom.RICH.RICHGeomFactory;
 import org.jlab.geom.base.Detector;
+import org.jlab.geom.prim.Point3D;
 import org.jlab.geom.prim.Vector3D;
 import org.jlab.rec.dc.Constants;
 
 import java.io.PrintWriter;
+import org.jlab.geom.prim.Plane3D;
+import org.jlab.rec.dc.trajectory.Trajectory.TrajectoryStateVec;
 
 /**
  * A class to load the geometry constants used in the DC reconstruction. The
@@ -32,6 +35,11 @@ public class TrajectorySurfaces {
 
     private List<ArrayList<Surface>> _DetectorPlanes = new ArrayList<ArrayList<Surface>>();
     
+    private DCGeant4Factory dcDetector = null;
+    private FTOFGeant4Factory ftofDetector=null;
+    private Detector ecalDetector=null;
+    private RICHGeomFactory richDetector=null;
+    
     public List<ArrayList<Surface>> getDetectorPlanes() {
         return _DetectorPlanes;
     }
@@ -43,10 +51,16 @@ public class TrajectorySurfaces {
     double FVT_Z1stlayer = 30.2967; // z-distance between target center and strips of the first layer.
     double FVT_Interlayer = 1.190;  // Keep this for now until the Geometry service is ready... or remove FMT from traj.
     public void LoadSurfaces(double targetPosition, double targetLength,
-            DCGeant4Factory dcDetector,
-            FTOFGeant4Factory ftofDetector,
-            Detector ecalDetector,
-            RICHGeomFactory richDetector) {
+            DCGeant4Factory dcDet,
+            FTOFGeant4Factory ftofDet,
+            Detector ecalDet,
+            RICHGeomFactory richDet) {
+        
+        this.dcDetector   = dcDet;
+        this.ftofDetector = ftofDet;
+        this.ecalDetector = ecalDet;
+        this.richDetector = richDet;
+        
         // creating Boundaries for MS 
         Constants.Z[0]= targetPosition;
         Constants.Z[1]= dcDetector.getWireMidpoint(0, 0, 0, 0).z;
@@ -136,13 +150,15 @@ public class TrajectorySurfaces {
             d = P.dot(n);
 //            System.out.println("ECout " + d + " " + P1.dot(n));
             this._DetectorPlanes.get(is).add(new Surface(DetectorType.ECAL, DetectorLayer.EC_OUTER_U, d, n.x(), n.y(), n.z())); 
-            // RICH  
-            if((is+1)==4) {
-                for(int i=0; i<3; i++) {
-                    P = richDetector.get_AeroforTraj(i).point().toVector3D();
-                    n = richDetector.get_AeroforTraj(i).normal().multiply(-1);
+            // RICH
+            int[] richPlanes = {DetectorLayer.RICH_MAPMT, DetectorLayer.RICH_AEROGEL_B1, DetectorLayer.RICH_AEROGEL_B2, DetectorLayer.RICH_AEROGEL_L1};
+            for(int i=0; i<richPlanes.length; i++) {
+                Plane3D richPlane = richDetector.get_TrajPlane(is+1,richPlanes[i]);
+                if(richPlane!=null) {
+                    P = richPlane.point().toVector3D();
+                    n = richPlane.normal().multiply(-1);
                     d = P.dot(n);
-                    this._DetectorPlanes.get(is).add(new Surface(DetectorType.RICH, i, d, n.x(), n.y(), n.z())); 
+                    this._DetectorPlanes.get(is).add(new Surface(DetectorType.RICH, richPlanes[i], d, n.x(), n.y(), n.z()));
                 }
             }
         }

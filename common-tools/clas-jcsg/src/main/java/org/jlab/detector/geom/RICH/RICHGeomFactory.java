@@ -12,7 +12,7 @@ import eu.mihosoft.vrl.v3d.Vertex;
 import eu.mihosoft.vrl.v3d.Polygon;   
 import eu.mihosoft.vrl.v3d.CSG;   
 import java.util.Arrays;
-import java.util.Optional;
+import org.jlab.detector.base.DetectorLayer;
 import org.jlab.detector.calib.utils.ConstantsManager;
 import org.jlab.geometry.prim.Line3d;   
 
@@ -762,7 +762,14 @@ public class RICHGeomFactory{
 
     }
 
-
+    public Plane3D get_TrajPlane(int sector, int iplane) {
+        if(sector==4) {
+            if(iplane==DetectorLayer.RICH_MAPMT) return this.get_MaPMTforTraj();
+            else return this.get_AeroforTraj(iplane);
+            }
+        else return null;
+    }
+    
     //------------------------------
     public Plane3D get_MaPMTforTraj() {
     //------------------------------
@@ -774,14 +781,15 @@ public class RICHGeomFactory{
 
 
     //------------------------------
-    public Plane3D get_AeroforTraj(int iflag) {
+    public Plane3D get_AeroforTraj(int ilayer) {
     //------------------------------
 
-        RICHLayer layer = get_Layer("aerogel_2cm_B1");
-        if(iflag==1) layer = get_Layer("aerogel_2cm_B2");
-        if(iflag==2) layer = get_Layer("aerogel_3cm_L1");
+        Plane3D layer = null;
+        if(ilayer==DetectorLayer.RICH_AEROGEL_B1)      layer = this.get_Layer("aerogel_2cm_B1").get_TrajPlane();
+        else if(ilayer==DetectorLayer.RICH_AEROGEL_B2) layer = this.get_Layer("aerogel_2cm_B2").get_TrajPlane();
+        else if(ilayer==DetectorLayer.RICH_AEROGEL_L1) layer = this.get_Layer("aerogel_3cm_L1").get_TrajPlane();
 
-        return layer.get_TrajPlane();
+        return layer;
 
     }
 
