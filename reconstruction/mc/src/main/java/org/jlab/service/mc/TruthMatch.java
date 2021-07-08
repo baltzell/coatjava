@@ -38,7 +38,7 @@ public class TruthMatch extends ReconstructionEngine {
 
     @Override
     public boolean init() {
-        return true; 
+        return true;
     }
 
     @Override
@@ -102,7 +102,7 @@ public class TruthMatch extends ReconstructionEngine {
         /**
          * Getting FT Hits and clusters
          */
-        Map< Short, List<RecHit>> ftCalHits = getFTCalHits(event, mchits.get((byte) DetectorType.FTCAL.getDetectorId()));
+        Map< Short, List<RecHit>> ftCalHits = getFTCalHits(event, mchits.get((byte) DetectorType.FTCAL.getDetectorId()), mcp, recp);
         List<RecCluster> ftCalClusters = getFTCalClusters(event);
 
         /**
@@ -417,6 +417,7 @@ public class TruthMatch extends ReconstructionEngine {
     private final int ECalStartBit = 0;
     private final int CTOFBit = 6;
     private final int CNDStartBit = 3;
+    private final int FTCalBit = 14;
 
     private final List<Integer> chargedPIDs;
 
@@ -670,7 +671,7 @@ public class TruthMatch extends ReconstructionEngine {
         return recHits;
     }
 
-    Map< Short, List<RecHit>> getFTCalHits(DataEvent event, Map<Integer, MCHit> mchitsInFTCal) {
+    Map< Short, List<RecHit>> getFTCalHits(DataEvent event, Map<Integer, MCHit> mchitsInFTCal, Map<Short, MCPart> mcp, Map<Short, RecPart> recp) {
         Map< Short, List<RecHit>> recHits = new HashMap<>();
 
         if (mchitsInFTCal == null) {
@@ -710,6 +711,9 @@ public class TruthMatch extends ReconstructionEngine {
 
             curHit.id = hitsBank.getShort("hitID", ihit);   // Not removing 1, as hitID start from 0
             curHit.cid = (short) (hitsBank.getShort("clusterID", ihit) - 1);  // -1 for starting from 0
+
+            mcp.get((short) mchitsInFTCal.get(curHit.id).otid).MCLayersNeut |= 1L << FTCalBit;
+
             if (curHit.cid == -2 || !mchitsInFTCal.containsKey(curHit.id)) {
                 continue; // The hit is not part of any cluster, or the hit it's corresponding MC hit is ignored
             }
@@ -724,7 +728,32 @@ public class TruthMatch extends ReconstructionEngine {
             }
 
             curHit.pindex = clId2Pindex.get(curHit.cid);
-            curHit.detector = (byte) DetectorType.ECAL.getDetectorId(); // Seems Wrong 10/03/2020, Should be looked at
+            //curHit.detector = (byte) DetectorType.ECAL.getDetectorId(); // Seems Wrong 10/03/2020, Should be looked at
+            curHit.detector = (byte) DetectorType.FTCAL.getDetectorId();
+
+            // Although the "if" statement above should ensure pindex is not negative, 
+            if (curHit.pindex >= 0) {
+
+                recp.get(curHit.pindex).RecLayersNeut = FTCalBit;
+
+                if (!recp.get(curHit.pindex).MCLayersNeut.containsKey(mchitsInFTCal.get(curHit.id).otid)) {
+                    recp.get(curHit.pindex).MCLayersNeut.put(mchitsInFTCal.get(curHit.id).otid, 0L);
+                }
+
+                Long tmpMCWord = recp.get(curHit.pindex).MCLayersNeut.get(mchitsInFTCal.get(curHit.id).otid);
+                tmpMCWord |= 1L << FTCalBit;
+                recp.get(curHit.pindex).MCLayersNeut.put(mchitsInFTCal.get(curHit.id).otid, tmpMCWord);
+
+                if (!mcp.get((short) mchitsInFTCal.get(curHit.id).otid).RecLayersNeut.containsKey((int) curHit.pindex)) {
+                    mcp.get((short) mchitsInFTCal.get(curHit.id).otid).RecLayersNeut.put((int) curHit.pindex, 0L);
+                }
+
+                Long tmp = mcp.get((short) mchitsInFTCal.get(curHit.id).otid).RecLayersNeut.get((int) curHit.pindex);
+                tmp |= 1L << FTCalBit;
+                mcp.get((short) mchitsInFTCal.get(curHit.id).otid).RecLayersNeut.put((int) curHit.pindex, tmp);
+                
+                System.out.println( "The word is " + mcp.get((short) mchitsInFTCal.get(curHit.id).otid).RecLayersNeut.get((int) curHit.pindex) );
+            }
 
             if (recHits.get(curHit.cid) == null) {
                 recHits.put(curHit.cid, new ArrayList<>());
@@ -1141,13 +1170,12 @@ public class TruthMatch extends ReconstructionEngine {
             }
         }
 
-        System.out.println(" ======== Beginning ========");
-        tbMCTrue.show();
-        tdcBank.show();
+//        System.out.println(" ======== Beginning ========");
+//        tbMCTrue.show();
+//        tdcBank.show();
 //        tbHitsBank.show();
 //        tbtrkBank.show();
 //        trkBank.show();
-
 //        for( Map.Entry<Integer, MCHit> entry: mchitsInDC.entrySet() ){
 //            System.out.println( "The Key is " + entry.getKey() + "   The value is " + entry.getValue().toString() );
 //        }
@@ -1170,7 +1198,7 @@ public class TruthMatch extends ReconstructionEngine {
             }
 
 //            System.out.println(" layerBit = " + layerBit + "   The size of mcp is " + mcp.size() );
-              System.out.println(" curHit.id = " + curHit.id);
+//            System.out.println(" curHit.id = " + curHit.id);
 //            System.out.println(" otid is " + mchitsInDC.get(curHit.id).otid);
 //            System.out.println(" MCLayersTrk is " + mcp.get( (short) mchitsInDC.get(curHit.id).otid).MCLayersTrk + "   layerBit = " + layerBit );
             mcp.get((short) mchitsInDC.get(curHit.id).otid).MCLayersTrk |= 1L << layerBit;
@@ -1203,7 +1231,7 @@ public class TruthMatch extends ReconstructionEngine {
             recHits.get(curHit.cid).add(curHit);
         }
 
-        System.out.println(" ========    End    ========");
+        //System.out.println(" ========    End    ========");
         return recHits;
     }
 
