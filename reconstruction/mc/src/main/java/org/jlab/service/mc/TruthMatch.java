@@ -105,6 +105,9 @@ public class TruthMatch extends ReconstructionEngine {
         Map< Short, List<RecHit>> ftCalHits = getFTCalHits(event, mchits.get((byte) DetectorType.FTCAL.getDetectorId()), mcp, recp);
         List<RecCluster> ftCalClusters = getFTCalClusters(event);
 
+        Map< Short, List<RecHit>> ftHodoHits = getFTHodoHits(event, mchits.get((byte) DetectorType.FTHODO.getDetectorId()), mcp, recp);
+        List<RecCluster> ftHodoClusters = getFTHodoClusters(event);
+
         /**
          * Getting CND Hits and Clusters
          */
@@ -144,6 +147,7 @@ public class TruthMatch extends ReconstructionEngine {
          */
         MatchClasters(ecalClusters, ecalHits, mchits.get((byte) DetectorType.ECAL.getDetectorId()));
         MatchClasters(ftCalClusters, ftCalHits, mchits.get((byte) DetectorType.FTCAL.getDetectorId()));
+        MatchClasters(ftHodoClusters, ftHodoHits, mchits.get((byte) DetectorType.FTHODO.getDetectorId()));
         MatchClasters(cndClusters, cndHits, mchits.get((byte) DetectorType.CND.getDetectorId()));
         MatchClasters(ctofClusters, ctofHits, mchits.get((byte) DetectorType.CTOF.getDetectorId()));
         MatchClasters(bstClusters, bstHits, mchits.get((byte) DetectorType.BST.getDetectorId()));
@@ -418,6 +422,7 @@ public class TruthMatch extends ReconstructionEngine {
     private final int CTOFBit = 6;
     private final int CNDStartBit = 3;
     private final int FTCalBit = 14;
+    private final int FTHodoStartBit = 12;
 
     private final List<Integer> chargedPIDs;
 
@@ -642,7 +647,7 @@ public class TruthMatch extends ReconstructionEngine {
 
             if (curHit.pindex >= 0) {
 
-                recp.get(curHit.pindex).RecLayersNeut = ECalLayerBit;
+                recp.get(curHit.pindex).RecLayersNeut |= 1L << ECalLayerBit;
 
                 if (!recp.get(curHit.pindex).MCLayersNeut.containsKey(mchitsInECal.get(curHit.id).otid)) {
                     recp.get(curHit.pindex).MCLayersNeut.put(mchitsInECal.get(curHit.id).otid, 0L);
@@ -700,8 +705,11 @@ public class TruthMatch extends ReconstructionEngine {
 
             Short pindex = RecFTBank.getShort("pindex", iFT);
             Short index = RecFTBank.getShort("index", iFT);
+            Byte detector = RecFTBank.getByte("detector", iFT);
 
-            clId2Pindex.put(index, pindex);
+            if (detector == (byte) DetectorType.FTCAL.getDetectorId()) {
+                clId2Pindex.put(index, pindex);
+            }
         }
 
         DataBank hitsBank = event.getBank("FTCAL::hits");
@@ -734,7 +742,7 @@ public class TruthMatch extends ReconstructionEngine {
             // Although the "if" statement above should ensure pindex is not negative, 
             if (curHit.pindex >= 0) {
 
-                recp.get(curHit.pindex).RecLayersNeut = FTCalBit;
+                recp.get(curHit.pindex).RecLayersNeut |= 1L << FTCalBit;
 
                 if (!recp.get(curHit.pindex).MCLayersNeut.containsKey(mchitsInFTCal.get(curHit.id).otid)) {
                     recp.get(curHit.pindex).MCLayersNeut.put(mchitsInFTCal.get(curHit.id).otid, 0L);
@@ -751,8 +759,103 @@ public class TruthMatch extends ReconstructionEngine {
                 Long tmp = mcp.get((short) mchitsInFTCal.get(curHit.id).otid).RecLayersNeut.get((int) curHit.pindex);
                 tmp |= 1L << FTCalBit;
                 mcp.get((short) mchitsInFTCal.get(curHit.id).otid).RecLayersNeut.put((int) curHit.pindex, tmp);
-                
-                System.out.println( "The word is " + mcp.get((short) mchitsInFTCal.get(curHit.id).otid).RecLayersNeut.get((int) curHit.pindex) );
+            }
+
+            if (recHits.get(curHit.cid) == null) {
+                recHits.put(curHit.cid, new ArrayList<>());
+            }
+
+            recHits.get(curHit.cid).add(curHit);
+        }
+
+        return recHits;
+    }
+
+    Map< Short, List<RecHit>> getFTHodoHits(DataEvent event, Map<Integer, MCHit> mchitsInFTHodo, Map<Short, MCPart> mcp, Map<Short, RecPart> recp) {
+        Map< Short, List<RecHit>> recHits = new HashMap<>();
+
+        if (mchitsInFTHodo == null) {
+            /**
+             * In case if no MC hit present in the FTHodo, then don't proceed,
+             * as we need only hits that are associated to an MC hit
+             */
+            return recHits;
+        }
+
+        /**
+         * Check if two necessary banks exist otherwise will return null
+         */
+        if (event.hasBank("FTHODO::hits") == false) {
+            return null;
+        }
+
+        if (event.hasBank("FTHODO::clusters") == false) {
+            return null;
+        }
+        
+        Map<Short, Short> clId2Pindex = new HashMap<>();
+        DataBank RecFTBank = event.getBank("REC::ForwardTagger");
+
+        for (int iFT = 0; iFT < RecFTBank.rows(); iFT++) {
+
+            Short pindex = RecFTBank.getShort("pindex", iFT);
+            Short index = RecFTBank.getShort("index", iFT);
+            Byte detector = RecFTBank.getByte("detector", iFT);
+
+            if (detector == (byte) DetectorType.FTHODO.getDetectorId()) {
+                clId2Pindex.put(index, pindex);
+            }
+        }
+        
+        DataBank hitsBank = event.getBank("FTHODO::hits");
+
+        for (int ihit = 0; ihit < hitsBank.rows(); ihit++) {
+            RecHit curHit = new RecHit();
+
+            curHit.id = hitsBank.getShort("hitID", ihit);   // Not removing 1, as hitID start from 0
+            curHit.cid = (short) (hitsBank.getShort("clusterID", ihit) - 1);  // -1 for starting from 0
+            int layer = hitsBank.getShort("layer", ihit) - 1; // 0 would correspond to the layer 1, and 1 would correspond to the layer 2
+            int HodoLayerBit = FTHodoStartBit + layer;
+            
+            mcp.get((short) mchitsInFTHodo.get(curHit.id).otid).MCLayersNeut |= 1L << HodoLayerBit;
+
+            if (curHit.cid == -2 || !mchitsInFTHodo.containsKey(curHit.id)) {
+                continue; // The hit is not part of any cluster, or the hit it's corresponding MC hit is ignored
+            }
+
+            /**
+             * For FTHodo not necessarily all clusters are associated to a rec
+             * particle, that is why we will check, if the clId2Pindex contains
+             * the given cluster
+             */
+            if (!clId2Pindex.containsKey(curHit.cid)) {
+                continue;
+            }
+
+            curHit.pindex = clId2Pindex.get(curHit.cid);
+            //curHit.detector = (byte) DetectorType.ECAL.getDetectorId(); // Seems Wrong 10/03/2020, Should be looked at
+            curHit.detector = (byte) DetectorType.FTCAL.getDetectorId();
+
+            // Although the "if" statement above should ensure pindex is not negative, 
+            if (curHit.pindex >= 0) {
+
+                recp.get(curHit.pindex).RecLayersNeut |= 1L << HodoLayerBit;
+
+                if (!recp.get(curHit.pindex).MCLayersNeut.containsKey(mchitsInFTHodo.get(curHit.id).otid)) {
+                    recp.get(curHit.pindex).MCLayersNeut.put(mchitsInFTHodo.get(curHit.id).otid, 0L);
+                }
+
+                Long tmpMCWord = recp.get(curHit.pindex).MCLayersNeut.get(mchitsInFTHodo.get(curHit.id).otid);
+                tmpMCWord |= 1L << HodoLayerBit;
+                recp.get(curHit.pindex).MCLayersNeut.put(mchitsInFTHodo.get(curHit.id).otid, tmpMCWord);
+
+                if (!mcp.get((short) mchitsInFTHodo.get(curHit.id).otid).RecLayersNeut.containsKey((int) curHit.pindex)) {
+                    mcp.get((short) mchitsInFTHodo.get(curHit.id).otid).RecLayersNeut.put((int) curHit.pindex, 0L);
+                }
+
+                Long tmp = mcp.get((short) mchitsInFTHodo.get(curHit.id).otid).RecLayersNeut.get((int) curHit.pindex);
+                tmp |= 1L << HodoLayerBit;
+                mcp.get((short) mchitsInFTHodo.get(curHit.id).otid).RecLayersNeut.put((int) curHit.pindex, tmp);
             }
 
             if (recHits.get(curHit.cid) == null) {
@@ -1311,6 +1414,50 @@ public class TruthMatch extends ReconstructionEngine {
         return cls;
     }
 
+    
+    List<RecCluster> getFTHodoClusters(DataEvent event) {
+        List<RecCluster> cls = new ArrayList<>();
+
+        /**
+         * We need the bank REC::ForwardTagger, so as a first thing we will
+         * check if the bank exist
+         */
+        if (event.hasBank("REC::ForwardTagger") == false) {
+            return cls;
+        }
+
+        DataBank recFT = event.getBank("REC::ForwardTagger");
+
+        for (int iCl = 0; iCl < recFT.rows(); iCl++) {
+
+            /**
+             * Both FT clusters and FT hodo hits are in the same
+             * REC::ForwardTagger bank
+             */
+            if (recFT.getByte("detector", iCl) != DetectorType.FTHODO.getDetectorId()) {
+                continue;
+            }
+
+            RecCluster curCl = new RecCluster();
+
+            curCl.id = recFT.getShort("index", iCl);
+            curCl.pindex = recFT.getShort("pindex", iCl);
+            curCl.detector = recFT.getByte("detector", iCl);
+            curCl.layer = recFT.getByte("layer", iCl);
+            curCl.sector = -1; // No concept of sector for FT
+            curCl.energy = recFT.getFloat("energy", iCl);
+            curCl.size = recFT.getShort("size", iCl);
+
+            curCl.rectid = -1;  
+            curCl.superlayer = -1;
+
+            cls.add(curCl);
+        }
+
+        return cls;
+    }
+    
+    
     List<RecCluster> getCNDClusters(DataEvent event) {
         List<RecCluster> cls = new ArrayList<>();
 
