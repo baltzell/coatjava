@@ -173,6 +173,13 @@ public class TruthMatch extends ReconstructionEngine {
         }
 
         /**
+         * Adding FTHodo clusters
+         */
+        if (ftHodoClusters != null) {
+            allCls.addAll(ftHodoClusters);
+        }
+
+        /**
          * Adding CND clusters
          */
         if (cndClusters != null) {
@@ -248,12 +255,12 @@ public class TruthMatch extends ReconstructionEngine {
         // (still needs to be defined which one) in MC::True)
 
         public int pid;     // PDG ID code
-        public long MCLayersTrk;    // This is not really MCParticle property, bu we know that each MCParticle should have this so, attaching this to MCPart object
+        public long MCLayersTrk;    // This is not really MCParticle property, but we know that each MCParticle should have this so, attaching this to MCPart object
         // *********************************************** Description of "LayersTrk" ************************************************************
         //**** BMT Layer ****|*** BST Layer **** | ******************************************* DC layers *******************************************
         // 47 46 45 44 43 42 | 41 40 39 38 37 36 | 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 3 2 0
 
-        public long MCLayersNeut;   // This is not really MCParticle property, bu we know that each MCParticle should have this so, attaching this to MCPart object
+        public long MCLayersNeut;   // This is ntot really MCParticle property, bu we know that each MCParticle should have this so, attaching this to MCPart object
 
         // In the following map, the key is the pindex of the matched particle, and the value is the    
         public Map<Integer, Long> RecLayersTrk;
@@ -792,7 +799,7 @@ public class TruthMatch extends ReconstructionEngine {
         if (event.hasBank("FTHODO::clusters") == false) {
             return null;
         }
-        
+
         Map<Short, Short> clId2Pindex = new HashMap<>();
         DataBank RecFTBank = event.getBank("REC::ForwardTagger");
 
@@ -806,7 +813,7 @@ public class TruthMatch extends ReconstructionEngine {
                 clId2Pindex.put(index, pindex);
             }
         }
-        
+
         DataBank hitsBank = event.getBank("FTHODO::hits");
 
         for (int ihit = 0; ihit < hitsBank.rows(); ihit++) {
@@ -814,9 +821,9 @@ public class TruthMatch extends ReconstructionEngine {
 
             curHit.id = hitsBank.getShort("hitID", ihit);   // Not removing 1, as hitID start from 0
             curHit.cid = (short) (hitsBank.getShort("clusterID", ihit) - 1);  // -1 for starting from 0
-            int layer = hitsBank.getShort("layer", ihit) - 1; // 0 would correspond to the layer 1, and 1 would correspond to the layer 2
+            int layer = (int) hitsBank.getByte("layer", ihit) - 1; // 0 would correspond to the layer 1, and 1 would correspond to the layer 2
             int HodoLayerBit = FTHodoStartBit + layer;
-            
+
             mcp.get((short) mchitsInFTHodo.get(curHit.id).otid).MCLayersNeut |= 1L << HodoLayerBit;
 
             if (curHit.cid == -2 || !mchitsInFTHodo.containsKey(curHit.id)) {
@@ -834,7 +841,7 @@ public class TruthMatch extends ReconstructionEngine {
 
             curHit.pindex = clId2Pindex.get(curHit.cid);
             //curHit.detector = (byte) DetectorType.ECAL.getDetectorId(); // Seems Wrong 10/03/2020, Should be looked at
-            curHit.detector = (byte) DetectorType.FTCAL.getDetectorId();
+            curHit.detector = (byte) DetectorType.FTHODO.getDetectorId();
 
             // Although the "if" statement above should ensure pindex is not negative, 
             if (curHit.pindex >= 0) {
@@ -1414,7 +1421,6 @@ public class TruthMatch extends ReconstructionEngine {
         return cls;
     }
 
-    
     List<RecCluster> getFTHodoClusters(DataEvent event) {
         List<RecCluster> cls = new ArrayList<>();
 
@@ -1448,7 +1454,7 @@ public class TruthMatch extends ReconstructionEngine {
             curCl.energy = recFT.getFloat("energy", iCl);
             curCl.size = recFT.getShort("size", iCl);
 
-            curCl.rectid = -1;  
+            curCl.rectid = -1;
             curCl.superlayer = -1;
 
             cls.add(curCl);
@@ -1456,8 +1462,7 @@ public class TruthMatch extends ReconstructionEngine {
 
         return cls;
     }
-    
-    
+
     List<RecCluster> getCNDClusters(DataEvent event) {
         List<RecCluster> cls = new ArrayList<>();
 
@@ -1791,16 +1796,15 @@ public class TruthMatch extends ReconstructionEngine {
 
         List<MCRecMatch> recMatch = new ArrayList<>();
 
-        //System.out.println("******************** Inside the MakeMCRecMatch **************************** ");
         for (short imc : mcp.keySet()) {
 
-            //System.out.println("******* MCParticle index is " + imc);
             MCRecMatch match = new MCRecMatch();
 
             match.id = imc;
             match.MCLayersTrk = mcp.get(imc).MCLayersTrk;
             match.MCLayersNeut = mcp.get(imc).MCLayersNeut;
 
+            
             /**
              * Generally speaking it is possible that all clusters of a given MC
              * particles will not have the same Rec::Particle. So we will make a
@@ -1832,9 +1836,7 @@ public class TruthMatch extends ReconstructionEngine {
 
                 for (RecCluster curCl : clsPerMCp.get(imc)) {
 
-                    //System.out.println("Det = " + curCl.detector + "   layer = " + curCl.layer + "pindex = " + curCl.pindex );
                     incrementMap(matched_counts, curCl.pindex);
-                    //System.out.println("******* Counts after Increment Operation is " + matched_counts.get(curCl.pindex));
 
                     final int det = (int) curCl.detector;
 
@@ -1888,7 +1890,6 @@ public class TruthMatch extends ReconstructionEngine {
                 match.RecLayersTrk = 0L;
                 match.RecLayersNeut = 0L;
             }
-
             recMatch.add(match);
         }
 
