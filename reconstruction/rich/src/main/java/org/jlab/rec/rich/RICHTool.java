@@ -113,7 +113,7 @@ public class RICHTool{
     //------------------------------
 
     //start processing time
-    int debugMode = 1;
+    int debugMode = 0;
 
 
     if(RICHRecConstants.READ_FROM_FILES==0){
@@ -146,7 +146,7 @@ public class RICHTool{
     public void init_CalParametersCCDB(IndexedTable timewalkConstants, IndexedTable timeoffConstants, IndexedTable cheleConstants, IndexedTable pixelConstants){
     //------------------------------
 
-        int debugMode = 1;
+        int debugMode = 0;
 
         /*
         * TIME_OFFSETs
@@ -263,7 +263,7 @@ public class RICHTool{
     public void init_RecParametersCCDB(IndexedTable paraConstants) {
     //------------------------------
 
-        int debugMode = 1;
+        int debugMode = 0;
 
         /*
         * RECONSTRUCTION PARAMETERS
@@ -347,7 +347,7 @@ public class RICHTool{
     //------------------------------
     // To be moved to CCDB
 
-        int debugMode = 1;
+        int debugMode = 0;
 
        if(ifile==2){
            /**
@@ -807,7 +807,7 @@ public class RICHTool{
     //public Vector3d find_intersection_MAPMT(Line3D ray){
     // ----------------
     /*
-        int debugMode = 1;
+        int debugMode = 0;
 
         if(debugMode>=1) System.out.format(" Ray %s \n",ray.origin().toStringBrief(2));
         RICHIntersection inter = get_Layer("mapmts").find_Entrance(ray, -1);
