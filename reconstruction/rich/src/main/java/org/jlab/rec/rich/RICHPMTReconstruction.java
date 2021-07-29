@@ -14,21 +14,24 @@ import org.jlab.groot.graphics.EmbeddedCanvas;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.data.H2F;
 
+import org.jlab.detector.geom.RICH.RICHGeoFactory;
 
 public class RICHPMTReconstruction {
 
 
-    private RICHTool         tool;
-    private RICHEvent        richevent;
-    private RICHio           richio;
+    private RICHTool           tool;
+    private RICHEvent          richevent;
+    private RICHio             richio;
+    private RICHRecParameters  recpar;
       
     // ----------------
-    public RICHPMTReconstruction(RICHEvent richeve, RICHTool richtool,RICHio io) {
+    public RICHPMTReconstruction(RICHEvent richeve, RICHTool richtool, RICHio io) {
     // ----------------
 
         tool = richtool;
         richevent = richeve;
         richio = io;
+        recpar = new RICHRecParameters();
 
     }
 
@@ -111,7 +114,7 @@ public class RICHPMTReconstruction {
         for(int i = 0; i < allEdges.size(); i++) {
             RICHEdge edge = allEdges.get(i);
                 if(edge.passEdgeSelection()) {
-                        if(edge.get_polarity()==tool.get_Constants().LEADING_EDGE_POLARITY)Leads.add(edge);      
+                        if(edge.get_polarity()==RICHRecConstants.LEADING_EDGE_POLARITY)Leads.add(edge);      
                 }
         }      
 
@@ -141,7 +144,7 @@ public class RICHPMTReconstruction {
         {
             RICHEdge edge = allEdges.get(i);
                 if(edge.passEdgeSelection()) {
-                        if(edge.get_polarity()==tool.get_Constants().TRAILING_EDGE_POLARITY)Trails.add(edge);      
+                        if(edge.get_polarity()==RICHRecConstants.TRAILING_EDGE_POLARITY)Trails.add(edge);      
                 }
         }      
 
@@ -355,6 +358,7 @@ public class RICHPMTReconstruction {
             System.out.println("----------------");
             System.out.println("Search for Xtalk");
             System.out.println("----------------");
+            System.out.format(" %7.3f \n",recpar.GOODHIT_FRAC);
         }
 
         for(int ih=0; ih<hits.size(); ih++) {
@@ -366,7 +370,7 @@ public class RICHPMTReconstruction {
                 if(hiti.get_cluster()!=0)  continue; // this hit is not yet associated with a cluster
                 if(debugMode==6)System.out.println("Hit pair "+ih+" "+hiti.get_id()+" "+hiti.get_pmt()+" "+hiti.get_channel()+" "+hiti.get_duration()+" "+hiti.get_cluster()+" | " +jh+" "+hitj.get_id()+" "+hitj.get_pmt()+" "+hitj.get_channel()+" "+hitj.get_duration()+" "+hitj.get_cluster());
 
-                if(hiti.get_pmt()==hitj.get_pmt() && hitj.get_duration()*100 < hiti.get_duration()*tool.get_Constants().GOODHIT_FRAC){
+                if(hiti.get_pmt()==hitj.get_pmt() && hitj.get_duration()*100 < hiti.get_duration()*recpar.GOODHIT_FRAC){
                     for(int k=-1; k<=1; k+=2 ) {
                         if(hiti.get_channel() == (k+hitj.get_channel())) {hitj.set_xtalk(1000+hiti.get_id()); if(debugMode==6)System.out.println(" E Xtalk "+hitj.get_xtalk());}
                     }
@@ -375,7 +379,7 @@ public class RICHPMTReconstruction {
         }
 
         for(int iclu=0; iclu<allclusters.size(); iclu++) {
-            if(allclusters.get(iclu).get_size()< tool.get_Constants().CLUSTER_MIN_SIZE) {
+            if(allclusters.get(iclu).get_size()< RICHRecConstants.CLUSTER_MIN_SIZE) {
                 RICHCluster clu = allclusters.get(iclu);
                 if(debugMode==6)System.out.println("  Cluster "+ iclu +" ID "+clu.get_id());
                 for(int ih = 0; ih< clu.size(); ih++) {
@@ -385,7 +389,7 @@ public class RICHPMTReconstruction {
                         RICHHit hitj = clu.get(jh);
                         if(debugMode==6)System.out.println("Hit pair "+ih+" "+hiti.get_id()+" "+hiti.get_pmt()+" "+hiti.get_channel()+" "+hiti.get_duration()+" | " +jh+" "+hitj.get_id()+" "+hitj.get_pmt()+" "+hitj.get_channel()+" "+hitj.get_duration());
 
-                        if(hitj.get_duration()*100 < hiti.get_duration()*tool.get_Constants().GOODHIT_FRAC) {hitj.set_xtalk(hiti.get_id()); if(debugMode==6)System.out.println(" O Xtalk "+hitj.get_xtalk());}
+                        if(hitj.get_duration()*100 < hiti.get_duration()*recpar.GOODHIT_FRAC) {hitj.set_xtalk(hiti.get_id()); if(debugMode==6)System.out.println(" O Xtalk "+hitj.get_xtalk());}
 
                     }
                 }

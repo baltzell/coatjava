@@ -2,6 +2,9 @@ package org.jlab.detector.geom.RICH;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
+import java.io.BufferedReader;
+import java.io.FileReader;
 
 import org.jlab.detector.geant4.v2.RICHGeant4Factory;
 import org.jlab.detector.volume.G4Stl;
@@ -11,7 +14,6 @@ import eu.mihosoft.vrl.v3d.Vector3d;
 import eu.mihosoft.vrl.v3d.Vertex;
 import eu.mihosoft.vrl.v3d.Polygon;   
 import eu.mihosoft.vrl.v3d.CSG;   
-import java.util.Arrays;
 import org.jlab.detector.base.DetectorLayer;
 import org.jlab.detector.calib.utils.ConstantsManager;
 import org.jlab.geometry.prim.Line3d;   
@@ -32,237 +34,50 @@ import org.jlab.utils.groups.IndexedTable;
  *
  * @author mcontalb
  */
-public class RICHGeomFactory{
+public class RICHGeoFactory{
 
+    private RICHGeant4Factory richfactory = new RICHGeant4Factory();
+    private RICHPixelMap pixelmap = new RICHPixelMap();
+    private RICHPixel pmtpixels  = null; 
+    private RICHGeoParameters geopar = new RICHGeoParameters();
 
-//    private final static int anode_map[] = {60,58,59,57,52,50,51,49,44,42,43,41,36,34,35,
-//                     33,28,26,27,25,20,18,19,17,12,10,11,9,4,2,3,1,5,7,6,8,13,15,14,16,21,
-//                     23,22,24,29,31,30,32,37,39,38,40,45,47,46,48,53,55,54,56,61,63,62,64};
-//
-//
-//    private final static int tile2pmt[][]={{   1,   2,   3},  
-//                        {   4,   5,   6},  
-//                        {   7,   0,   8},  
-//                        {   9,  10,  11},  
-//                        {  12,   0,  13},  
-//                        {  14,  15,  16},  
-//                        {  17,   0,  18},  
-//                        {  19,  20,  21},  
-//                        {  22,  23,  24},  
-//                        {  25,  26,  27},  
-//                        {  28,  29,  30},  
-//                        {  31,   0,  32},  
-//                        {  33,  34,  35},  
-//                        {  36,  37,  38},  
-//                        {  39,   0,  40},  
-//                        {  41,  42,  43},  
-//                        {  44,  45,  46},  
-//                        {  47,  48,  49},  
-//                        {  50,   0,  51},  
-//                        {  52,  53,  54},  
-//                        {  55,  56,  57},  
-//                        {  58,  59,  60},  
-//                        {  61,  62,  63},  
-//                        {  64,   0,  65},  
-//                        {  66,  67,  68},  
-//                        {  69,  70,  71},  
-//                        {  72,  73,  74},  
-//                        {  75,   0,  76},  
-//                        {  77,  78,  79},  
-//                        {  80,  81,  82},  
-//                        {  83,  84,  85},  
-//                        {  86,  87,  88},  
-//                        {  89,   0,  90},  
-//                        {  91,  92,  93},  
-//                        {  94,  95,  96},  
-//                        {  97,  98,  99},  
-//                        { 100, 101, 102},  
-//                        { 103, 104, 105},  
-//                        { 106,   0, 107},  
-//                        { 108, 109, 110},  
-//                        { 111, 112, 113},  
-//                        { 114, 115, 116},  
-//                        { 117, 118, 119},  
-//                        { 120,   0, 121},  
-//                        { 122, 123, 124},  
-//                        { 125, 126, 127},  
-//                        { 128, 129, 130},  
-//                        { 131, 132, 133},  
-//                        { 134, 135, 136},  
-//                        { 137,   0, 138},  
-//                        { 139, 140, 141},  
-//                        { 142, 143, 144},  
-//                        { 145, 146, 147},  
-//                        { 148, 149, 150},  
-//                        { 151, 152, 153},  
-//                        { 154, 155, 156},  
-//                        { 157,   0, 158},  
-//                        { 159, 160, 161},  
-//                        { 162, 163, 164},  
-//                        { 165, 166, 167},  
-//                        { 168, 169, 170},  
-//                        { 171, 172, 173},  
-//                        { 174,   0, 175},  
-//                        { 176, 177, 178},  
-//                        { 179, 180, 181},  
-//                        { 182, 183, 184},  
-//                        { 185, 186, 187},  
-//                        { 188, 189, 190},  
-//                        { 191, 192, 193},  
-//                        { 194,   0, 195},  
-//                        { 196, 197, 198},  
-//                        { 199, 200, 201},  
-//                        { 202, 203, 204},  
-//                        { 205, 206, 207},  
-//                        { 208, 209, 210},  
-//                        { 211, 212, 213},  
-//                        { 214, 215, 216},  
-//                        { 217,   0, 218},  
-//                        { 219, 220, 221},  
-//                        { 222, 223, 224},  
-//                        { 225, 226, 227},  
-//                        { 228, 229, 230},  
-//                        { 231, 232, 233},  
-//                        { 234, 235, 236},  
-//                        { 237,   0, 238},  
-//                        { 239, 240, 241},  
-//                        { 242, 243, 244},  
-//                        { 245, 246, 247},  
-//                        { 248, 249, 250},  
-//                        { 251, 252, 253},  
-//                        { 254, 255, 256},  
-//                        { 257, 258, 259},  
-//                        { 260,   0, 261},  
-//                        { 262, 263, 264},  
-//                        { 265, 266, 267},  
-//                        { 268, 269, 270},  
-//                        { 271, 272, 273},  
-//                        { 274, 275, 276},  
-//                        { 277, 278, 279},  
-//                        { 280, 281, 282},  
-//                        { 283, 284, 285},  
-//                        { 286,   0, 287},  
-//                        { 288, 289, 290},  
-//                        { 291, 292, 293},  
-//                        { 294, 295, 296},  
-//                        { 297, 298, 299},  
-//                        { 300, 301, 302},  
-//                        { 303, 304, 305},  
-//                        { 306, 307, 308},  
-//                        { 309,   0, 310},  
-//                        { 311, 312, 313},  
-//                        { 314, 315, 316},  
-//                        { 317, 318, 319},  
-//                        { 320, 321, 322},  
-//                        { 323, 324, 325},  
-//                        { 326, 327, 328},  
-//                        { 329, 330, 331},  
-//                        { 332, 333, 334},  
-//                        { 335,   0, 336},  
-//                        { 337, 338, 339},  
-//                        { 340, 341, 342},  
-//                        { 343, 344, 345},  
-//                        { 346, 347, 348},  
-//                        { 349, 350, 351},  
-//                        { 352, 353, 354},  
-//                        { 355, 356, 357},  
-//                        { 358, 359, 360},  
-//                        { 361, 362, 363},  
-//                        { 364,   0, 365},  
-//                        { 366, 367, 368},  
-//                        { 369, 370, 371},  
-//                        { 372, 373, 374},  
-//                        { 375, 376, 377},  
-//                        { 378, 379, 380},  
-//                        { 381, 382, 383},  
-//                        { 384, 385, 386},  
-//                        { 387, 388, 389},  
-//                        { 390,   0, 391},
-//                        { 392, 393, 394},  //tracking station
-//                        { 395, 396, 397}};
-//
-//
-    public int DO_MISALIGNMENT      =   0;
-    public int     APPLY_SURVEY     =   0;        // if 1 apply the survey data for misalignment
+    private List<RICHLayer> opticlayers = new ArrayList<RICHLayer>();
+    private final static int NLAY   = RICHGeoConstants.NLAY;
+    private final static int NCOMPO = RICHGeoConstants.NCOMPO;
 
-    public int RICH_DEBUG           =   0;
-    
-    public int     MISA_PMT_PIVOT   =   1;        // if 1 use MAPMT barycenter for rotations
-    public double  MISA_SHIFT_SCALE =   1.0;      // Scale factor for misalignment shifts
-    public double  MISA_ANGLE_SCALE =   1.0;      // Scale factor for misalignment angles
-        
-    private final static int NLAY=13;
-    private final static int NROW=25;
-    private final static int NCOL=56;
-    private final static int NPMT=391;
-    private final static int NPIX=64;
-    private final static int NCOMPO=10;
-//
-//    private double pmt_timeoff[][] = new double[NPMT][NPIX];
-//    private double pmt_timewalk[][] = new double[NPMT][4];
-//    private double pixel_gain[][] = new double[NPMT][NPIX];
-//    private double pixel_eff[][] = new double[NPMT][NPIX];
-//    private int pixel_flag[][] = new int [NPMT][NPIX];            // 0 = dead, 1 = ok, 2= hot
-//    private int pixel_ntime[][] = new int [NPMT][NPIX];            // 0 = dead, 1 = ok, 2= hot
-//    private double pixel_mtime[][] = new double [NPMT][NPIX];            // 0 = dead, 1 = ok, 2= hot
-//    private double pixel_stime[][] = new double [NPMT][NPIX];            // 0 = dead, 1 = ok, 2= hot
-//
     private double aero_refi[][] = new double[4][31];
     private double aero_plan[][] = new double[4][31];
-//    private double aero_chele_dir[][][] = new double[4][31][225];
-//    private double aero_chele_lat[][][] = new double[4][31][225];
-//    private double aero_chele_spe[][][] = new double[4][31][225];
-//    private double aero_schele_dir[][][] = new double[4][31][225];
-//    private double aero_schele_lat[][][] = new double[4][31][225];
-//    private double aero_schele_spe[][][] = new double[4][31][225];
-//
+
     private Vector3D rich_survey_angle  = new Vector3D();
     private Vector3D rich_survey_shift  = new Vector3D();
     private Vector3D layer_misa_angle[][] = new Vector3D[NLAY+1][NCOMPO+1];
     private Vector3D layer_misa_shift[][] = new Vector3D[NLAY+1][NCOMPO+1];
     private RICHFrame rich_frame = new RICHFrame();
     private RICHFrame survey_frame = new RICHFrame();
-//
-//    private final static int pfirst[] = {1, 7,14,22,31,41,52,64,77, 91,106,122,139,157,176,196,217,239,262,286,311,337,364,392,395};
-//    private final static int plast[]  = {6,13,21,30,40,51,63,76,90,105,121,138,156,175,195,216,238,261,285,310,336,363,391,394,397};
-//
-//    private int nxp[] = new int[397]; // X coordinate of pixel 1 of each mapmt
-//    private int nyp[] = new int[397]; // Y coordinate of pixel 1 of each mapmt
-//
-    public RICHGeant4Factory richfactory = new RICHGeant4Factory();
 
-    private List<RICHLayer> opticlayers = new ArrayList<RICHLayer>();
-//
-//    private RICHPixel MAPMTpixels  = null; 
-//
-//    private final static int NTIME = 10;
-//    private long RICH_START_TIME = (long) 0;
-//    private long RICH_LAST_TIME = (long) 0;
-//    private double richprocess_time[] = new double[NTIME];
-//    private int richprocess_ntimes[] = new int[NTIME];
-//
-//    private RICHConstants reco_constants = new RICHConstants();
-
-    public RICHGeomFactory() {
+    //------------------------------
+    public RICHGeoFactory() {
+    //------------------------------
     }
 
+
     //------------------------------
-    public RICHGeomFactory(int iflag, ConstantsManager manager, int run){
+    public RICHGeoFactory(int iEngine, ConstantsManager manager, int run){
     //------------------------------
 
-        // generate the tracking layers (0 = only Aerogel and MaPMT for trajectory, 1 = all)
-        // start processing time
-//        init_ProcessTime();
-        String[] richTables = new String[]{
+        //PROVA
+        // generate the tracking layers (iEngine=0 only Aerogel and MaPMT for trajectory, iEngine=1  all)
+
+        if(iEngine==0){
+            // add RICH tables to a different Engine
+            String[] richTables = new String[]{
                     "/calibration/rich/aerogel",
                     "/calibration/rich/misalignments",
                     "/calibration/rich/parameterss"
                  };
-        manager.init(Arrays.asList(richTables));
+            manager.init(Arrays.asList(richTables));
+        }
 
-        System.out.format("RICHEBEngine: Load geometry constants from CCDB \n");
-
-     
         // reset alignment constants
         for (int ila=0; ila<NLAY+1; ila++){
             for (int ico=0; ico<NCOMPO+1; ico++){
@@ -270,29 +85,41 @@ public class RICHGeomFactory{
                 layer_misa_angle[ila][ico] = new Vector3D(0., 0., 0.);
             }
         }
-    
-        init_GeoConstantsCCDB(manager.getConstants(run, "/calibration/rich/parameterss"),
-                              manager.getConstants(run, "/calibration/rich/aerogel"), 
-                              manager.getConstants(run, "/calibration/rich/misalignments"));
-       
 
-        if(iflag>0){
+        System.out.format("RICHGeoFactory: Load geometry constants from CCDB \n");
+     
+        init_GeoParametersCCDB( manager.getConstants(run, "/calibration/rich/parameterss"),
+                                manager.getConstants(run, "/calibration/rich/aerogel"), 
+                                manager.getConstants(run, "/calibration/rich/misalignments"));
+
+        if(iEngine==1 && geopar.READ_FROM_FILES==1){
+            // QUE attenzione per la produzione
+            System.out.format("RICHGeoFactory: Load geometry constants from TXT \n");
+            init_GeoParametersTxT(1);
+            //init_GeoParametersTxT(3);
+        }
+       
+        if(iEngine>0){
             // global pixel coordinat indexes
-//            init_GlobalPixelGeo();
+            pixelmap.init_GlobalPixelGeo();
 
             // RICH survey
             init_Survey();
         }
 
         // RICH geometry organized on layers of Shape3D area and RICH components 
-        init_RICHLayers(iflag);
+        init_RICHLayers(iEngine);
 
     } 
 
 
+    //------------------------------
+    public RICHGeoParameters get_GeoParameters() {return geopar;}
+    //------------------------------
+
 
     //------------------------------
-    public void init_GeoConstantsCCDB(IndexedTable paraConstants, IndexedTable aeroConstants, IndexedTable misaConstants){
+    public void init_GeoParametersCCDB(IndexedTable paraConstants, IndexedTable aeroConstants, IndexedTable misaConstants){
     //------------------------------
 
         int debugMode = 1;
@@ -301,84 +128,31 @@ public class RICHGeomFactory{
         * RECONSTRUCTION PARAMETERS
         */
 
-        DO_MISALIGNMENT             =  paraConstants.getIntValue("flag1", 4, 0, 0); 
-//        reco_constants.FORCE_DC_MATCH              =  paraConstants.getIntValue("flag2", 4, 0, 0);
-//        reco_constants.MISA_RICH_REF               =  paraConstants.getIntValue("flag3", 4, 0, 0);
-        MISA_PMT_PIVOT              =  paraConstants.getIntValue("flag4", 4, 0, 0);
-        APPLY_SURVEY                =  paraConstants.getIntValue("flag5", 4, 0, 0);
-//
-//        reco_constants.DO_ANALYTIC                 =  paraConstants.getIntValue("flag6", 4, 0, 0);
-//        reco_constants.THROW_ELECTRONS             =  paraConstants.getIntValue("flag7", 4, 0, 0);
-//        reco_constants.THROW_PIONS                 =  paraConstants.getIntValue("flag8", 4, 0, 0);
-//        reco_constants.THROW_KAONS                 =  paraConstants.getIntValue("flag9", 4, 0, 0);
-//        reco_constants.THROW_PROTONS               =  paraConstants.getIntValue("flag10", 4, 0, 0);
-//        reco_constants.THROW_PHOTON_NUMBER         =  paraConstants.getIntValue("flag11", 4, 0, 0);
-//        reco_constants.TRACE_PHOTONS               =  paraConstants.getIntValue("flag12", 4, 0, 0);
-//
-//        reco_constants.REDO_RICH_RECO              =  paraConstants.getIntValue("flag13", 4, 0, 0);
-//        reco_constants.DO_MIRROR_HADS              =  paraConstants.getIntValue("flag14", 4, 0, 0);  
-//        reco_constants.DO_CURVED_AERO              =  paraConstants.getIntValue("flag15", 4, 0, 0);  
-//
-//        reco_constants.USE_ELECTRON_ANGLES         =  paraConstants.getIntValue("flag16", 4, 0, 0);
-//        reco_constants.USE_PIXEL_PROPERTIES        =  paraConstants.getIntValue("flag17", 4, 0, 0);
-//        reco_constants.SAVE_THROWS                 =  paraConstants.getIntValue("flag18", 4, 0, 0);
-//        reco_constants.QUADRANT_NUMBER             =  paraConstants.getIntValue("flag19", 4, 0, 0);
-//
-//        reco_constants.GOODHIT_FRAC                =  paraConstants.getDoubleValue("par1", 4, 0, 0);
-//        reco_constants.RICH_DCMATCH_CUT            =  paraConstants.getDoubleValue("par2", 4, 0, 0);
-//        reco_constants.RICH_HITMATCH_RMS           =  paraConstants.getDoubleValue("par3", 4, 0, 0);
-//        reco_constants.RICH_DIRECT_RMS             =  paraConstants.getDoubleValue("par4", 4, 0, 0) / 1000.;
-//        reco_constants.SHOW_PROGRESS_INTERVAL      =  paraConstants.getDoubleValue("par5", 4, 0, 0);
-//        reco_constants.THROW_ASSOCIATION_CUT       =  paraConstants.getDoubleValue("par6", 4, 0, 0);
+        geopar.DO_ALIGNMENT                =  paraConstants.getIntValue("flag1", 4, 0, 0); 
+        geopar.MISA_RICH_REF               =  paraConstants.getIntValue("flag3", 4, 0, 0);
+        geopar.MISA_PMT_PIVOT              =  paraConstants.getIntValue("flag4", 4, 0, 0);
+        geopar.APPLY_SURVEY                =  paraConstants.getIntValue("flag5", 4, 0, 0);
 
-        RICH_DEBUG                  =  (int) paraConstants.getDoubleValue("par7", 4, 0, 0);
-//        reco_constants.RICH_TIME_RMS               =  paraConstants.getDoubleValue("par8", 4, 0, 0);
-        MISA_SHIFT_SCALE            =  paraConstants.getDoubleValue("par9", 4, 0, 0);
-        MISA_ANGLE_SCALE            =  paraConstants.getDoubleValue("par10", 4, 0, 0);
+        geopar.MISA_SHIFT_SCALE            =  paraConstants.getDoubleValue("par9", 4, 0, 0);
+        geopar.MISA_ANGLE_SCALE            =  paraConstants.getDoubleValue("par10", 4, 0, 0);
         
-        //TODO: check
-        //reco_constants.RICH_DEBUG                  =  1.0;
-        //reco_constants.QUADRANT_NUMBER             =  5;
-        //reco_constants.USE_ELECTRON_ANGLES         =  1;
-        //reco_constants.USE_PIXEL_PROPERTIES        =  1;
-        if(debugMode>=1 && RICH_DEBUG>0){   //MC
-        //if(debugMode>=1){ 
+        geopar.RICH_GEO_DEBUG              =  (int) paraConstants.getDoubleValue("par7", 4, 0, 0);
+
+        // QUE: da rimuovere nella produzione
+        geopar.READ_FROM_FILES             =  1;
+
+        if(debugMode>=1 || geopar.RICH_GEO_DEBUG>0){   
 
             System.out.format(" \n");
-            System.out.format("CCDB RICH PARA    DO_MISALIGNMENT              %9d \n", DO_MISALIGNMENT); 
-//            System.out.format("CCDB RICH PARA    FORCE_DC_MATCH               %9d \n", reco_constants.FORCE_DC_MATCH); 
-//            System.out.format("CCDB RICH PARA    MISA_RICH_REF                %9d \n", reco_constants.MISA_RICH_REF); 
-            System.out.format("CCDB RICH PARA    MISA_PMT_PIVOT               %9d \n", MISA_PMT_PIVOT); 
-            System.out.format("CCDB RICH PARA    APPLY_SURVEY                 %9d \n", APPLY_SURVEY); 
-//
-//            System.out.format("CCDB RICH PARA    DO_ANALYTIC                  %9d \n", reco_constants.DO_ANALYTIC); 
-//            System.out.format("CCDB RICH PARA    THROW_ELECTRONS              %9d \n", reco_constants.THROW_ELECTRONS); 
-//            System.out.format("CCDB RICH PARA    THROW_PIONS                  %9d \n", reco_constants.THROW_PIONS); 
-//            System.out.format("CCDB RICH PARA    THROW_KAONS                  %9d \n", reco_constants.THROW_KAONS); 
-//            System.out.format("CCDB RICH PARA    THROW_PROTONS                %9d \n", reco_constants.THROW_PROTONS); 
-//            System.out.format("CCDB RICH PARA    THROW_PHOTON_NUMBER          %9d \n", reco_constants.THROW_PHOTON_NUMBER); 
-//            System.out.format("CCDB RICH PARA    TRACE_PHOTONS                %9d \n", reco_constants.TRACE_PHOTONS); 
-//
-//            System.out.format("CCDB RICH PARA    REDO_RICH_RECO               %9d \n", reco_constants.REDO_RICH_RECO); 
-//            System.out.format("CCDB RICH PARA    DO_MIRROR_HADS               %9d \n", reco_constants.DO_MIRROR_HADS); 
-//            System.out.format("CCDB RICH PARA    DO_CURVED_AERO               %9d \n", reco_constants.DO_CURVED_AERO); 
-//
-//            System.out.format("CCDB RICH PARA    USE_ELECTRON_ANGLES          %9d \n", reco_constants.USE_ELECTRON_ANGLES); 
-//            System.out.format("CCDB RICH PARA    USE_PIXEL_PROPERTIES         %9d \n", reco_constants.USE_PIXEL_PROPERTIES); 
-//            System.out.format("CCDB RICH PARA    SAVE_THROWS                  %9d \n", reco_constants.SAVE_THROWS);
-//            System.out.format("CCDB RICH PARA    QUADRANT_NUMBER              %9d \n \n", reco_constants.QUADRANT_NUMBER);
-//
-//            System.out.format("CCDB RICH PARA    GOODHIT_FRAC                 %9.4f \n", reco_constants.GOODHIT_FRAC); 
-//            System.out.format("CCDB RICH PARA    RICH_DCMATCH_CUT             %9.4f \n", reco_constants.RICH_DCMATCH_CUT); 
-//            System.out.format("CCDB RICH PARA    RICH_HITMATCH_RMS            %9.4f \n", reco_constants.RICH_HITMATCH_RMS); 
-//            System.out.format("CCDB RICH PARA    RICH_DIRECT_RMS              %9.4f \n", reco_constants.RICH_DIRECT_RMS); 
-//            System.out.format("CCDB RICH PARA    SHOW_PROGRESS_INTERVAL       %9.4f \n", reco_constants.SHOW_PROGRESS_INTERVAL); 
-//            System.out.format("CCDB RICH PARA    THROW_ASSOCIATION_CUT        %9.4f \n", reco_constants.THROW_ASSOCIATION_CUT); 
+            System.out.format("CCDB RICH PARA    DO_ALIGNMENT                 %9d \n", geopar.DO_ALIGNMENT); 
+            System.out.format("CCDB RICH PARA    MISA_RICH_REF                %9d \n", geopar.MISA_RICH_REF); 
+            System.out.format("CCDB RICH PARA    MISA_PMT_PIVOT               %9d \n", geopar.MISA_PMT_PIVOT); 
+            System.out.format("CCDB RICH PARA    APPLY_SURVEY                 %9d \n", geopar.APPLY_SURVEY); 
 
-            System.out.format("CCDB RICH PARA    RICH_DEBUG                   %9.4f \n", RICH_DEBUG); 
-//            System.out.format("CCDB RICH PARA    RICH_TIME_RMS                %9.4f \n", reco_constants.RICH_TIME_RMS); 
-            System.out.format("CCDB RICH PARA    MISA_SHIFT_SCALE             %9.4f \n", MISA_SHIFT_SCALE); 
-            System.out.format("CCDB RICH PARA    MISA_ANGLE_SCALE             %9.4f \n", MISA_ANGLE_SCALE); 
+            System.out.format("CCDB RICH PARA    MISA_SHIFT_SCALE             %9.4f \n", geopar.MISA_SHIFT_SCALE); 
+            System.out.format("CCDB RICH PARA    MISA_ANGLE_SCALE             %9.4f \n", geopar.MISA_ANGLE_SCALE); 
+
+            System.out.format("CCDB RICH PARA    RICH_GEO_DEBUG               %9d \n", geopar.RICH_GEO_DEBUG); 
             System.out.format(" \n");
 
         }
@@ -397,8 +171,8 @@ public class RICHGeomFactory{
         int tool_ila[] = {0,  1,  2,  3,  4, 11,  5,  6,  9, 10,  7,  8, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 13};
         int tool_ico[] = {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10,  0};
 
-        double sscale = MISA_SHIFT_SCALE;
-        double ascale = MISA_ANGLE_SCALE / RICHGeoConstants.MRAD;  // to convert in rad
+        double sscale = geopar.MISA_SHIFT_SCALE;
+        double ascale = geopar.MISA_ANGLE_SCALE / RICHGeoConstants.MRAD;  // to convert in rad
 
         for (int im=0; im<NMISA; im++){
 
@@ -417,9 +191,9 @@ public class RICHGeomFactory{
             layer_misa_shift[ila][ico].add( new Vector3D( dx*sscale,  dy*sscale,  dz*sscale));
             layer_misa_angle[ila][ico].add( new Vector3D(thx*ascale, thy*ascale, thz*ascale));
 
-            if(debugMode>=1 && RICH_DEBUG>0){
+            if(debugMode>=1 || geopar.RICH_GEO_DEBUG>0){
                 //System.out.format("QUA QUA %4d %4d  %d %d  %7.2f %7.2f %7.2f  %7.2f %7.2f \n",ila,ico,lla,cco,dx,dy,dz,
-                //    layer_misa_shift[ila][ico].mag(),layer_misa_angle[ila][ico].mag()*reco_constants.MRAD);
+                //    layer_misa_shift[ila][ico].mag(),layer_misa_angle[ila][ico].mag()*RICHGeoConstants.MRAD);
                 if(layer_misa_shift[ila][ico].mag()>0 || layer_misa_angle[ila][ico].mag()>0){
                     System.out.format("CCDB RICH MISA    ila  %4d ico %3d  (%4d %3d)  shift %s  angle %s \n", lla,cco, ila,ico,
                                layer_misa_shift[ila][ico].toStringBrief(3), layer_misa_angle[ila][ico].toStringBrief(3));
@@ -439,7 +213,7 @@ public class RICHGeomFactory{
             for (int ico=0; ico<nco[ila]; ico++){
                 aero_refi[ila][ico] = (float) aeroConstants.getDoubleValue("n400", 4,201+ila,ico+1);
                 aero_plan[ila][ico] = (float) aeroConstants.getDoubleValue("planarity", 4,201+ila, ico+1);
-                if(debugMode>=2 && RICH_DEBUG>0)System.out.format("CCDB RICH AERO    ila %4d  ico %3d  n = %8.5f  pla = %8.2f\n", 201+ila, ico+1, aero_refi[ila][ico], aero_plan[ila][ico]);
+                if(debugMode>=2 && geopar.RICH_GEO_DEBUG>0)System.out.format("CCDB RICH AERO    ila %4d  ico %3d  n = %8.5f  pla = %8.2f\n", 201+ila, ico+1, aero_refi[ila][ico], aero_plan[ila][ico]);
             }
         }
 
@@ -455,6 +229,216 @@ public class RICHGeomFactory{
             }
         }
 
+    }
+
+
+    //------------------------------
+    public void init_GeoParametersTxT(int ifile){
+    //------------------------------
+    // To be moved to CCDB
+
+       int debugMode = 1;
+
+        if(ifile==1){
+
+            /*
+            * DC_OFFSETs
+            */
+            String dcoff_filename = new String("CALIB_DATA/DC_offsets_4013.txt");
+
+            try {
+
+                BufferedReader bf = new BufferedReader(new FileReader(dcoff_filename));
+                String currentLine = null;
+
+                while ( (currentLine = bf.readLine()) != null) {    
+
+                    String[] array = currentLine.split(" ");
+                    int idc    = Integer.parseInt(array[0]);
+                    int imatch = Integer.parseInt(array[1]);
+                    int iref   = Integer.parseInt(array[2]);
+                    int ipiv   = Integer.parseInt(array[3]);
+                    int isur   = Integer.parseInt(array[4]);
+
+                    float  ss  = Float.parseFloat(array[5]);
+                    float  sa  = Float.parseFloat(array[6]);
+
+                    int inp    = Integer.parseInt(array[7]);
+                    
+                    float  hr  = Float.parseFloat(array[8]);
+
+                    geopar.DO_ALIGNMENT    = idc;
+                    geopar.FORCE_DC_MATCH  = imatch;
+                    geopar.MISA_RICH_REF   = iref;
+                    geopar.MISA_PMT_PIVOT  = ipiv;
+                    geopar.APPLY_SURVEY    = isur;
+
+                    geopar.MISA_SHIFT_SCALE     = (double) ss ;
+                    geopar.MISA_ANGLE_SCALE     = (double) sa;
+
+                    if(debugMode>=1 || geopar.RICH_GEO_DEBUG>0){
+
+                        System.out.format("TEXT PARA    DO_ALIGNMENT                 %7d \n", geopar.DO_ALIGNMENT);
+                        System.out.format("TEXT PARA    FORCE_DC_MATCH               %7d \n", geopar.FORCE_DC_MATCH);
+                        System.out.format("TEXT PARA    MISA_RICH_REF                %7d \n", geopar.MISA_RICH_REF);
+                        System.out.format("TEXT PARA    MISA_PMT_PIVOT               %7d \n", geopar.MISA_PMT_PIVOT);
+                        System.out.format("TEXT PARA    APPLY_SURVEY                 %7d \n", geopar.APPLY_SURVEY);
+
+                        System.out.format("TEXT PARA    MISA_SHIFT_SCALE             %7.3f \n", geopar.MISA_SHIFT_SCALE);
+                        System.out.format("TEXT PARA    MISA_ANGLE_SCALE             %7.3f \n", geopar.MISA_ANGLE_SCALE);
+
+                    }
+
+                }
+
+            } catch (Exception e) {
+
+                System.err.format("Exception occurred trying to read '%s' \n", dcoff_filename);
+                e.printStackTrace();
+            }
+
+
+            double sscale = geopar.MISA_SHIFT_SCALE;
+            double ascale = geopar.MISA_ANGLE_SCALE / RICHGeoConstants.MRAD;  // to convert in rad
+
+
+            /*
+            *  SINGLE COMPONENT MISALIGNMENT
+            *  This comes on top of the RICH survey and global transformation
+            */
+            /*for (int ila=0; ila<NLAY+1; ila++){
+                for (int ico=0; ico<NCOMPO+1; ico++){
+                    layer_misa_shift[ila][ico] = new Vector3D(0., 0., 0.);
+                    layer_misa_angle[ila][ico] = new Vector3D(0., 0., 0.);
+                }
+            }*/
+
+            String misaco_filename = new String("CALIB_DATA/RICHlayer_misalignment.txt");
+
+            try {
+
+                BufferedReader bf = new BufferedReader(new FileReader(misaco_filename));
+                String currentLine = null;
+
+                while ( (currentLine = bf.readLine()) != null) {    
+
+                    String[] array = currentLine.split(" ");
+                    int isec = Integer.parseInt(array[0]);
+                    int lla = Integer.parseInt(array[1]);
+                    int cco = Integer.parseInt(array[2]);
+
+                    float  dx  = Float.parseFloat(array[3]);
+                    float  dy  = Float.parseFloat(array[4]);
+                    float  dz  = Float.parseFloat(array[5]);
+                    float  thx = Float.parseFloat(array[6]);
+                    float  thy = Float.parseFloat(array[7]);
+                    float  thz = Float.parseFloat(array[8]);
+
+                    int[] ind = {0,0};
+                    if(convert_indexes(lla, cco, ind)){
+
+                        int ila=ind[0];
+                        int ico=ind[1];
+                        if(debugMode>=0)System.out.format("MISA conversion %4d %3d --> %4d %3d \n",lla,cco,ila,ico);
+
+                        // the rotation is assumed to be in the component local ref system
+                        layer_misa_shift[ila][ico].add( new Vector3D( dx*sscale,  dy*sscale,  dz*sscale));
+                        layer_misa_angle[ila][ico].add( new Vector3D(thx*ascale, thy*ascale, thz*ascale));
+
+                        if(debugMode>=1 || geopar.RICH_GEO_DEBUG>0){
+                            if(layer_misa_shift[ila][ico].mag()>0 || layer_misa_angle[ila][ico].mag()>0){
+                                System.out.format("TXT MISA   layer %4d ico %3d  (%4d %3d)  shift %s  angle %s \n", ila,ico,lla,cco, 
+                                   layer_misa_shift[ila][ico].toStringBrief(3), layer_misa_angle[ila][ico].toStringBrief(3));
+                            }
+                        }
+
+                    }else{
+                        System.out.format("Unsupported imisalignment for layer %3d %3d \n",lla,cco);
+                    }
+                }
+
+            } catch (Exception e) {
+
+                System.err.format("Exception occurred trying to read '%s' \n", misaco_filename);
+                e.printStackTrace();
+            }
+
+            if(debugMode>=1 || geopar.RICH_GEO_DEBUG>0){
+                System.out.format("\n");
+                for (int ila=0; ila<NLAY; ila++){
+                    for(int ico=0; ico<NCOMPO; ico++){
+                        if(layer_misa_shift[ila][ico].multiply(10.).mag()>1.e-3 || layer_misa_angle[ila][ico].multiply(1000.).mag()>1.e-3){
+                            System.out.format("ALL MISA   layer %4d ico %3d  shift (mm) %s  angle (mrad) %s \n", ila,ico,
+                            layer_misa_shift[ila][ico].multiply(10.).toStringBrief(2), layer_misa_angle[ila][ico].multiply(1000.).toStringBrief(2));
+                        }
+                    }
+                }
+                System.out.format("\n");
+            }
+        }
+
+
+        if(ifile==3){
+
+            /*
+            * AEROGEL NOMINAL OPTCIS
+            */
+
+            String aero_filename = new String("CALIB_DATA/aerogel_passports.txt");
+
+            try {
+
+                BufferedReader bf = new BufferedReader(new FileReader(aero_filename));
+                String currentLine = null;
+
+                while ( (currentLine = bf.readLine()) != null) {    
+
+                    String[] array = currentLine.split(" ");
+                    int idlay = Integer.parseInt(array[1]);
+                    int iaer = Integer.parseInt(array[2]);
+                    
+                    if(debugMode>=1)System.out.format("Read optics for AERO lay %3d  compo %3d", idlay, iaer); 
+                    float refi = Float.parseFloat(array[5]);
+                    float plana = Float.parseFloat(array[11]);
+                    aero_refi[idlay-201][iaer-1] = refi;
+                    aero_plan[idlay-201][iaer-1] = plana;
+                    //aero_refi[idlay-201][iaer-1] = (float) RICHConstants.RICH_AEROGEL_INDEX;
+                    if(debugMode>=1)System.out.format(" n = %8.5f   pla = %8.2f \n", aero_refi[idlay-201][iaer-1], aero_plan[idlay-201][iaer-1]);
+                    
+                }
+
+            } catch (Exception e) {
+
+                System.err.format("Exception occurred trying to read '%s' \n", aero_filename);
+                e.printStackTrace();
+            }
+
+            if(debugMode>=1)System.out.format("initConstants: DONE \n");
+            
+        }
+
+    }
+
+
+    //------------------------------
+    public boolean convert_indexes(int lla, int cco, int[] ind){
+    //------------------------------
+
+        int[] lateral_compo = {11,5,6,9,10,7,8};
+
+        /*
+        *  Aerogel
+        */
+        if(lla==0 && cco==0){ind[0]=lla; ind[1]=cco; return true;}
+        if(lla>=201 && lla<=204 && cco==0){ind[0]=lla-200; ind[1]=cco; return true;}
+        if(lla==301 && cco>0 && cco<=7) {ind[0]=lateral_compo[cco-1]; ind[1]=0; return true;}
+        if(lla==302){
+            if(cco==0){ind[0]=12; ind[1]=0; return true;}
+            if(cco>0 && cco<11){ind[0]=12; ind[1]=cco; return true;}
+        }
+        if(lla==401 && cco==0){ind[0]=13; ind[1]=cco; return true;}
+
+        return false;
     }
 
 
@@ -616,14 +600,14 @@ public class RICHGeomFactory{
 
 
     //------------------------------
-    public void init_RICHLayers(int iflag){
+    public void init_RICHLayers(int iEngine){
     //------------------------------
     // Take RICHFactory Layers of Geant4 volumes (for GEMC) and convert in coatjava Layers 
     // of RICH components accounting for optical descriptiors plus basic tracking 
     // planes for effective ray tracing
     // ATT: to be done: aerogel cromatic dispersion, mirror reflectivity vs wavelength
 
-        int debugMode = 0;
+        int debugMode = 1;
 
         /*
         * relevant characterization of the basic tracking planes
@@ -658,8 +642,8 @@ public class RICHGeomFactory{
             }
             RICHLayer layer = new RICHLayer(ilay, slayer, vlayer);
 
-            //if(iflag==0 && (ilay>3 && ilay<12)) continue;
-            if(iflag==1 || (ilay<4 || ilay==12)) {
+            //if(iEngine==0 && (ilay>3 && ilay<12)) continue;
+            if(iEngine==1 || (ilay<4 || ilay==12)) {
 
             for (int ico=0; ico<get_RICHFactory_Size(idlayer); ico++){
                 RICHComponent compo = get_RICHFactory_Component(idlayer, ico);
@@ -706,33 +690,34 @@ public class RICHGeomFactory{
         */
 
         rich_frame = survey_frame.clone();
+        // QUE: il survey non corrisponde al nominale e sovrascrive il PIVOT
 
         for (int ilay=0; ilay<NLAY; ilay++){
 
-            if(iflag==0 && (ilay>3 && ilay<12)) continue;
+            if(iEngine==0 && (ilay>3 && ilay<12)) continue;
             if(debugMode>=1)System.out.format("generate surfaces for layer %d \n",ilay);
 
             generate_TrackingPlane(ilay);
 
-            if(DO_MISALIGNMENT==1)misalign_TrackingPlane(ilay);
+            if(geopar.DO_ALIGNMENT==1)misalign_TrackingPlane(ilay);
 
             store_TrackingPlane(ilay);
 
         }
 
         
-//        if(iflag>0){
-//            /*
-//            *  Generate Pixel map on the misaligned MAPMT plane
-//            */
-//            RICHLayer layer = get_Layer("mapmts");
-//            List<Integer> compo_list = layer.get_CompoList();
-//            Shape3D compo_misa = layer.get_TrackingSurf();
-//            generate_Pixel_Map(layer.get_id(), 0, compo_misa, compo_list);
-//
-//            if(debugMode>=1)show_Shape3D(compo_misa, null, "CC");
-//            if(debugMode>=1)show_RICH("Real RICH Geometry", "RR");
-//        }
+        if(iEngine>0){
+            /*
+            *  Generate Pixel map on the misaligned MAPMT plane
+            */
+            RICHLayer layer = get_Layer("mapmts");
+            List<Integer> compo_list = layer.get_CompoList();
+            Shape3D compo_misa = layer.get_TrackingSurf();
+            generate_Pixel_Map(layer.get_id(), 0, compo_misa, compo_list);
+
+            if(debugMode>=1)show_Shape3D(compo_misa, null, "CC");
+            if(debugMode>=1)show_RICH("Real RICH Geometry", "RR");
+        }
 
     }
 
@@ -806,6 +791,38 @@ public class RICHGeomFactory{
 
         // return a solution plane in any case
         return 0;
+
+    }
+
+
+    //------------------------------
+    public RICHPixelMap get_PixelMap() { return pixelmap; }
+    //------------------------------
+
+
+    //------------------------------
+    public Vector3d GetPixelCenter(int ipmt, int anode){
+    //------------------------------
+
+        Vector3d Vertex = richfactory.GetPhotocatode(ipmt).getVertex(2);
+        Vector3d VPixel = Vertex.plus(pmtpixels.GetPixelCenter(anode));
+        //System.out.format("Std  vtx %8.3f %8.3f %8.3f \n",Vertex.x, Vertex.y, Vertex.z);
+        return new Vector3d (VPixel.x, -VPixel.y, VPixel.z);
+
+    }
+
+
+    //------------------------------
+    public Vector3d get_Pixel_Center(int ipmt, int anode){
+    //------------------------------
+
+        int ilay = 12;
+        Face3D compo_face = get_Layer(ilay).get_CompoFace(ipmt-1, 0);
+        Vector3d Vertex = toVector3d( compo_face.point(1) );
+        //System.out.format("Misa vtx %8.3f %8.3f %8.3f \n",Vertex.x, Vertex.y, Vertex.z);
+        //System.out.println(pmtpixels.GetPixelCenter(anode));
+        Vector3d VPixel = Vertex.plus(pmtpixels.GetPixelCenter(anode));
+        return new Vector3d (VPixel.x, -VPixel.y, VPixel.z);
 
     }
 
@@ -1139,7 +1156,7 @@ public class RICHGeomFactory{
         /*
         *  To account for SURVEY
         */
-        if(APPLY_SURVEY==1){
+        if(geopar.APPLY_SURVEY==1){
             if(debugMode>=1)System.out.format(" --> SURVEY %s %s \n", toString(rich_survey_shift), toString(rich_survey_angle));
 
             misalign_Element( layer.get_GlobalSurf(), survey_frame, rich_survey_angle, rich_survey_shift);
@@ -1253,7 +1270,7 @@ public class RICHGeomFactory{
         *  Select the pivot for the RICH rotations
         */
         if(layer.is_mapmt()) {
-            if(MISA_PMT_PIVOT==1) rich_frame.set_bref(layer.get_SurfBary());
+            if(geopar.MISA_PMT_PIVOT==1) rich_frame.set_bref(layer.get_SurfBary());
             if(debugMode>=1)System.out.format("RICH PIVOT %s \n",rich_frame.bref().toStringBrief(2));
         }
 
@@ -1329,8 +1346,68 @@ public class RICHGeomFactory{
         layer.set_CompoList( layer.merge_CompoList());
            
     }
- 
 
+
+    //------------------------------
+    public void generate_Pixel_Map(int ilay, int ico, Shape3D compo_plane, List<Integer> compo_list) {
+    //------------------------------
+    // generate the MAPMT pixel map starting from the corresponding
+    // facet of the MAPMT plane aligned in the space
+    // QUE: assumes that the MAPMT facets have always the same ordering ?
+
+        int debugMode = 1;
+
+        RICHLayer layer = get_Layer(ilay);
+        if(layer.is_mapmt()){
+
+            if(debugMode>=1){
+                System.out.format("------------------------\n");
+                System.out.format("Generate pixel map for Layer %d %s\n", ilay, get_Layer(ilay).get_Name());
+                System.out.format("------------------------\n");
+            }
+
+            int found=0;
+            Vector3d downversor   = null;
+            Vector3d rightversor  = null;
+            Vector3d vertex       = null;
+            for(int ifa=0; ifa<compo_plane.size(); ifa++){
+                if(compo_list.get(ifa)==ico){
+                    if(debugMode>=1){ System.out.format("  --> ifa %4d ", ifa); dump_Face( compo_plane.face(ifa) ); }
+                    if(found==0){
+                        Vector3d vp0 = toVector3d( compo_plane.face(ifa).point(0) );
+                        Vector3d vp1 = toVector3d( compo_plane.face(ifa).point(1) );
+                        Vector3d vp2 = toVector3d( compo_plane.face(ifa).point(2) );
+                        downversor   = (vp0.minus(vp1)).normalized();
+                        rightversor  = (vp2.minus(vp1).normalized());
+                        vertex       = new Vector3d(vp1);
+                        if(debugMode>=1){
+                            System.out.format("MAPMT ico %4d  ifa %4d \n",ico, ifa);
+                            System.out.format("vtx0  %s \n",toString(vp0));
+                            System.out.format("vtx1  %s \n",toString(vp1));
+                            System.out.format("vtx2  %s \n",toString(vp2));
+                            System.out.format("down  %s \n",toString(downversor));
+                            System.out.format("right %s \n",toString(rightversor));
+                        }
+                        found++;
+                    }
+                }
+            }
+
+            if(downversor!=null && rightversor!= null) {
+                pmtpixels = new RICHPixel(new Vector3d(0.,0.,0.), downversor, rightversor);
+                if(debugMode>=1){
+                    pmtpixels.show_Pixels( vertex );
+                    vertex = toVector3d( layer.get_CompoFace(5,0).point(1) );
+                    pmtpixels.show_Pixels( vertex );
+                    vertex = toVector3d( layer.get_CompoFace(363,0).point(1) );
+                    pmtpixels.show_Pixels( vertex );
+                    vertex = toVector3d( layer.get_CompoFace(390,0).point(1) );
+                    pmtpixels.show_Pixels( vertex );
+                }
+            }
+        }
+    }
+ 
 
     //------------------------------
     public Shape3D generate_Nominal_Plane(int ilay, int ico){
@@ -1520,6 +1597,24 @@ public class RICHGeomFactory{
             return guess_two;
         }
 
+    }
+
+
+    //------------------------------
+    public int Maroc2Anode(int channel) {
+    //------------------------------
+
+        // return anode from MAROC channel
+        return RICHGeoConstants.anode_map[(channel)%64];
+    }
+
+    //------------------------------
+    public int Tile2PMT(int tile, int channel) {
+    //------------------------------
+
+        // return anode from MAROC channel
+
+        return RICHGeoConstants.tile2pmt[tile-1][(int) (channel-1)/64];
     }
 
 

@@ -75,7 +75,7 @@ public class RICHio {
 
 
     // ----------------
-    public void write_RECBank(DataEvent event, RICHEvent richevent, RICHConstants recopar) {
+    public void write_RECBank(DataEvent event, RICHEvent richevent, RICHRecParameters recpar) {
     // ----------------
 
         int debugMode = 0;
@@ -86,7 +86,7 @@ public class RICHio {
         if(NMAT>0){
 
             String richBank = "RICH::response";
-            DataBank bankRich = getRichResponseBank(richevent.get_Matches(), event, richBank, recopar);
+            DataBank bankRich = getRichResponseBank(richevent.get_Matches(), event, richBank, recpar);
             if(bankRich!=null)event.appendBanks(bankRich);
 
         }
@@ -95,16 +95,16 @@ public class RICHio {
 
 
     // ----------------
-    public void write_CherenkovBanks(DataEvent event, RICHEvent richevent, RICHConstants recopar) {
+    public void write_CherenkovBanks(DataEvent event, RICHEvent richevent, RICHRecParameters recpar) {
     // ----------------
 
         if(richevent.get_nHad()>0)write_HadronBank(event, richevent);
 
-        if(richevent.get_nPho()>0)write_PhotonBank(event, richevent, recopar);
+        if(richevent.get_nPho()>0)write_PhotonBank(event, richevent, recpar);
 
-        if(richevent.get_nPho()>0)write_RingCherBank(event, richevent, recopar);
+        if(richevent.get_nPho()>0)write_RingCherBank(event, richevent, recpar);
 
-        if(richevent.get_nHad()>0)write_HadCherBank(event, richevent, recopar);
+        if(richevent.get_nHad()>0)write_HadCherBank(event, richevent, recpar);
 
     }
 
@@ -245,7 +245,7 @@ public class RICHio {
     }
 
     // ----------------
-    public void write_HadCherBank(DataEvent event, RICHEvent richevent, RICHConstants recopar) {
+    public void write_HadCherBank(DataEvent event, RICHEvent richevent, RICHRecParameters recpar) {
     // ----------------
 
         int debugMode = 0;
@@ -264,7 +264,7 @@ public class RICHio {
             for(int i = 0; i < NHAD; i++){
 
                 RICHParticle had = richevent.get_Hadron(i);
-                double dT_max = recopar.RICH_TIME_RMS*3;
+                double dT_max = recpar.RICH_TIME_RMS*3;
 
                 if(debugMode>0)System.out.format(" RICHio %7.2f %7.2f %5d %7.2f %9.4f %9.4f \n",had.minChAngle(0)*MRAD,had.maxChAngle(0)*MRAD,
                           had.traced.get_BestH(),had.traced.get_RQP(),had.traced.get_ElProb(),had.traced.get_PiProb());
@@ -308,7 +308,7 @@ public class RICHio {
     }
 
     // ----------------
-    public void write_RingCherBank(DataEvent event, RICHEvent richevent, RICHConstants recopar) {
+    public void write_RingCherBank(DataEvent event, RICHEvent richevent, RICHRecParameters recpar) {
     // ----------------
 
         int debugMode = 0;
@@ -350,7 +350,7 @@ public class RICHio {
                 RICHHit hit = richevent.get_Hit( pho.get_hit_index() );
                 RICHParticle had = richevent.get_Hadron( pho.get_ParentIndex() );
 
-                double htime = hit.get_time();
+                double htime  = hit.get_time();
                 double a_time = pho.get_start_time() + pho.analytic.get_time();
                 double t_time = pho.get_start_time() + pho.traced.get_time();
 
@@ -399,7 +399,7 @@ public class RICHio {
 
 
     // ----------------
-    public void write_PhotonBank(DataEvent event, RICHEvent richevent, RICHConstants recopar) {
+    public void write_PhotonBank(DataEvent event, RICHEvent richevent, RICHRecParameters recpar) {
     // ----------------
 
         int debugMode = 0;
@@ -413,7 +413,7 @@ public class RICHio {
 
             for(int i = 0; i < NPHO; i++){
                 RICHParticle pho = richevent.get_Photon(i);
-                if(pho.get_type()==0 || recopar.SAVE_THROWS==1)Nrow++;
+                if(pho.get_type()==0 || recpar.SAVE_THROWS==1)Nrow++;
             }
 
             if(debugMode>=1)System.out.format(" --> Creating the Photons Bank for Npho %4d Nrow %4d \n",NPHO,Nrow);
@@ -433,7 +433,7 @@ public class RICHio {
                 // consistency
                 if(ientry>Nrow) continue;
 
-                if(pho.get_type()==0 || recopar.SAVE_THROWS==1){
+                if(pho.get_type()==0 || recpar.SAVE_THROWS==1){
     
                     if(debugMode>=1)System.out.format("   --> store \n");
 
@@ -490,7 +490,7 @@ public class RICHio {
     }
 
     // ----------------
-    public DataBank getRichResponseBank(List<DetectorResponse> responses, DataEvent event, String bank_name, RICHConstants recopar){
+    public DataBank getRichResponseBank(List<DetectorResponse> responses, DataEvent event, String bank_name, RICHRecParameters recpar){
     // ----------------
 
         int debugMode = 0;
@@ -515,7 +515,7 @@ public class RICHio {
             bank.setFloat("energy", row, (float) r.getEnergy());
             float chi2 = (float) (2*Math.sqrt(Math.pow(r.getMatchedPosition().x()-r.getPosition().x(),2)+
                                   Math.pow(r.getMatchedPosition().y()-r.getPosition().y(),2)+
-                                  Math.pow(r.getMatchedPosition().z()-r.getPosition().z(),2))/recopar.RICH_HITMATCH_RMS);
+                                  Math.pow(r.getMatchedPosition().z()-r.getPosition().z(),2))/recpar.RICH_HITMATCH_RMS);
             bank.setFloat("chi2", row, (float) chi2);
 
             if(debugMode>=1)System.out.format("RICH::response id %3d   hit %6.1f %6.1f %6.1f    tk %6.1f %6.1f %6.1f chi2 %8.3f \n",

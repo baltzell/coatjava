@@ -36,7 +36,8 @@ package eu.mihosoft.vrl.v3d;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import javafx.scene.paint.Color;
+//import javafx.scene.paint.Color;
+import java.awt.Color;
 
 /**
  * A simple property storage.

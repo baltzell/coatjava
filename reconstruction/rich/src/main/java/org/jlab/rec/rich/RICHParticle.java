@@ -23,6 +23,10 @@ import org.freehep.math.minuit.MnUserParameters;
 import org.jlab.clas.pdg.PhysicsConstants;
 import org.jlab.clas.pdg.PDGDatabase;
 
+import org.jlab.detector.geom.RICH.RICHRay;
+import org.jlab.detector.geom.RICH.RICHIntersection;
+import org.jlab.detector.geom.RICH.RICHGeoConstants;
+
 
 public class RICHParticle {
 
@@ -88,11 +92,11 @@ public class RICHParticle {
 
     public Line3d direct_ray;
 
+    private RICHRecParameters recpar;
+    private RICHGeoConstants  geocost = new RICHGeoConstants();
+
     private static double MRAD = 1000.;
     private static double RAD = 180./Math.PI;
-
-    private RICHConstants recopar = null;
-
 
     // -------------
     public RICHParticle(int id, int parent_index, int hit_index, double mom, int CLASpid, RICHTool tool){
@@ -107,7 +111,7 @@ public class RICHParticle {
         set_CLASpid(CLASpid);
         set_momentum(mom);
 
-        recopar = tool.get_Constants();
+        recpar  = tool.recpar;
 
     }
 
@@ -151,7 +155,7 @@ public class RICHParticle {
         }
 
         for (int iref=0; iref<3; iref++){
-            if(recopar.USE_ELECTRON_ANGLES==1){
+            if(recpar.USE_ELECTRON_ANGLES==1){
                 ChAngle[0][iref] = calibrated_ChAngle(11, iref);      // expected angle for electron
                 ChAngle[1][iref] = calibrated_ChAngle(211, iref);     // pion
                 ChAngle[2][iref] = calibrated_ChAngle(321, iref);     // kaon
@@ -258,7 +262,7 @@ public class RICHParticle {
     // ----------------
     // calculate the minimum Cherenlov angle compatible with the momentum 
   
-        for(int k=3 ; k>=0; k--) if(ChAngle[k][irefle]>0) return Math.max(recopar.RICH_MIN_CHANGLE, ChAngle[k][irefle] - 3*sChAngle[irefle]);
+        for(int k=3 ; k>=0; k--) if(ChAngle[k][irefle]>0) return Math.max(RICHRecConstants.RICH_MIN_CHANGLE, ChAngle[k][irefle] - 3*sChAngle[irefle]);
         return 0.0;
     }
 
@@ -267,7 +271,7 @@ public class RICHParticle {
     public double nominal_sChAngle(){
     // ----------------
 
-        return recopar.RICH_DIRECT_RMS;
+        return recpar.RICH_DIRECT_RMS;
     }
 
     // ----------------
@@ -382,7 +386,7 @@ public class RICHParticle {
         int ipmt = hit.get_pmt()-1;
         int ich  = hit.get_anode()-1;
 
-        if (tool.get_Constants().USE_PIXEL_PROPERTIES==1){
+        if (recpar.USE_PIXEL_PROPERTIES==1){
             pixel_gain  = tool.get_PixelGain(ipmt, ich);
             pixel_eff   = tool.get_PixelEff(ipmt, ich);
             pixel_flag  = tool.get_PixelFlag(ipmt, ich);
@@ -393,7 +397,7 @@ public class RICHParticle {
             pixel_eff   = 1.0;
             pixel_flag  = 1;
             pixel_mtime = 0.0;
-            pixel_stime = recopar.RICH_TIME_RMS;
+            pixel_stime = recpar.RICH_TIME_RMS;
         }
 
         if(debugMode>=1) System.out.format("Photon pixel %4d %4d %4d --> %2d %7.2f %7.2f %7.2f %7.2f \n",hit.get_id(), ipmt, ich, pixel_flag, pixel_gain, 
@@ -444,7 +448,7 @@ public class RICHParticle {
         }
         this.lab_origin = ori;
 
-        if(tool.get_Constants().FORCE_DC_MATCH==1){
+        if(recpar.FORCE_DC_MATCH==1){
             if(debugMode>=1)System.out.println(" FORCE DC-RICH match \n");
             this.direct_ray = new Line3d(tool.toVector3d(ori), tool.toVector3d(impa));
             this.meas_hit = tool.toVector3d(impa);
@@ -454,7 +458,7 @@ public class RICHParticle {
             Line3D temp = new Line3D(ori, end);
             if(status==1){
                 // status = 1 means a matching MAPMT cluster has been found, track pointing to MaPMT
-                this.meas_hit = tool.find_intersection_MAPMT(temp);
+                this.meas_hit = tool.rgeo.find_intersection_MAPMT(temp);
             }else{
                 // status != 1 means no matching cluster, track pointing to RICH 
                 this.meas_hit = tool.toVector3d(impa);
@@ -534,7 +538,7 @@ public class RICHParticle {
         ico_entrance   = entrance.get_component();
         refi_emission  = tool.get_Component(ilay_emission,ico_emission).get_index();
 
-        int Nqua = tool.get_Constants().QUADRANT_NUMBER;
+        int Nqua = recpar.QUADRANT_NUMBER;
         iqua_emission = tool.get_Layer(ilay_emission).get_Quadrant(Nqua, ico_emission, exit.get_pos());
 
         if(debugMode>=1){
@@ -627,7 +631,7 @@ public class RICHParticle {
     // ----------------
 
         int debugMode = 0;
-        double n_a = recopar.RICH_AIR_INDEX;
+        double n_a = geocost.RICH_AIR_INDEX;
 
         double Phi_ini = trial_pho.lab_phi;
         double Theta_ini = trial_pho.lab_theta;
@@ -709,7 +713,7 @@ public class RICHParticle {
     // ----------------
 
         int debugMode = 0;
-        double n_a = recopar.RICH_AIR_INDEX;
+        double n_a = geocost.RICH_AIR_INDEX;
 
         if(trial_pho==null){
             if(debugMode>=1) System.out.format(" Missing starting values from trial photon\n");
@@ -866,12 +870,12 @@ public class RICHParticle {
     // ----------------
 
         int debugMode = 0;
-        double n_a = recopar.RICH_AIR_INDEX;
+        double n_a = geocost.RICH_AIR_INDEX;
 
         // The following definition should be read by the geometry
         // ATT: mismatch con la definizione di emission a 3/4 dell'aerogel
         // ATT: L deve essere calcolato con il coseno
-        double T_r = recopar.RICH_AERO_THICKNESS;
+        double T_r = geocost.RICH_AERO_THICKNESS;
         double L = T_r/2; // middle point is Thickness
         double T_g = hadron.ref_impact.z-hadron.ref_emission.z-L;
 
@@ -957,7 +961,7 @@ public class RICHParticle {
 
         // timing probability
         double meant = start_time + reco.get_time();
-        double sigmat = recopar.RICH_TIME_RMS;
+        double sigmat = recpar.RICH_TIME_RMS;
 
         double funt = 0.0;
         double dfunt = 1;
@@ -966,9 +970,9 @@ public class RICHParticle {
             funt = Math.exp((-0.5)*Math.pow((testtime - meant)/sigmat, 2) )/ (sigmat*Math.sqrt(2* Math.PI));
         }
         
-        double prob = 1 + funt*dfunt + recopar.RICH_BKG_PROBABILITY;
+        double prob = 1 + funt*dfunt + recpar.RICH_BKG_PROBABILITY;
 
-        if(debugMode>=1)if(prob-1>recopar.RICH_BKG_PROBABILITY)System.out.format(
+        if(debugMode>=1)if(prob-1>recpar.RICH_BKG_PROBABILITY)System.out.format(
                      "TIM prob   meant %8.3f  time %8.3f -->  %g  %g \n",
                      meant,testtime,funt*dfunt,Math.log(prob)); 
         return prob;
@@ -1035,9 +1039,9 @@ public class RICHParticle {
             
         }
 
-        double prob = 1 + pixel_eff*func*dfunc*funt*dfunt + recopar.RICH_BKG_PROBABILITY;
+        double prob = 1 + pixel_eff*func*dfunc*funt*dfunt + recpar.RICH_BKG_PROBABILITY;
 
-        //if(debugMode>=1)if(prob-1>recopar.RICH_BKG_PROBABILITY)System.out.format(
+        //if(debugMode>=1)if(prob-1>recpar.RICH_BKG_PROBABILITY)System.out.format(
         if(debugMode>=1)System.out.format(
                      "PID prob %4d    mean %7.2f etaC %7.2f sigma %7.2f   meant %7.2f (%7.2f + %7.2f) time %7.2f sigmat %7.2f  eff %7.2f -->  %g  %g  %8.4f e-3\n",pid,
                      mean*MRAD,reco.get_EtaC()*MRAD,sigma*MRAD,recot+meant,recot,meant,meas_time,sigmat,pixel_eff,func*dfunc,funt*dfunt,Math.log(prob)*1e3); 

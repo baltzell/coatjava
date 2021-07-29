@@ -14,7 +14,7 @@ import org.jlab.detector.base.DetectorType;
 
 import org.jlab.detector.geant4.v2.DCGeant4Factory;
 import org.jlab.detector.geant4.v2.FTOFGeant4Factory;
-import org.jlab.detector.geom.RICH.RICHGeomFactory;
+import org.jlab.detector.geom.RICH.RICHGeoFactory;
 import org.jlab.geom.base.Detector;
 import org.jlab.geom.prim.Point3D;
 import org.jlab.geom.prim.Vector3D;
@@ -38,7 +38,7 @@ public class TrajectorySurfaces {
     private DCGeant4Factory dcDetector = null;
     private FTOFGeant4Factory ftofDetector=null;
     private Detector ecalDetector=null;
-    private RICHGeomFactory richDetector=null;
+    private RICHGeoFactory richDetector=null;
     
     public List<ArrayList<Surface>> getDetectorPlanes() {
         return _DetectorPlanes;
@@ -54,7 +54,7 @@ public class TrajectorySurfaces {
             DCGeant4Factory dcDet,
             FTOFGeant4Factory ftofDet,
             Detector ecalDet,
-            RICHGeomFactory richDet) {
+            RICHGeoFactory richDet) {
         
         this.dcDetector   = dcDet;
         this.ftofDetector = ftofDet;

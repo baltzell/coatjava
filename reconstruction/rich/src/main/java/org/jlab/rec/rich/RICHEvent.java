@@ -12,6 +12,7 @@ import org.jlab.geometry.prim.Line3d;
 import eu.mihosoft.vrl.v3d.Vector3d;
 
 import org.jlab.clas.detector.DetectorResponse;
+import org.jlab.detector.geom.RICH.RICHRay;
 
 public class RICHEvent {
 
@@ -393,7 +394,7 @@ public class RICHEvent {
      
 
     // ----------------
-    public void get_pid(RICHParticle hadron, int recotype) {
+    public void get_pid(RICHParticle hadron, int recotype, RICHRecParameters recpar) {
     // ----------------
 
         int debugMode = 0;
@@ -436,7 +437,7 @@ public class RICHEvent {
 
                 // prob for backgound
                 prob = pho.pid_probability(hadron, hit, 0, recotype);
-                if(prob-1>=RICHConstants.RICH_BKG_PROBABILITY){
+                if(prob-1>=recpar.RICH_BKG_PROBABILITY){
                     lh_bg += Math.log(prob);
                     ch_bg += Math.log(prob)*etac;
                     n_bg++;
@@ -448,7 +449,7 @@ public class RICHEvent {
 
                 // prob for electron
                 prob = pho.pid_probability(hadron, hit, 11, recotype);
-                if(prob-1>=RICHConstants.RICH_BKG_PROBABILITY){
+                if(prob-1>=recpar.RICH_BKG_PROBABILITY){
                     lh_el += Math.log(prob);
                     ch_el += Math.log(prob)*etac;
                     n_el++;
@@ -460,7 +461,7 @@ public class RICHEvent {
 
                 // prob for pion
                 prob=pho.pid_probability(hadron, hit, 211, recotype);
-                if(prob-1>=RICHConstants.RICH_BKG_PROBABILITY){
+                if(prob-1>=recpar.RICH_BKG_PROBABILITY){
                     lh_pi += Math.log(prob);
                     ch_pi += Math.log(prob)*etac;
                     n_pi++;
@@ -472,7 +473,7 @@ public class RICHEvent {
 
                 // prob for kaon
                 prob=pho.pid_probability(hadron, hit, 321, recotype);
-                if(prob-1>=RICHConstants.RICH_BKG_PROBABILITY){
+                if(prob-1>=recpar.RICH_BKG_PROBABILITY){
                     lh_k  += Math.log(prob);
                     ch_k  += Math.log(prob)*etac;
                     n_k++;
@@ -484,7 +485,7 @@ public class RICHEvent {
 
                 // prob for proton
                 prob=pho.pid_probability(hadron, hit, 2212, recotype);
-                if(prob-1>=RICHConstants.RICH_BKG_PROBABILITY){
+                if(prob-1>=recpar.RICH_BKG_PROBABILITY){
                     lh_pr += Math.log(prob);
                     ch_pr += Math.log(prob)*etac;
                     reco.set_PrProb(Math.log(prob));
@@ -557,7 +558,7 @@ public class RICHEvent {
     }
 
     // ----------------
-    public void select_Photons(RICHConstants recopar, int recotype){
+    public void select_Photons(RICHRecParameters recpar, int recotype){
     // ----------------
         int debugMode = 0;
         int jj=0;
@@ -583,7 +584,7 @@ public class RICHEvent {
 
                 double CHMI = had.minChAngle(irefle);
                 double CHMA = had.maxChAngle(irefle);
-                double DTMA = recopar.RICH_TIME_RMS*3;
+                double DTMA = recpar.RICH_TIME_RMS*3;
 
                 double etaC = reco.get_EtaC();
 
@@ -654,14 +655,12 @@ public class RICHEvent {
 
 
     // ----------------
-    public void associate_Throws(RICHTool tool){
+    public void associate_Throws(RICHRecParameters recpar) {
     // ----------------
 
         int debugMode = 0;
         int match_nchi2 = 0 ;
         double match_chi2 = 0.0 ;
-
-        RICHConstants recopar = tool.get_Constants();
 
         if(debugMode>=1)System.out.format("Associate photon with trials \n");
         int jj=0;
@@ -676,7 +675,7 @@ public class RICHEvent {
                         //if(debugMode>=0)System.out.format("  -->  %4d %8.2f %8.2f  dist %8.2f  prev %8.2f \n",ii, trial.meas_hit.x, trial.meas_hit.y, dist, distmin);
                         if(dist < distmin){
                             distmin = dist;
-                            if(distmin<recopar.THROW_ASSOCIATION_CUT){
+                            if(distmin<recpar.THROW_ASSOCIATION_CUT){
                                 photon.trial_pho = trial;
                             }
                         }
@@ -686,11 +685,11 @@ public class RICHEvent {
                 if(photon.trial_pho!=null && distmin<4){
                     double tprob=photon.trial_pho.time_probability(photon.get_meas_time(), 1);
                     if(tprob-1>1.e-3){
-                        match_chi2+=Math.pow((distmin/recopar.RICH_HITMATCH_RMS),2);
+                        match_chi2+=Math.pow((distmin/recpar.RICH_HITMATCH_RMS),2);
                         match_nchi2++;
                         if(debugMode>=1)System.out.format("  -->  store throw id %d  xy %8.2f %8.2f  time %7.2f  --> dist %7.2f  ch2 %7.2f  tprob %8.6f %10.2f \n",
                             photon.trial_pho.get_id(),photon.trial_pho.meas_hit.x,photon.trial_pho.meas_hit.y, photon.trial_pho.get_meas_time(), 
-                            distmin, (distmin/recopar.RICH_HITMATCH_RMS), tprob-1, match_chi2);
+                            distmin, (distmin/recpar.RICH_HITMATCH_RMS), tprob-1, match_chi2);
                     }
                 }
             }

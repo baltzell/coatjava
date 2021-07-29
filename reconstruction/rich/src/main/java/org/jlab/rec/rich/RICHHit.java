@@ -3,6 +3,8 @@ package org.jlab.rec.rich;
 import org.jlab.detector.geant4.v2.RICHGeant4Factory;
 import eu.mihosoft.vrl.v3d.Vector3d;
 
+//import org.jlab.detector.geom.RICH.RICHGeoFactory;
+
 // ----------------
 public class RICHHit implements Comparable<RICHHit>{
 // ----------------
@@ -37,6 +39,7 @@ public class RICHHit implements Comparable<RICHHit>{
     // ----------------
     }
 
+
     // ----------------
     public RICHHit(int hid, RICHTool tool, int phase, RICHEdge lead, RICHEdge trail) {
     // ----------------
@@ -46,13 +49,13 @@ public class RICHHit implements Comparable<RICHHit>{
         this.id        = hid;
         this.sector    = lead.get_sector();
         this.tile      = lead.get_tile();
-        this.pmt       = tool.Tile2PMT(tile, lead.get_channel());  // run from1  to 391
+        this.pmt       = tool.rgeo.Tile2PMT(tile, lead.get_channel());  // run from1  to 391
         this.channel   = (lead.get_channel()-1)%64;     
-        this.anode     = tool.Maroc2Anode(channel);                // run from 1 to 64
-        this.idx       = tool.Anode2idx(anode);
-        this.idy       = tool.Anode2idy(anode);
-        this.glx       = tool.get_Globalidx(pmt, anode);
-        this.gly       = tool.get_Globalidy(pmt, anode);
+        this.anode     = tool.rgeo.Maroc2Anode(channel);                // run from 1 to 64
+        this.idx       = tool.rgeo.get_PixelMap().Anode2idx(anode);
+        this.idy       = tool.rgeo.get_PixelMap().Anode2idy(anode);
+        this.glx       = tool.rgeo.get_PixelMap().get_Globalidx(pmt, anode);
+        this.gly       = tool.rgeo.get_PixelMap().get_Globalidy(pmt, anode);
         this.duration  = trail.get_tdc()-lead.get_tdc();
 
         /*float twalk_corr = 0;
@@ -88,7 +91,7 @@ public class RICHHit implements Comparable<RICHHit>{
                                            phase*4, tool.getPMTtimeoff(pmt, anode), -twalk_corr, this.time);
 
         //Vector3d CenPos = tool.GetPixelCenter(pmt,anode);
-        Vector3d CesPos = tool.get_Pixel_Center(pmt,anode);
+        Vector3d CesPos = tool.rgeo.get_Pixel_Center(pmt,anode);
         this.x         = (float) CesPos.x;
         this.y         = (float) CesPos.y;
         this.z         = (float) CesPos.z;
@@ -364,7 +367,7 @@ public class RICHHit implements Comparable<RICHHit>{
         float tDiff = Math.abs(hit.get_time() - nonet.get_time());
         int xDiff = Math.abs(hit.get_idx()  - nonet.get_idx());
         int yDiff = Math.abs(hit.get_idy()  - nonet.get_idy());
-        if(tDiff <= RICHConstants.CLUSTER_TIME_WINDOW && xDiff <= 1 && yDiff <= 1 && (xDiff + yDiff) >0) addFlag = true;
+        if(tDiff <= RICHRecConstants.CLUSTER_TIME_WINDOW && xDiff <= 1 && yDiff <= 1 && (xDiff + yDiff) >0) addFlag = true;
         return addFlag;
     }
 

@@ -5,6 +5,8 @@ import org.jlab.clas.pdg.PhysicsConstants;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.jlab.detector.geom.RICH.RICHRay;
+
 import org.jlab.geom.prim.Point3D;
 
 // ----------------

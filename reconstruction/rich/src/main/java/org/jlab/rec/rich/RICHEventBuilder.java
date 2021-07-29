@@ -31,6 +31,7 @@ import org.jlab.io.evio.EvioDataBank;
 import org.jlab.io.evio.EvioDataEvent;
 
 import org.jlab.clas.pdg.PhysicsConstants;
+import org.jlab.detector.geom.RICH.RICHGeoFactory;
 
 public class RICHEventBuilder{
 
@@ -40,42 +41,29 @@ public class RICHEventBuilder{
     *   Reconstruction classes
     */
     private RICHTool                 tool;
-    private HashMap<Integer,Integer> pindex_map = new HashMap<Integer, Integer>();
-
-    /* 
-    *   DATA Event managing classes 
-    */
-    private DetectorEvent            sector4Event;  // temporarely only Sector 4 particles !!!
     private RICHio                   richio;
     private RICHEvent                richevent;
+    private DetectorEvent            sector4Event;  // temporarely only Sector 4 particles !!!
+
+    private HashMap<Integer,Integer> pindex_map = new HashMap<Integer, Integer>();
 
     private static double Precision = 0.00000000001; //E-11 is my threshold for defying what 0 is
     private static double MRAD=1000.;
     private static double RAD=180/Math.PI;
 
     // ----------------
-    public RICHEventBuilder(RICHEvent richeve, RICHTool richtool, RICHio io) {
+    public RICHEventBuilder(DataEvent event, RICHEvent richeve, RICHTool richtool, RICHio io) {
     // ----------------
 
-        tool         = richtool;
-        richevent    = richeve;
-        richio       = io;
-        sector4Event = new DetectorEvent();  
+        tool           =   richtool;
+        richevent      =   richeve;
+        richio         =   io;
+        sector4Event   =   new DetectorEvent();  
 
-    }
-
-    // ----------------
-    public void init_Event(DataEvent event) {
-    // ----------------
-
-        tool.start_ProcessTime();
-
-        // clear RICH reconstruction classes
 	sector4Event.clear();
         richevent.clear();
 
         set_EventInfo(event);
-
     }
 
 
@@ -91,7 +79,7 @@ public class RICHEventBuilder{
         if(!process_DCData(event)) return false;
         tool.save_ProcessTime(1);
 
-        richio.write_RECBank(event, richevent, tool.get_Constants());
+        richio.write_RECBank(event, richevent, tool.recpar);
 
         /*
         *   create RICH particles
@@ -113,7 +101,7 @@ public class RICHEventBuilder{
 
         if(debugMode>=1)richevent.showEvent();
 
-        richio.write_CherenkovBanks(event, richevent, tool.get_Constants());
+        richio.write_CherenkovBanks(event, richevent, tool.recpar);
         tool.save_ProcessTime(5);
 
         return true;
@@ -377,7 +365,7 @@ public class RICHEventBuilder{
                    n,p.getTrackIndex(),p.getPathLength(),ori.x(),ori.y(),ori.z(),end.x(),end.y(),end.z());
 
             // Matching tracks to RICH:
-            Double rich_match_cut = tool.get_Constants().RICH_DCMATCH_CUT;
+            Double rich_match_cut = tool.recpar.RICH_DCMATCH_CUT;
             int index = p.getDetectorHit(richevent.get_ResClus(), DetectorType.RICH, 1, rich_match_cut);
             if(index>=0){
 		// while storing the match, calculates the matched position as middle point between track and hit and path (track last cross plus distance to hit)
@@ -493,7 +481,7 @@ public class RICHEventBuilder{
                 }
             }
             
-            if( (nr==1) || (nr==0 && tool.get_Constants().DO_MIRROR_HADS==1) ){ 
+            if( (nr==1) || (nr==0 && tool.recpar.DO_MIRROR_HADS==1) ){ 
                 if(debugMode>=1)System.out.format("EXTRAPOLATED with nresp %d \n",nr);
                 exr = extrapolate_RICHResponse(p, r);
                 if(exr!=null) nexr++;
@@ -501,7 +489,7 @@ public class RICHEventBuilder{
 
             // ATT: define the response tratment in special cases
             if(nexr==0){if(debugMode>=1)System.out.format("No RICH intersection for particle with nresp %d and theta %8.2f \n",nr,theta*RAD); continue;}
-            if(nr==1)Match_chi2 = 2*exr.getMatchedDistance()/tool.get_Constants().RICH_HITMATCH_RMS;
+            if(nr==1)Match_chi2 = 2*exr.getMatchedDistance()/tool.recpar.RICH_HITMATCH_RMS;
 
             // ATT: time taken at the RICH extrapolated point
             double CLAStime = richevent.get_EventTime() + exr.getPath()/CLASbeta/(PhysicsConstants.speedOfLight());
@@ -607,15 +595,15 @@ public class RICHEventBuilder{
 
         int debugMode = 0;
 
-        if(tool.get_Constants().DO_ANALYTIC==1){
+        if(tool.recpar.DO_ANALYTIC==1){
 
             richevent.analyze_Photons();
-            richevent.select_Photons(tool.get_Constants(), 0);
+            richevent.select_Photons(tool.recpar, 0);
 
             for(RICHParticle richhadron : richevent.get_Hadrons()){
                 if (richhadron.get_Status()==1){
                     richevent.get_ChMean(richhadron,0); 
-                    richevent.get_pid(richhadron,0); 
+                    richevent.get_pid(richhadron,0, tool.recpar); 
                 }else{
                     if(debugMode>=1)System.out.format(" Hadron pointing to mirror, skip analytic analysis \n");
                 }
@@ -635,25 +623,25 @@ public class RICHEventBuilder{
 
         for(RICHParticle richhadron : richevent.get_Hadrons()){
 
-            int trials = tool.get_Constants().THROW_PHOTON_NUMBER;
+            int trials = tool.recpar.THROW_PHOTON_NUMBER;
 
-            if(tool.get_Constants().THROW_ELECTRONS==1){
+            if(tool.recpar.THROW_ELECTRONS==1){
                 double chel = richhadron.get_changle(0,0);
                 if(chel>0)richevent.throw_Photons(richhadron, trials, chel, 5, tool);
             }
 
-            if(tool.get_Constants().THROW_PIONS==1){
+            if(tool.recpar.THROW_PIONS==1){
                 double chpi = richhadron.get_changle(1,0);
                 if(chpi>0)richevent.throw_Photons(richhadron, trials, chpi, 1, tool);
             }
 
 
-            if(tool.get_Constants().THROW_KAONS==1){
+            if(tool.recpar.THROW_KAONS==1){
                 double chk = richhadron.get_changle(2,0);
                 if(chk>0)richevent.throw_Photons(richhadron, trials, chk, 2, tool);
             }
 
-            if(tool.get_Constants().THROW_PROTONS==1){
+            if(tool.recpar.THROW_PROTONS==1){
                 double chpr = richhadron.get_changle(3,0);
                 if(chpr>0)richevent.throw_Photons(richhadron, trials, chpr, 3, tool);
             }
@@ -661,16 +649,16 @@ public class RICHEventBuilder{
 
        }
 
-       if(tool.get_Constants().TRACE_PHOTONS==1){
+       if(tool.recpar.TRACE_PHOTONS==1){
 
-            richevent.associate_Throws(tool);
+            richevent.associate_Throws(tool.recpar);
 
             richevent.trace_Photons(tool);
-            richevent.select_Photons(tool.get_Constants(), 1);
+            richevent.select_Photons(tool.recpar, 1);
             
             for(RICHParticle richhadron : richevent.get_Hadrons()){
                 richevent.get_ChMean(richhadron,1); 
-                richevent.get_pid(richhadron,1); 
+                richevent.get_pid(richhadron,1,tool.recpar); 
             }
 
         }
@@ -688,10 +676,10 @@ public class RICHEventBuilder{
 
         DetectorResponse exr = new DetectorResponse(4, 18, 1);
 
-        Point3D extra = tool.toPoint3D( tool.find_intersection_MAPMT( p.getLastCross()) );
+        Point3D extra = tool.toPoint3D( tool.rgeo.find_intersection_MAPMT( p.getLastCross()) );
         if(extra==null){
             imir=1;
-            extra = tool.toPoint3D( tool.find_intersection_UpperHalf_RICH( p.getLastCross()) );
+            extra = tool.toPoint3D( tool.rgeo.find_intersection_UpperHalf_RICH( p.getLastCross()) );
         }
 
         if(extra==null) return null;

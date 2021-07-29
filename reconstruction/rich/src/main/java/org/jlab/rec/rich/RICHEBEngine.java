@@ -17,6 +17,8 @@ import java.util.Optional;
 import org.jlab.geom.prim.Plane3D;
 import org.jlab.geom.prim.Line3D;
 
+import org.jlab.detector.geom.RICH.RICHGeoFactory;
+
 public class RICHEBEngine extends ReconstructionEngine {
 
     private int Run = -1;
@@ -24,13 +26,13 @@ public class RICHEBEngine extends ReconstructionEngine {
 
     private long EBRICH_start_time;
     
-    private RICHTool  tool = null;
-    private boolean LOAD_TABLES = true;
+    private RICHGeoFactory       geo;
+
 
     // ----------------
     public RICHEBEngine() {
     // ----------------
-        super("RICHEB", "mcontalb-kenjo", "3.0");
+        super("RICHEB", "mcontalb", "3.0");
 
     }
 
@@ -40,87 +42,14 @@ public class RICHEBEngine extends ReconstructionEngine {
     public boolean init() {
     // ----------------
 
-
         int debugMode = 0;
         if(debugMode>=1)System.out.format("I am in RICHEBEngine \n");
 
-        tool = new RICHTool();
-
-        boolean ccdb = init_CCDB(1);
-
-        return true;
-
-    }
-
-    
-    /*
-    // ----------------
-    public boolean init_forTraj() {
-    // ----------------
-
-
-        int debugMode = 0;
-
-        tool = new RICHTool();
-
-        boolean ccdb = init_CCDB(0);
-
-        //testTraj();
-
-        return true;
-
-    }*/
-
-    // ----------------
-    public void testTraj() {
-    // ----------------
-
-        tool.testTraj();
- 
-    }
-
-
-    // ----------------
-    public Plane3D get_MaPMTforTraj() {
-    // ----------------
-
-        return tool.get_MaPMTforTraj();
-
-    }
-
-
-    // ----------------
-    public Plane3D get_AeroforTraj(int iflag) {
-    // ----------------
-
-        return tool.get_AeroforTraj(iflag);
-
-    }
-
-
-    //------------------------------
-    public int select_AeroforTraj(Line3D first, Line3D second, Line3D third) {
-    //------------------------------
-
-        return tool.select_AeroforTraj(first, second, third);
-
-    }
-
- 
-    // ----------------
-    public boolean init_CCDB(int iflag) {
-    // ----------------
-
-        int debugMode = 0;
 
         String[] richTables = new String[]{
-                    "/calibration/rich/aerogel",
-                    "/calibration/rich/time_walk",
-                    "/calibration/rich/time_offset",
-                    "/calibration/rich/misalignments",
                     "/calibration/rich/parameterss",
-                    "/calibration/rich/pixels",
-                    "/calibration/rich/electro"
+                    "/calibration/rich/aerogel",
+                    "/calibration/rich/misalignments"
                  };
 
         requireConstants(Arrays.asList(richTables));
@@ -128,19 +57,12 @@ public class RICHEBEngine extends ReconstructionEngine {
         // initialize constants manager default variation, will be then modified based on yaml settings
         // Get the constants for the correct variation
         String engineVariation = Optional.ofNullable(this.getEngineConfigString("variation")).orElse("default");         
-        getConstantsManager().setVariation(engineVariation);
-
-        if(debugMode==1)System.out.format("RICHEBEngine: Load geometry constants from CCDB \n");
+        this.getConstantsManager().setVariation(engineVariation);
 
         // Get the constant tables for reconstruction parameters, geometry and optical characterization
         int run = 11;
 
-        //IndexedTable test = getConstantsManager().getConstants(run, "/calibration/rich/parameter");
-
-        tool.init_GeoConstants(iflag,
-                  getConstantsManager().getConstants(run, "/calibration/rich/parameterss"),
-                  getConstantsManager().getConstants(run, "/calibration/rich/aerogel"),
-                  getConstantsManager().getConstants(run, "/calibration/rich/misalignments") );
+        geo  = new RICHGeoFactory(1, this.getConstantsManager(), 11);
 
         return true;
 
@@ -152,21 +74,34 @@ public class RICHEBEngine extends ReconstructionEngine {
     public boolean processDataEvent(DataEvent event) {
     // ----------------
 
-        int debugMode = 0;
+        int debugMode = 1;
 
-	Ncalls++;
-        
         // create instances of all event-dependent classes in processDataEvent to avoid interferences between different threads when running in clara
-        RICHEvent        richevent = new RICHEvent();
-        RICHio              richio = new RICHio();
-        RICHPMTReconstruction rpmt = new RICHPMTReconstruction(richevent, tool, richio);
-        RICHEventBuilder       reb = new RICHEventBuilder(richevent, tool, richio);
+        RICHEvent              richevent = new RICHEvent();
+        RICHio                 richio    = new RICHio();
+        RICHTool               tool      = new RICHTool(geo, Ncalls);
+
+        RICHPMTReconstruction  rpmt      = new RICHPMTReconstruction(richevent, tool, richio);
+        RICHEventBuilder       reb       = new RICHEventBuilder(event, richevent, tool, richio);
         
-	/*
-	Initialize the RICH event
-	*/
-        reb.init_Event(event);
-        init_Event(event,richevent,tool);
+        // add RICH tables at event level
+        if(Ncalls==0){
+            String[] richTables = new String[]{
+                    "/calibration/rich/electro",
+                    "/calibration/rich/time_walk",
+                    "/calibration/rich/time_offset",
+                    "/calibration/rich/pixels",
+                    };
+            this.getConstantsManager().init(Arrays.asList(richTables));
+        }
+	
+	//  Initialize the RICH event
+        int run = richevent.get_RunID(); 
+        if(run>0){
+            tool.load_CCDB(this.getConstantsManager(), run);
+        }else{
+            tool.load_CCDB(this.getConstantsManager(), 11);
+        }
 
         if(debugMode>=1){
             System.out.println("---------------------------------");
@@ -175,7 +110,7 @@ public class RICHEBEngine extends ReconstructionEngine {
         }
 
         // clear RICH output banks
-        if(tool.get_Constants().REDO_RICH_RECO==1)richio.clear_Banks(event); // would be better to move all io operation here rather than passing richio around
+        if(tool.recpar.REDO_RICH_RECO==1)richio.clear_Banks(event); // would be better to move all io operation here rather than passing richio around
 
 	/*
 	Process RICH signals to get hits and clusters
@@ -192,29 +127,9 @@ public class RICHEBEngine extends ReconstructionEngine {
         tool.save_ProcessTime(6);
         //tool.dump_ProcessTime();
 
+        Ncalls++;
+
         return true;
-
-    }
-
-    // ----------------
-    public void init_Event(DataEvent event, RICHEvent richevent, RICHTool tool) {
-    // ----------------
-
-        int debugMode = 0;
-        int run = richevent.get_RunID(); 
-        if(run>0 && LOAD_TABLES) {
-
-            LOAD_TABLES = false;
-
-            if(debugMode>=1)System.out.format("LOAD constants from CCDB for run %5d \n",run);
-    
-            // Get the run-dependent tables for time calibration
-            tool.init_TimeConstants( getConstantsManager().getConstants(run, "/calibration/rich/time_walk"),
-                      getConstantsManager().getConstants(run, "/calibration/rich/time_offset"),
-                      getConstantsManager().getConstants(run, "/calibration/rich/electro"),
-                      getConstantsManager().getConstants(run, "/calibration/rich/pixels") );
-
-        }
 
     }
 

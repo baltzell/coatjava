@@ -10,7 +10,7 @@ import org.jlab.detector.base.DetectorType;
 import org.jlab.detector.base.GeometryFactory;
 import org.jlab.detector.geant4.v2.DCGeant4Factory;
 import org.jlab.detector.geant4.v2.FTOFGeant4Factory;
-import org.jlab.detector.geom.RICH.RICHGeomFactory;
+import org.jlab.detector.geom.RICH.RICHGeoFactory;
 import org.jlab.geom.base.ConstantProvider;
 import org.jlab.geom.base.Detector;
 import org.jlab.io.base.DataEvent;
@@ -25,7 +25,7 @@ public class DCEngine extends ReconstructionEngine {
     DCGeant4Factory   dcDetector;
     FTOFGeant4Factory ftofDetector;
     Detector          ecalDetector = null;
-    RICHGeomFactory   richDetector = null;
+    RICHGeoFactory   richDetector = null;
     TrajectorySurfaces tSurf;
     String clasDictionaryPath ;
     String variationName;
@@ -159,53 +159,6 @@ public class DCEngine extends ReconstructionEngine {
             "/geometry/beam/position"
         };
 
-        requireConstants(Arrays.asList(dcTables));
-        // Get the constants for the correct variation
-        String geomDBVar = this.getEngineConfigString("dcGeometryVariation");
-        if (geomDBVar!=null) {
-            System.out.println("["+this.getName()+"] run with geometry variation based on yaml = "+geomDBVar);
-        }
-        else {
-            geomDBVar = System.getenv("COAT_DC_GEOMETRYVARIATION");
-            if (geomDBVar!=null) {
-                System.out.println("["+this.getName()+"] run with geometry variation chosen based on env = "+geomDBVar);
-            }
-        } 
-        if (geomDBVar==null) {
-            System.out.println("["+this.getName()+"] run with default geometry");
-        }
-        
-        // Load the geometry
-        String geoVariation = Optional.ofNullable(geomDBVar).orElse("default");
-        ConstantProvider provider = GeometryFactory.getConstants(DetectorType.DC, 11, geoVariation);
-        dcDetector = new DCGeant4Factory(provider, DCGeant4Factory.MINISTAGGERON, endplatesBowing);
-        for(int l=0; l<6; l++) {
-            Constants.wpdist[l] = provider.getDouble("/geometry/dc/superlayer/wpdist", l);
-            System.out.println("****************** WPDIST READ *********FROM "+geoVariation+"**** VARIATION ****** "+provider.getDouble("/geometry/dc/superlayer/wpdist", l));
-        }
-        // Load target
-        ConstantProvider providerTG = GeometryFactory.getConstants(DetectorType.TARGET, 11, geoVariation);
-        double targetPosition = providerTG.getDouble("/geometry/target/position",0);
-        double targetLength   = providerTG.getDouble("/geometry/target/length",0);
-        // Load other geometries
-        ConstantProvider providerFTOF = GeometryFactory.getConstants(DetectorType.FTOF, 11, geoVariation);
-        ftofDetector = new FTOFGeant4Factory(providerFTOF);        
-        ConstantProvider providerEC = GeometryFactory.getConstants(DetectorType.ECAL, 11, geoVariation);
-        ecalDetector =  GeometryFactory.getDetector(DetectorType.ECAL, 11, geoVariation);
-        richDetector = new RICHGeomFactory(1, this.getConstantsManager(), 11);
-        System.out.println(" -- Det Geometry constants are Loaded " );
-        
-        // create the surfaces
-        tSurf = new TrajectorySurfaces();
-        // for debugging the end plates bowing:
-        //====================================
-        //try {
-        //    tSurf.checkDCGeometry(dcDetector);
-        //} catch (FileNotFoundException ex) {
-        //    Logger.getLogger(DCEngine.class.getName()).log(Level.SEVERE, null, ex);
-        //}
-        tSurf.LoadSurfaces(targetPosition, targetLength,dcDetector, ftofDetector, ecalDetector, richDetector);
-        
         // Get the constants for the correct variation
         String ccDBVar = this.getEngineConfigString("variation");
         if (ccDBVar!=null) {
@@ -224,6 +177,54 @@ public class DCEngine extends ReconstructionEngine {
         String dcvariationName = Optional.ofNullable(ccDBVar).orElse("default");
         variationName = dcvariationName;
         this.getConstantsManager().setVariation(dcvariationName);
+
+        requireConstants(Arrays.asList(dcTables));
+        // Get the constants for the correct variation
+        String geomDBVar = this.getEngineConfigString("dcGeometryVariation");
+        if (geomDBVar!=null) {
+            System.out.println("["+this.getName()+"] run with geometry variation based on yaml = "+geomDBVar);
+        }
+        else {
+            geomDBVar = System.getenv("COAT_DC_GEOMETRYVARIATION");
+            if (geomDBVar!=null) {
+                System.out.println("["+this.getName()+"] run with geometry variation chosen based on env = "+geomDBVar);
+            }
+        } 
+        if (geomDBVar==null) {
+            System.out.println("["+this.getName()+"] run with default geometry");
+        }
+
+        // Load the geometry
+        String geoVariation = Optional.ofNullable(geomDBVar).orElse("default");
+        ConstantProvider provider = GeometryFactory.getConstants(DetectorType.DC, 11, geoVariation);
+        dcDetector = new DCGeant4Factory(provider, DCGeant4Factory.MINISTAGGERON, endplatesBowing);
+        for(int l=0; l<6; l++) {
+            Constants.wpdist[l] = provider.getDouble("/geometry/dc/superlayer/wpdist", l);
+            System.out.println("****************** WPDIST READ *********FROM "+geoVariation+"**** VARIATION ****** "+provider.getDouble("/geometry/dc/superlayer/wpdist", l));
+        }
+        // Load target
+        ConstantProvider providerTG = GeometryFactory.getConstants(DetectorType.TARGET, 11, geoVariation);
+        double targetPosition = providerTG.getDouble("/geometry/target/position",0);
+        double targetLength   = providerTG.getDouble("/geometry/target/length",0);
+        // Load other geometries
+        ConstantProvider providerFTOF = GeometryFactory.getConstants(DetectorType.FTOF, 11, geoVariation);
+        ftofDetector = new FTOFGeant4Factory(providerFTOF);        
+        ConstantProvider providerEC = GeometryFactory.getConstants(DetectorType.ECAL, 11, geoVariation);
+        ecalDetector =  GeometryFactory.getDetector(DetectorType.ECAL, 11, geoVariation);
+        richDetector = new RICHGeoFactory(0, this.getConstantsManager(), 11);
+        System.out.println(" -- Det Geometry constants are Loaded " );
+        
+        // create the surfaces
+        tSurf = new TrajectorySurfaces();
+        // for debugging the end plates bowing:
+        //====================================
+        //try {
+        //    tSurf.checkDCGeometry(dcDetector);
+        //} catch (FileNotFoundException ex) {
+        //    Logger.getLogger(DCEngine.class.getName()).log(Level.SEVERE, null, ex);
+        //}
+        tSurf.LoadSurfaces(targetPosition, targetLength,dcDetector, ftofDetector, ecalDetector, richDetector);
+        
     }
     
     @Override
