@@ -95,7 +95,7 @@ public class RICHGeoFactory{
         if(FactoryMode==1 && geopar.READ_FROM_FILES==1){
             // QUE attenzione per la produzione
             System.out.format("RICHGeoFactory: Load geometry constants from TXT \n");
-            init_GeoParametersTxT(1);
+            //init_GeoParametersTxT(1);
             //init_GeoParametersTxT(3);
         }
        
@@ -122,7 +122,7 @@ public class RICHGeoFactory{
     public void init_GeoParametersCCDB(IndexedTable paraConstants, IndexedTable aeroConstants, IndexedTable misaConstants){
     //------------------------------
 
-        int debugMode = 1;
+        int debugMode = 0;
 
         /*
         * RECONSTRUCTION PARAMETERS
@@ -139,7 +139,7 @@ public class RICHGeoFactory{
         geopar.RICH_GEO_DEBUG              =  (int) paraConstants.getDoubleValue("par7", 4, 0, 0);
 
         // QUE: da rimuovere nella produzione
-        geopar.READ_FROM_FILES             =  1;
+        geopar.READ_FROM_FILES             =  0;
 
         if(debugMode>=1 || geopar.RICH_GEO_DEBUG>0){   
 
@@ -237,7 +237,7 @@ public class RICHGeoFactory{
     //------------------------------
     // To be moved to CCDB
 
-       int debugMode = 1;
+       int debugMode = 0;
 
         if(ifile==1){
 
@@ -607,7 +607,7 @@ public class RICHGeoFactory{
     // planes for effective ray tracing
     // ATT: to be done: aerogel cromatic dispersion, mirror reflectivity vs wavelength
 
-        int debugMode = 1;
+        int debugMode = 0;
 
         /*
         * relevant characterization of the basic tracking planes
@@ -1355,7 +1355,7 @@ public class RICHGeoFactory{
     // facet of the MAPMT plane aligned in the space
     // QUE: assumes that the MAPMT facets have always the same ordering ?
 
-        int debugMode = 1;
+        int debugMode = 0;
 
         RICHLayer layer = get_Layer(ilay);
         if(layer.is_mapmt()){
