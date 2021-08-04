@@ -175,8 +175,6 @@ public class DCEngine extends ReconstructionEngine {
         }
         // Load the calibration constants
         String dcvariationName = Optional.ofNullable(ccDBVar).orElse("default");
-        variationName = dcvariationName;
-        this.getConstantsManager().setVariation(dcvariationName);
 
         requireConstants(Arrays.asList(dcTables));
         // Get the constants for the correct variation
@@ -225,6 +223,8 @@ public class DCEngine extends ReconstructionEngine {
         //}
         tSurf.LoadSurfaces(targetPosition, targetLength,dcDetector, ftofDetector, ecalDetector, richDetector);
         
+        variationName = dcvariationName;
+        this.getConstantsManager().setVariation(dcvariationName);
     }
     
     @Override

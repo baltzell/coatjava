@@ -62,13 +62,13 @@ public class RICHGeoFactory{
 
 
     //------------------------------
-    public RICHGeoFactory(int iEngine, ConstantsManager manager, int run){
+    public RICHGeoFactory(int FactoryMode, ConstantsManager manager, int run){
     //------------------------------
 
         //PROVA
-        // generate the tracking layers (iEngine=0 only Aerogel and MaPMT for trajectory, iEngine=1  all)
+        // generate the tracking layers (FactoryMode=0 only Aerogel and MaPMT for trajectory, FactoryMode=1  all)
 
-        if(iEngine==0){
+        if(FactoryMode==0){
             // add RICH tables to a different Engine
             String[] richTables = new String[]{
                     "/calibration/rich/aerogel",
@@ -92,14 +92,14 @@ public class RICHGeoFactory{
                                 manager.getConstants(run, "/calibration/rich/aerogel"), 
                                 manager.getConstants(run, "/calibration/rich/misalignments"));
 
-        if(iEngine==1 && geopar.READ_FROM_FILES==1){
+        if(FactoryMode==1 && geopar.READ_FROM_FILES==1){
             // QUE attenzione per la produzione
             System.out.format("RICHGeoFactory: Load geometry constants from TXT \n");
-            //init_GeoParametersTxT(1);
+            init_GeoParametersTxT(1);
             //init_GeoParametersTxT(3);
         }
        
-        if(iEngine>0){
+        if(FactoryMode>0){
             // global pixel coordinat indexes
             pixelmap.init_GlobalPixelGeo();
 
@@ -108,7 +108,7 @@ public class RICHGeoFactory{
         }
 
         // RICH geometry organized on layers of Shape3D area and RICH components 
-        init_RICHLayers(iEngine);
+        init_RICHLayers(FactoryMode);
 
     } 
 
@@ -122,7 +122,7 @@ public class RICHGeoFactory{
     public void init_GeoParametersCCDB(IndexedTable paraConstants, IndexedTable aeroConstants, IndexedTable misaConstants){
     //------------------------------
 
-        int debugMode = 0;
+        int debugMode = 1;
 
         /*
         * RECONSTRUCTION PARAMETERS
@@ -139,7 +139,7 @@ public class RICHGeoFactory{
         geopar.RICH_GEO_DEBUG              =  (int) paraConstants.getDoubleValue("par7", 4, 0, 0);
 
         // QUE: da rimuovere nella produzione
-        geopar.READ_FROM_FILES             =  0;
+        geopar.READ_FROM_FILES             =  1;
 
         if(debugMode>=1 || geopar.RICH_GEO_DEBUG>0){   
 
@@ -237,7 +237,7 @@ public class RICHGeoFactory{
     //------------------------------
     // To be moved to CCDB
 
-       int debugMode = 0;
+       int debugMode = 1;
 
         if(ifile==1){
 
@@ -600,14 +600,14 @@ public class RICHGeoFactory{
 
 
     //------------------------------
-    public void init_RICHLayers(int iEngine){
+    public void init_RICHLayers(int FactoryMode){
     //------------------------------
     // Take RICHFactory Layers of Geant4 volumes (for GEMC) and convert in coatjava Layers 
     // of RICH components accounting for optical descriptiors plus basic tracking 
     // planes for effective ray tracing
     // ATT: to be done: aerogel cromatic dispersion, mirror reflectivity vs wavelength
 
-        int debugMode = 0;
+        int debugMode = 1;
 
         /*
         * relevant characterization of the basic tracking planes
@@ -642,8 +642,8 @@ public class RICHGeoFactory{
             }
             RICHLayer layer = new RICHLayer(ilay, slayer, vlayer);
 
-            //if(iEngine==0 && (ilay>3 && ilay<12)) continue;
-            if(iEngine==1 || (ilay<4 || ilay==12)) {
+            //if(FactoryMode==0 && (ilay>3 && ilay<12)) continue;
+            if(FactoryMode==1 || (ilay<4 || ilay==12)) {
 
             for (int ico=0; ico<get_RICHFactory_Size(idlayer); ico++){
                 RICHComponent compo = get_RICHFactory_Component(idlayer, ico);
@@ -694,7 +694,7 @@ public class RICHGeoFactory{
 
         for (int ilay=0; ilay<NLAY; ilay++){
 
-            if(iEngine==0 && (ilay>3 && ilay<12)) continue;
+            if(FactoryMode==0 && (ilay>3 && ilay<12)) continue;
             if(debugMode>=1)System.out.format("generate surfaces for layer %d \n",ilay);
 
             generate_TrackingPlane(ilay);
@@ -706,7 +706,7 @@ public class RICHGeoFactory{
         }
 
         
-        if(iEngine>0){
+        if(FactoryMode>0){
             /*
             *  Generate Pixel map on the misaligned MAPMT plane
             */
@@ -1355,7 +1355,7 @@ public class RICHGeoFactory{
     // facet of the MAPMT plane aligned in the space
     // QUE: assumes that the MAPMT facets have always the same ordering ?
 
-        int debugMode = 0;
+        int debugMode = 1;
 
         RICHLayer layer = get_Layer(ilay);
         if(layer.is_mapmt()){

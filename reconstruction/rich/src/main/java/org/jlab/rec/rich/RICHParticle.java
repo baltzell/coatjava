@@ -395,7 +395,7 @@ public class RICHParticle {
         }else{
             pixel_gain  = 1.0;
             pixel_eff   = 1.0;
-            pixel_flag  = 1;
+            pixel_flag  = 0;
             pixel_mtime = 0.0;
             pixel_stime = recpar.RICH_TIME_RMS;
         }
@@ -1009,7 +1009,7 @@ public class RICHParticle {
         double meant = 0.0;
         double sigmat = 0.0;
 
-        if(pixel_flag==1){
+        if(pixel_flag==0){
 
             // angle probability
 
