@@ -49,7 +49,11 @@ public class RICHEBEngine extends ReconstructionEngine {
         String[] richTables = new String[]{
                     "/calibration/rich/parameterss",
                     "/calibration/rich/aerogel",
-                    "/calibration/rich/misalignments"
+                    "/calibration/rich/misalignments",
+                    "/calibration/rich/electro",
+                    "/calibration/rich/time_walk",
+                    "/calibration/rich/time_offset",
+                    "/calibration/rich/pixels",
                  };
 
         requireConstants(Arrays.asList(richTables));
@@ -84,17 +88,6 @@ public class RICHEBEngine extends ReconstructionEngine {
         RICHPMTReconstruction  rpmt      = new RICHPMTReconstruction(richevent, tool, richio);
         RICHEventBuilder       reb       = new RICHEventBuilder(event, richevent, tool, richio);
         
-        // add RICH tables at event level
-        if(Ncalls==0){
-            String[] richTables = new String[]{
-                    "/calibration/rich/electro",
-                    "/calibration/rich/time_walk",
-                    "/calibration/rich/time_offset",
-                    "/calibration/rich/pixels",
-                    };
-            this.getConstantsManager().init(Arrays.asList(richTables));
-        }
-	
 	//  Initialize the RICH event
         int run = richevent.get_RunID(); 
         if(run>0){

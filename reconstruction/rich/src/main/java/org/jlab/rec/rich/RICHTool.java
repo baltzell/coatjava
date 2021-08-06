@@ -174,7 +174,7 @@ public class RICHTool{
             pmt_timewalk[ipmt][1] = (float) timewalkConstants.getDoubleValue("m1", 4, ipmt+1, 0);
             pmt_timewalk[ipmt][2] = (float) Math.abs(timewalkConstants.getDoubleValue("m2", 4, ipmt+1, 0))*(-1.0);
             pmt_timewalk[ipmt][3] = (float) timewalkConstants.getDoubleValue("T0", 4, ipmt+1, 0);
-            if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<10){
+            if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<NCMAX){
                 if(ipmt<10 || ipmt>380)System.out.format("CCDB RICH TWALK   ipmt %4d  D0 = %8.3f  T0 = %8.3f  m1 = %8.4f  m2 = %8.4f\n", ipmt+1,
                          pmt_timewalk[ipmt][0], pmt_timewalk[ipmt][1] , pmt_timewalk[ipmt][2], pmt_timewalk[ipmt][3]);
                 if(ipmt==10)System.out.format("CCDB RICH TWALK    ....... \n");
@@ -201,7 +201,7 @@ public class RICHTool{
                 aero_schele_lat[ila][itil][iqua] = (float) cheleConstants.getDoubleValue("s_lat", 4,201+ila,ico+1);
                 aero_schele_spe[ila][itil][iqua] = (float) cheleConstants.getDoubleValue("s_spe", 4,201+ila,ico+1);
 
-                if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<1){
+                if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<NCMAX){
                     if( (itil<2 || itil>ndo[ila]-3) && (iqua==0 || iqua==224)) {
                         System.out.format("CCDB RICH CHELE   ila %4d  itile %3d  iq %4d dir = %7.2f  %7.2f  lat = %7.2f  %7.2f  spe = %7.2f  %7.2f \n", 201+ila, itil+1, iqua+1,
                         aero_chele_dir[ila][itil][iqua]*mrad, aero_schele_dir[ila][itil][iqua]*mrad,
@@ -227,7 +227,7 @@ public class RICHTool{
                 pixel_mtime[ipmt][ich] = (float) pixelConstants.getDoubleValue("mean_t", 4, ipmt+1, ich+1);
                 pixel_stime[ipmt][ich] = (float) pixelConstants.getDoubleValue("sigma_t", 4, ipmt+1, ich+1);
             }
-            if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<1){
+            if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<NCMAX){
                 if(ipmt<2 || ipmt>388)System.out.format("CCDB PIXEL GAIN    ipmt %4d  %8.2f (ch1)  %8.2f (ch2)  %8.2f (ch63)  %8.2f (ch64) \n", ipmt+1,
                    pixel_gain[ipmt][0], pixel_gain[ipmt][1], pixel_gain[ipmt][62], pixel_gain[ipmt][63]);
                 if(ipmt==10)System.out.format("CCDB PIXEL GAIN     ....... \n");
@@ -304,7 +304,7 @@ public class RICHTool{
         //recpar.USE_ELECTRON_ANGLES         =  1;
         //recpar.USE_PIXEL_PROPERTIES        =  1;
 
-        if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<10){
+        if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<NCMAX){
 
             System.out.format(" \n");
             System.out.format("CCDB RICH PARA    FORCE_DC_MATCH               %9d \n", recpar.FORCE_DC_MATCH); 
@@ -368,7 +368,7 @@ public class RICHTool{
                     float off = Float.parseFloat(array[4]);
                     pmt_timeoff[ipmt-1][ich-1] = off;
 
-                    if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<10)if(ich==1 || ich==64)
+                    if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<NCMAX)if(ich==1 || ich==64)
                               System.out.format("TXT RICH TOFF   pmt %4d (ich=%3d: %8.2f) \n", ipmt, ich, pmt_timeoff[ipmt-1][ich-1]);
 
                 }
@@ -396,14 +396,14 @@ public class RICHTool{
                     String[] array = currentLine.split(" ");
                     int ipmt = Integer.parseInt(array[0]);
 
-                    if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<10)System.out.format("TXT WALK   pmt %d", ipmt);
+                    if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<NCMAX)System.out.format("TXT WALK   pmt %d", ipmt);
                     for (int ich=1; ich<5; ich++){
                         float walk = Float.parseFloat(array[1+(ich-1)*2]);
                         if(ich==4 && walk<-1000)walk= (float)-0.100;
                         pmt_timewalk[ipmt-1][ich-1] = walk;
-                        if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<10)System.out.format(" (%d, %8.4f) ", ich, pmt_timewalk[ipmt-1][ich-1]);
+                        if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<NCMAX)System.out.format(" (%d, %8.4f) ", ich, pmt_timewalk[ipmt-1][ich-1]);
                     }
-                    if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<10)System.out.format("\n");
+                    if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<NCMAX)System.out.format("\n");
 
                 }
 
@@ -436,7 +436,7 @@ public class RICHTool{
                     int iaer  = Integer.parseInt(array[2]);
                     int iqua  = Integer.parseInt(array[3]);
 
-                    if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<10)System.out.format("Read chele for AERO lay %3d  compo %3d quadrant  %3d", idlay, iaer, iqua);
+                    if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<NCMAX)System.out.format("Read chele for AERO lay %3d  compo %3d quadrant  %3d", idlay, iaer, iqua);
 
                     int ndir     = Integer.parseInt(array[4]);
                     float chdir  = Float.parseFloat(array[5]);
@@ -466,7 +466,7 @@ public class RICHTool{
                 e.printStackTrace();
             }
 
-            if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<10)System.out.format("initConstants: DONE \n");
+            if((debugMode>=1 || recpar.RICH_REC_DEBUG>=1) && ncalls<NCMAX)System.out.format("initConstants: DONE \n");
 
         }
 
