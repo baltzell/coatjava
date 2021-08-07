@@ -44,6 +44,7 @@ public class EBCCDBConstants {
         "/runcontrol/helicity",
         "/geometry/target",
         "/calibration/ftof/tres",
+        "/calibration/cnd/cluster"
         //"/calibration/ctof/tres"
     };
 
@@ -251,6 +252,11 @@ public class EBCCDBConstants {
         loadVector3D(EBCCDBEnum.FTOF1A_hitRes,"ftof_matching","dx","dy","dz",0,1,0);
         loadVector3D(EBCCDBEnum.FTOF1B_hitRes,"ftof_matching","dx","dy","dz",0,2,0);
         loadVector3D(EBCCDBEnum.FTOF2_hitRes,"ftof_matching","dx","dy","dz",0,0,0);
+
+        loadDouble(EBCCDBEnum.CND_MATCHING_dx,"/calibration/cnd/cluster","deltax",0,0,0);
+        loadDouble(EBCCDBEnum.CND_MATCHING_dy,"/calibration/cnd/cluster","deltay",0,0,0);
+        loadDouble(EBCCDBEnum.CND_MATCHING_dz,"/calibration/cnd/cluster","deltaz",0,0,0);
+        loadDouble(EBCCDBEnum.CND_MATCHING_dt,"/calibration/cnd/cluster","deltat",0,0,0);
 
         loadDouble(EBCCDBEnum.HTCC_TimingRes,"htcc_matching","dt",0,0,0);
         loadDouble(EBCCDBEnum.HTCC_NPHE_CUT,"htcc_matching","nphe",0,0,0);

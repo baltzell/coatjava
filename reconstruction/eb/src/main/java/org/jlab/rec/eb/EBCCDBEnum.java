@@ -64,6 +64,11 @@ public enum EBCCDBEnum {
     HELICITY_pattern,
     HELICITY_tsettle,
     HELICITY_tstable,
-    HWP_position;
+    HWP_position,
+    CND_MATCHING_dx,
+    CND_MATCHING_dy,
+    CND_MATCHING_dz,
+    CND_MATCHING_dt;
+    
 }
 
