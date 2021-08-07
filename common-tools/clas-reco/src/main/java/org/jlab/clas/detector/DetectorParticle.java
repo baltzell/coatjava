@@ -393,11 +393,8 @@ public class DetectorParticle implements Comparable {
     public void setCharge(int charge) { this.detectorTrack.setCharge(charge);}
 
     private boolean sameSector(DetectorResponse r) {
-        if (r.getSector()>0 && this.detectorTrack.getSector()>0 &&
-            r.getSector() != this.detectorTrack.getSector()) {
-            return false;
-        }
-        return true;
+        return !(r.getSector()>0 && this.detectorTrack.getSector()>0 &&
+                r.getSector() != this.detectorTrack.getSector());
     }
 
     private static boolean sameDescriptor(DetectorResponse r, DetectorType t, int layer) {
@@ -411,8 +408,8 @@ public class DetectorParticle implements Comparable {
 
     private boolean shareHits(DetectorResponse r) {
         if (this.getCharge() != 0) {
-            for (int ii=0; ii<this.sharedDetectors.length; ii++) {
-                if (r.getDescriptor().getType() == this.sharedDetectors[ii]) {
+            for (DetectorType sharedDetector : this.sharedDetectors) {
+                if (r.getDescriptor().getType() == sharedDetector) {
                     return true;
                 }
             }
@@ -434,7 +431,7 @@ public class DetectorParticle implements Comparable {
         int      bestIndex       = -1;
         for (int loop = 0; loop < hitList.size(); loop++){
             DetectorResponse response = hitList.get(loop);
-            if (this.sameDescriptor(response, type, layer)) {
+            if (DetectorParticle.sameDescriptor(response, type, layer)) {
                 if (this.sameSector(response)) {
                     if (this.shareHits(response) || response.getAssociation()<0) {
                         final Line3D residual = this.residual3(hitList.get(loop));
@@ -460,7 +457,7 @@ public class DetectorParticle implements Comparable {
         int      bestIndex       = -1;
         for (int loop = 0; loop < hitList.size(); loop++){
             DetectorResponse response = hitList.get(loop);
-            if (this.sameDescriptor(response, type, layer)) {
+            if (DetectorParticle.sameDescriptor(response, type, layer)) {
                 if (this.sameSector(response)) {
                     if (this.shareHits(response) || response.getAssociation()<0) {
                         final double distance = this.residual(response);
