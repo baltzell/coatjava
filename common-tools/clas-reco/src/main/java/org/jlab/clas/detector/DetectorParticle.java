@@ -1,6 +1,5 @@
 package org.jlab.clas.detector;
 
-import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,17 +10,11 @@ import org.jlab.detector.base.DetectorType;
 import org.jlab.detector.base.DetectorDescriptor;
 
 import org.jlab.geom.prim.Line3D;
-import org.jlab.geom.prim.Point3D;
 import org.jlab.geom.prim.Vector3D;
 
 import org.jlab.clas.pdg.PDGDatabase;
 import org.jlab.clas.pdg.PhysicsConstants;
 
-/**
- *
- * @author gavalian
- * @author baltzell
- */
 public class DetectorParticle implements Comparable {
   
     public static final Double DEFAULTQUALITY=9999.0;
@@ -399,7 +392,7 @@ public class DetectorParticle implements Comparable {
     public void setPid(int pid){this.particlePID = pid;}
     public void setCharge(int charge) { this.detectorTrack.setCharge(charge);}
 
-    public boolean sameSector(DetectorResponse r) {
+    private boolean sameSector(DetectorResponse r) {
         if (r.getSector()>0 && this.detectorTrack.getSector()>0 &&
             r.getSector() != this.detectorTrack.getSector()) {
             return false;
@@ -407,7 +400,7 @@ public class DetectorParticle implements Comparable {
         return true;
     }
 
-    public static boolean sameDescriptor(DetectorResponse r, DetectorType t, int layer) {
+    private static boolean sameDescriptor(DetectorResponse r, DetectorType t, int layer) {
         if (r.getDescriptor().getType() == t) {
             if (layer<=0 || r.getDescriptor().getLayer()==layer) {
                 return true;
@@ -416,7 +409,7 @@ public class DetectorParticle implements Comparable {
         return false;
     }
 
-    public boolean shareHits(DetectorResponse r) {
+    private boolean shareHits(DetectorResponse r) {
         if (this.getCharge() != 0) {
             for (int ii=0; ii<this.sharedDetectors.length; ii++) {
                 if (r.getDescriptor().getType() == this.sharedDetectors[ii]) {
@@ -427,11 +420,11 @@ public class DetectorParticle implements Comparable {
         return false;
     }
 
-    public Line3D residual3(DetectorResponse r) {
+    private Line3D residual3(DetectorResponse r) {
         return this.detectorTrack.getLastCross().distance(r.getPosition().toPoint3D());
     }
     
-    public double residual(DetectorResponse r) {
+    private double residual(DetectorResponse r) {
         return this.residual3(r).length();
     }
 
