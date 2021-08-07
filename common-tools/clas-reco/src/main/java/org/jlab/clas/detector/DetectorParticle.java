@@ -141,20 +141,14 @@ public class DetectorParticle implements Comparable {
         for (int ii=0; ii<responseStore.size(); ii++) {
             DetectorDescriptor desc=responseStore.get(ii).getDescriptor();
             if (desc.getType()!=type) continue;
-            if (desc.getLayer()!=layer) continue;
+            if (layer>0 && desc.getLayer()!=layer) continue;
             nResponses++;
         }
         return nResponses;
     }
     
     public int countResponses(DetectorType type) {
-        int nResponses=0;
-        for (int ii=0; ii<responseStore.size(); ii++) {
-            DetectorDescriptor desc=responseStore.get(ii).getDescriptor();
-            if (desc.getType()!=type) continue;
-            nResponses++;
-        }
-        return nResponses;
+        return this.countResponses(type,0);
     }
     
     public Particle getPhysicsParticle(int pid){
@@ -404,53 +398,91 @@ public class DetectorParticle implements Comparable {
     public void setMass(double mass){ this.particleMass = mass;}
     public void setPid(int pid){this.particlePID = pid;}
     public void setCharge(int charge) { this.detectorTrack.setCharge(charge);}
-    
-    public int getDetectorHit(List<DetectorResponse>  hitList, DetectorType type,
-            int detectorLayer,
-            double distanceThreshold){
-         
-        Line3D   trajectory = this.detectorTrack.getLastCross();
-        Point3D  hitPoint = new Point3D();
-        double   minimumDistance = 500.0;
-        int      bestIndex       = -1;
 
-        boolean hitSharing=false;
-        for (int ii=0; ii<sharedDetectors.length && this.getCharge()!=0; ii++) {
-            if (type == sharedDetectors[ii]) {
-                hitSharing=true;
-                break;
+    public boolean sameSector(DetectorResponse r) {
+        if (r.getSector()>0 && this.detectorTrack.getSector()>0 &&
+            r.getSector() != this.detectorTrack.getSector()) {
+            return false;
+        }
+        return true;
+    }
+
+    public static boolean sameDescriptor(DetectorResponse r, DetectorType t, int layer) {
+        if (r.getDescriptor().getType() == t) {
+            if (layer<=0 || r.getDescriptor().getLayer()==layer) {
+                return true;
             }
         }
+        return false;
+    }
 
-        for(int loop = 0; loop < hitList.size(); loop++){
-           
-            DetectorResponse response = hitList.get(loop);
- 
-            // same-sector requirement between hit and track:
-            if (response.getSector()>0 && this.detectorTrack.getSector()>0) {
-              if (response.getSector() != this.detectorTrack.getSector()) {
-                  continue;
-              }
+    public boolean shareHits(DetectorResponse r) {
+        if (this.getCharge() != 0) {
+            for (int ii=0; ii<this.sharedDetectors.length; ii++) {
+                if (r.getDescriptor().getType() == this.sharedDetectors[ii]) {
+                    return true;
+                }
             }
-            
-            if(response.getDescriptor().getType()==type &&
-               (detectorLayer<=0 || response.getDescriptor().getLayer()==detectorLayer) &&
-               (hitSharing || response.getAssociation()<0)) {
-                hitPoint.set(
-                        response.getPosition().x(),
-                        response.getPosition().y(),
-                        response.getPosition().z()
-                        );
-                double hitdistance = trajectory.distance(hitPoint).length();
-                if (hitdistance<distanceThreshold && hitdistance<minimumDistance) {
-                    minimumDistance = hitdistance;
-                    bestIndex       = loop;
+        }
+        return false;
+    }
+
+    public Line3D residual3(DetectorResponse r) {
+        return this.detectorTrack.getLastCross().distance(r.getPosition().toPoint3D());
+    }
+    
+    public double residual(DetectorResponse r) {
+        return this.residual3(r).length();
+    }
+
+    public int getDetectorHit(List<DetectorResponse>  hitList, DetectorType type,
+            int layer, Vector3D maxDistance){
+        double   minDistance = Double.POSITIVE_INFINITY;
+        int      bestIndex       = -1;
+        for (int loop = 0; loop < hitList.size(); loop++){
+            DetectorResponse response = hitList.get(loop);
+            if (this.sameDescriptor(response, type, layer)) {
+                if (this.sameSector(response)) {
+                    if (this.shareHits(response) || response.getAssociation()<0) {
+                        final Line3D residual = this.residual3(hitList.get(loop));
+                        final double distance = residual.length();
+                        if (distance < minDistance) {
+                            if (Math.abs(residual.toVector().x()) < maxDistance.x() &&
+                                Math.abs(residual.toVector().y()) < maxDistance.y() &&
+                                Math.abs(residual.toVector().z()) < maxDistance.z()) {
+                                bestIndex = loop;
+                                minDistance = distance;
+                            }
+                        }
+                    }
                 }
             }
         }
         return bestIndex;
     }
-    
+
+    public int getDetectorHit(List<DetectorResponse>  hitList, DetectorType type,
+            int layer, double maxDistance){
+        double   minDistance = Double.POSITIVE_INFINITY;
+        int      bestIndex       = -1;
+        for (int loop = 0; loop < hitList.size(); loop++){
+            DetectorResponse response = hitList.get(loop);
+            if (this.sameDescriptor(response, type, layer)) {
+                if (this.sameSector(response)) {
+                    if (this.shareHits(response) || response.getAssociation()<0) {
+                        final double distance = this.residual(response);
+                        if (distance < maxDistance && distance < minDistance) {
+                            bestIndex = loop;
+                            minDistance = distance;
+                        }
+                    }
+                }
+            }
+        }
+        return bestIndex;
+    }
+
+    /*
     public double getDetectorHitQuality(List<DetectorResponse>  hitList, int index, Vector3D hitRes){
         
         Line3D   trajectory = this.detectorTrack.getLastCross();
@@ -469,6 +501,7 @@ public class DetectorParticle implements Comparable {
         
         return pow(dx,2)/pow(hitRes.x(),2) + pow(dy,2)/pow(hitRes.y(),2) + pow(dz,2)/pow(hitRes.z(),2);
     }
+    */
     
     public Line3D  getDistance(DetectorResponse  response){
         Line3D cross = this.detectorTrack.getLastCross();
