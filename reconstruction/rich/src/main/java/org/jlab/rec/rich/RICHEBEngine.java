@@ -26,9 +26,9 @@ public class RICHEBEngine extends ReconstructionEngine {
 
     private long EBRICH_start_time;
     
-    private RICHGeoFactory       geo;
+    private RICHGeoFactory       richgeo;
+    private RICHTime             richtime = new RICHTime();
 
-    //// prova prova
 
     // ----------------
     public RICHEBEngine() {
@@ -67,7 +67,8 @@ public class RICHEBEngine extends ReconstructionEngine {
         // Get the constant tables for reconstruction parameters, geometry and optical characterization
         int run = 11;
 
-        geo  = new RICHGeoFactory(1, this.getConstantsManager(), 11);
+        richgeo   = new RICHGeoFactory(1, this.getConstantsManager(), 11);
+        richtime.init_ProcessTime();
 
         return true;
 
@@ -84,42 +85,50 @@ public class RICHEBEngine extends ReconstructionEngine {
         // create instances of all event-dependent classes in processDataEvent to avoid interferences between different threads when running in clara
         RICHEvent              richevent = new RICHEvent();
         RICHio                 richio    = new RICHio();
-        RICHTool               tool      = new RICHTool(geo, Ncalls);
+        RICHCalibration        richcal   = new RICHCalibration();
+        RICHParameters         richpar   = new RICHParameters();
 
-        RICHPMTReconstruction  rpmt      = new RICHPMTReconstruction(richevent, tool, richio);
-        RICHEventBuilder       reb       = new RICHEventBuilder(event, richevent, tool, richio);
+        RICHPMTReconstruction  rpmt      = new RICHPMTReconstruction(richevent, richgeo, richio);
+        RICHEventBuilder       reb       = new RICHEventBuilder(event, richevent, richgeo, richio);
+        RICHRayTrace           richtrace = new RICHRayTrace(richgeo, richpar); 
         
-	//  Initialize the RICH event
+        richtime.save_ProcessTime(0, richevent.get_CPUTime());
+
+	//  Initialize the CCDB information
         int run = richevent.get_RunID(); 
         if(run>0){
-            tool.load_CCDB(this.getConstantsManager(), run);
+            richpar.load_CCDB(this.getConstantsManager(), run, Ncalls);
+            richcal.load_CCDB(this.getConstantsManager(), run, Ncalls, richgeo, richpar);
         }else{
-            tool.load_CCDB(this.getConstantsManager(), 11);
+            richpar.load_CCDB(this.getConstantsManager(),  11, Ncalls);
+            richcal.load_CCDB(this.getConstantsManager(),  11, Ncalls, richgeo, richpar);
         }
+
+        richtime.save_ProcessTime(1, richevent.get_CPUTime());
 
         if(debugMode>=1){
             System.out.println("---------------------------------");
-            System.out.println("RICH Engine call: "+Ncalls+" New Event Process "+reb.getEventID()+"\n");
+            System.out.println("RICH Engine call: "+Ncalls+" New Event Process "+richevent.get_EventID()+"\n");
             System.out.println("---------------------------------");
         }
 
         // clear RICH output banks
-        if(tool.recpar.REDO_RICH_RECO==1)richio.clear_Banks(event); // would be better to move all io operation here rather than passing richio around
+        if(richpar.REDO_RICH_RECO==1)richio.clear_Banks(event); // would be better to move all io operation here rather than passing richio around
 
 	/*
 	Process RICH signals to get hits and clusters
 	*/
-        rpmt.processRawData(event);
+        rpmt.process_RawData(event, richpar, richcal);
 
-        tool.save_ProcessTime(0);
+        richtime.save_ProcessTime(2, richevent.get_CPUTime());
 
 	/*
 	Process RICH-DC event reconstruction
 	*/
-        if( !reb.process_Data(event)) return false;
+        if( !reb.process_Data(event, richpar, richcal, richtrace, richtime)) return false;
 
-        tool.save_ProcessTime(6);
-        //tool.dump_ProcessTime();
+        richtime.save_ProcessTime(8, richevent.get_CPUTime());
+        if(richpar.DEBUG_PROC_TIME>=1) richtime.dump_ProcessTime();
 
         Ncalls++;
 

@@ -1,5 +1,7 @@
 package org.jlab.detector.geom.RICH;
 
+import org.jlab.geom.prim.Vector3D;
+
 public class RICHGeoConstants {
 
     // -----------------
@@ -13,31 +15,59 @@ public class RICHGeoConstants {
     // Static
     // -----------------
 
-    public static final int    NLAY                       =   13;       // number of layers in RICH
+    public static final int    NSEC                       =   6;        // number of sectors of RICH
+    public static final int    NLAY                       =   13;       // number of layers of RICH
     public static final int    NROW                       =   24;       // number of PMT rows in RICH                 
     public static final int    NCOL                       =   56;       // number of PMT coloumns in RICH
     public static final int    NPMT                       =   391;      // number of PMTs in RICH
     public static final int    NPIX                       =   64;       // number of Pixels in one PMT
     public static final int    NCOMPO                     =   10;       // max number of components per layer
 
-    public static final int    READ_FROM_FILES            =   0;        // read values from txt files
-    
     public static final double MRAD                       =   1000.;
     public static final double RAD                        =   180./Math.PI;
+    public static final double CM                         =   0.1;
 
     public static final double RICH_AEROGEL_INDEX         =   1.05;      // Aerogel refracting index (not used)
-    public static final double RICH_AERO_THICKNESS        =   2.;        // Aerogel thickness (to define emission point)
+    public static final double AERO_REF_THICKNESS         =   20.;       // Aerogel thickness in mm (to define emission point)
+    public static final double AERO_REF_DIMENSION         =   200.;      // Aerogel lateral size in mm 
+    public static final double AERO_CUT_DIMENSION         =   165.;      // Aerogel heigth for the first two shaped tiles
     public static final double RICH_AIR_INDEX             =   1.000273;  // AIR n used in Mirazita's code (da CCDB)
 
     public static final double PHOTON_DISTMIN_TRACING     =   0.0001;    // max distance to set initial values for tracing photons
     public static final double PHOTON_DISTMIN_SPHERE      =   200.;      // max distance to approximate the spherical mirror with triangles
     
+    public static final double RICH_TABLE_FROM_FILE       =   1;         // read rich module configuration
+    public static final double ALIGN_TABLE_FROM_FILE      =   0;         // read alignment calibration values from local txt files
+    public static final double AERO_OPTICS_FROM_FILE      =   0;         // read aerogel nominal optics values from local txt files
 
-    public static final int anode_map[] = {60,58,59,57,52,50,51,49,44,42,43,41,36,34,35,
-                     33,28,26,27,25,20,18,19,17,12,10,11,9,4,2,3,1,5,7,6,8,13,15,14,16,21,
-                     23,22,24,29,31,30,32,37,39,38,40,45,47,46,48,53,55,54,56,61,63,62,64};
 
-    public static final int tile2pmt[][]={{   1,   2,   3},  
+    public static final int    NALIGN                     =   24;        // number of components with indipendent alignment
+    public static final int    ccdb_ila[] = {0,201,202,203,204,301,301,301,301,301,301,301,302,302,302,302,302,302,302,302,302,302,302,401};
+    public static final int    ccdb_ico[] = {0,  0,  0,  0,  0,  1,  2,  3,  4,  5,  6,  7,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10,  0};
+
+                               //                               BO  F1  F2  R1  R2   L1  L2
+    public static final int    tool_ila[] = {0,  1,  2,  3,  4, 11,  5,  6,  9, 10,  7,  8, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 13};
+    public static final int    tool_ico[] = {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10,  0};
+
+
+    public static final   Vector3D vfront   = new Vector3D(-0.42,   0.00,   0.91);
+    public static final   Vector3D vleft    = new Vector3D(-0.50,  -0.87,   0.00);
+    public static final   Vector3D vright   = new Vector3D(-0.50,   0.87,   0.00);
+    public static final   Vector3D vbottom  = new Vector3D(-1.00,   0.00,   0.00);
+    public static final   Vector3D vback    = new Vector3D( 0.42,   0.00,  -0.91);
+    public static final   Vector3D vsphere  = new Vector3D( 0.76,   0.00,  -0.65);
+
+    public static final int    anode_map[] = { 60,58,59,57,52,50,51,49,44,42,43,41,36,34,35,
+                                               33,28,26,27,25,20,18,19,17,12,10,11,9,4,2,3,1,5,7,6,8,13,15,14,16,21,
+                                               23,22,24,29,31,30,32,37,39,38,40,45,47,46,48,53,55,54,56,61,63,62,64};
+
+    public static final int    NWALK       = 4;                          // number of time walk parameters
+    public static final int    NAERLAY     = 4;                          // number of aerogel layers
+    public static final int    NAERMAX     = 31;                         // maximum number of tiles per aerogel layer
+    public static final int    NAERCO[]    = { 16,22,NAERMAX,NAERMAX };  // number of tiles per aerogel layer
+    public static final int    ATHICK[]    = { 10, 10, 15, 15};          // thickness per aerogel layer
+
+    public static final int    tile2pmt[][] = {{   1,   2,   3},  
                         {   4,   5,   6},  
                         {   7,   0,   8},  
                         {   9,  10,  11},  

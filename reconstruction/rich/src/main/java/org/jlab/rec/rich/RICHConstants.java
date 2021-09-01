@@ -9,7 +9,7 @@ package org.jlab.rec.rich;
  *
  * @author mcontalb
  */
-public class RICHRecConstants {
+public class RICHConstants {
 
     // RICH Reconstruction static constants
 
@@ -39,7 +39,10 @@ public class RICHRecConstants {
 
     public static final double  RICH_MATCH_POLYDIST       =   1.e-3;    // Matching dist between poly and point
 
-    public static final int    READ_FROM_FILES            =   0;        // read values from txt files
+    public static final int    RECOPAR_FROM_FILE          =   0;        // read reconstruction parameters from local txt files
+    public static final int    TIMECAL_FROM_FILE          =   0;        // read time calibation values from local txt files
+    public static final int    AEROCAL_FROM_FILE          =   0;        // read aerogel calibration values from local txt files
+    public static final int    PIXECAL_FROM_FILE          =   0;        // read pixel calibration values from local txt files
 
     // -----------------
     // Run Type

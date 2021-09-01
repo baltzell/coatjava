@@ -31,7 +31,6 @@ import org.jlab.utils.groups.IndexedTable;
 
 
 /**
- *
  * @author mcontalb
  */
 public class RICHGeoFactory{
@@ -39,21 +38,18 @@ public class RICHGeoFactory{
     private RICHGeant4Factory richfactory = new RICHGeant4Factory();
     private RICHPixelMap pixelmap = new RICHPixelMap();
     private RICHPixel pmtpixels  = null; 
-    private RICHGeoParameters geopar = new RICHGeoParameters();
+    private RICHGeoParameters    geopar  = new RICHGeoParameters();
+    private RICHGeoCalibration   geocal  = new RICHGeoCalibration();
 
-    private List<RICHLayer> opticlayers = new ArrayList<RICHLayer>();
+    private ArrayList<ArrayList<RICHLayer>> richlayers   = new ArrayList<ArrayList<RICHLayer>>();
+    private ArrayList<RICHFrame>            richframes   = new ArrayList<RICHFrame>();
+    private RICHFrame survey_frame                       = new RICHFrame();
+
     private final static int NLAY   = RICHGeoConstants.NLAY;
     private final static int NCOMPO = RICHGeoConstants.NCOMPO;
 
-    private double aero_refi[][] = new double[4][31];
-    private double aero_plan[][] = new double[4][31];
-
     private Vector3D rich_survey_angle  = new Vector3D();
     private Vector3D rich_survey_shift  = new Vector3D();
-    private Vector3D layer_misa_angle[][] = new Vector3D[NLAY+1][NCOMPO+1];
-    private Vector3D layer_misa_shift[][] = new Vector3D[NLAY+1][NCOMPO+1];
-    private RICHFrame rich_frame = new RICHFrame();
-    private RICHFrame survey_frame = new RICHFrame();
 
     //------------------------------
     public RICHGeoFactory() {
@@ -61,12 +57,12 @@ public class RICHGeoFactory{
     }
 
 
+    /*
+    /* generate the tracking layers (FactoryMode=0 only Aerogel and MaPMT for trajectory, FactoryMode=1  all)
+    */
     //------------------------------
     public RICHGeoFactory(int FactoryMode, ConstantsManager manager, int run){
     //------------------------------
-
-        //PROVA
-        // generate the tracking layers (FactoryMode=0 only Aerogel and MaPMT for trajectory, FactoryMode=1  all)
 
         if(FactoryMode==0){
             // add RICH tables to a different Engine
@@ -78,32 +74,17 @@ public class RICHGeoFactory{
             manager.init(Arrays.asList(richTables));
         }
 
-        // reset alignment constants
-        for (int ila=0; ila<NLAY+1; ila++){
-            for (int ico=0; ico<NCOMPO+1; ico++){
-                layer_misa_shift[ila][ico] = new Vector3D(0., 0., 0.);
-                layer_misa_angle[ila][ico] = new Vector3D(0., 0., 0.);
-            }
-        }
-
         System.out.format("RICHGeoFactory: Load geometry constants from CCDB \n");
      
-        init_GeoParametersCCDB( manager.getConstants(run, "/calibration/rich/parameterss"),
-                                manager.getConstants(run, "/calibration/rich/aerogel"), 
-                                manager.getConstants(run, "/calibration/rich/misalignments"));
+        int Ncalls = 0;
+        geopar.load_CCDB(manager, run, Ncalls);
+        geocal.load_CCDB(manager, run, Ncalls, geopar);
 
-        if(FactoryMode==1 && geopar.READ_FROM_FILES==1){
-            // QUE attenzione per la produzione
-            System.out.format("RICHGeoFactory: Load geometry constants from TXT \n");
-            //init_GeoParametersTxT(1);
-            //init_GeoParametersTxT(3);
-        }
-       
         if(FactoryMode>0){
-            // global pixel coordinat indexes
+            // global pixel coordinate indexes
             pixelmap.init_GlobalPixelGeo();
 
-            // RICH survey
+            // RICH survey (obsolete)
             init_Survey();
         }
 
@@ -111,335 +92,6 @@ public class RICHGeoFactory{
         init_RICHLayers(FactoryMode);
 
     } 
-
-
-    //------------------------------
-    public RICHGeoParameters get_GeoParameters() {return geopar;}
-    //------------------------------
-
-
-    //------------------------------
-    public void init_GeoParametersCCDB(IndexedTable paraConstants, IndexedTable aeroConstants, IndexedTable misaConstants){
-    //------------------------------
-
-        int debugMode = 0;
-
-        /*
-        * RECONSTRUCTION PARAMETERS
-        */
-
-        geopar.DO_ALIGNMENT                =  paraConstants.getIntValue("flag1", 4, 0, 0); 
-        geopar.MISA_RICH_REF               =  paraConstants.getIntValue("flag3", 4, 0, 0);
-        geopar.MISA_PMT_PIVOT              =  paraConstants.getIntValue("flag4", 4, 0, 0);
-        geopar.APPLY_SURVEY                =  paraConstants.getIntValue("flag5", 4, 0, 0);
-
-        geopar.MISA_SHIFT_SCALE            =  paraConstants.getDoubleValue("par9", 4, 0, 0);
-        geopar.MISA_ANGLE_SCALE            =  paraConstants.getDoubleValue("par10", 4, 0, 0);
-        
-        geopar.RICH_GEO_DEBUG              =  (int) paraConstants.getDoubleValue("par7", 4, 0, 0);
-
-        // QUE: da rimuovere nella produzione
-        geopar.READ_FROM_FILES             =  0;
-
-        if(debugMode>=1 || geopar.RICH_GEO_DEBUG>0){   
-
-            System.out.format(" \n");
-            System.out.format("CCDB RICH PARA    DO_ALIGNMENT                 %9d \n", geopar.DO_ALIGNMENT); 
-            System.out.format("CCDB RICH PARA    MISA_RICH_REF                %9d \n", geopar.MISA_RICH_REF); 
-            System.out.format("CCDB RICH PARA    MISA_PMT_PIVOT               %9d \n", geopar.MISA_PMT_PIVOT); 
-            System.out.format("CCDB RICH PARA    APPLY_SURVEY                 %9d \n", geopar.APPLY_SURVEY); 
-
-            System.out.format("CCDB RICH PARA    MISA_SHIFT_SCALE             %9.4f \n", geopar.MISA_SHIFT_SCALE); 
-            System.out.format("CCDB RICH PARA    MISA_ANGLE_SCALE             %9.4f \n", geopar.MISA_ANGLE_SCALE); 
-
-            System.out.format("CCDB RICH PARA    RICH_GEO_DEBUG               %9d \n", geopar.RICH_GEO_DEBUG); 
-            System.out.format(" \n");
-
-        }
-
-
-        /*
-        *  SINGLE COMPONENT MISALIGNMENT
-        *  This comes on top of the RICH survey and global transformation
-        */
-
-        int NMISA = 24;
-        int ccdb_ila[] = {0,201,202,203,204,301,301,301,301,301,301,301,302,302,302,302,302,302,302,302,302,302,302,401};
-        int ccdb_ico[] = {0,  0,  0,  0,  0,  1,  2,  3,  4,  5,  6,  7,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10,  0};
-
-        //                                   BO  F1  F2  R1  R2   L1  L2   
-        int tool_ila[] = {0,  1,  2,  3,  4, 11,  5,  6,  9, 10,  7,  8, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 13};
-        int tool_ico[] = {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10,  0};
-
-        double sscale = geopar.MISA_SHIFT_SCALE;
-        double ascale = geopar.MISA_ANGLE_SCALE / RICHGeoConstants.MRAD;  // to convert in rad
-
-        for (int im=0; im<NMISA; im++){
-
-            int lla = ccdb_ila[im];
-            int cco = ccdb_ico[im];
-            double dx = (double) misaConstants.getDoubleValue("dx", 4, lla, cco);
-            double dy = (double) misaConstants.getDoubleValue("dy", 4, lla, cco);
-            double dz = (double) misaConstants.getDoubleValue("dz", 4, lla, cco);
-            double thx = (double) misaConstants.getDoubleValue("dthx", 4, lla, cco);
-            double thy = (double) misaConstants.getDoubleValue("dthy", 4, lla, cco);
-            double thz = (double) misaConstants.getDoubleValue("dthz", 4, lla, cco);
-
-            // the rotation is assumed to be in the component local ref system
-            int ila = tool_ila[im];
-            int ico = tool_ico[im];
-            layer_misa_shift[ila][ico].add( new Vector3D( dx*sscale,  dy*sscale,  dz*sscale));
-            layer_misa_angle[ila][ico].add( new Vector3D(thx*ascale, thy*ascale, thz*ascale));
-
-            if(debugMode>=1 || geopar.RICH_GEO_DEBUG>0){
-                //System.out.format("QUA QUA %4d %4d  %d %d  %7.2f %7.2f %7.2f  %7.2f %7.2f \n",ila,ico,lla,cco,dx,dy,dz,
-                //    layer_misa_shift[ila][ico].mag(),layer_misa_angle[ila][ico].mag()*RICHGeoConstants.MRAD);
-                if(layer_misa_shift[ila][ico].mag()>0 || layer_misa_angle[ila][ico].mag()>0){
-                    System.out.format("CCDB RICH MISA    ila  %4d ico %3d  (%4d %3d)  shift %s  angle %s \n", lla,cco, ila,ico,
-                               layer_misa_shift[ila][ico].toStringBrief(3), layer_misa_angle[ila][ico].toStringBrief(3));
-                }
-                if(im==23)System.out.format("  \n");
-            }
-
-        }
-
-
-        /*
-        * AEROGEL NOMINAL OPTCIS
-        */
-
-        int nco[] = {16,22,31,31};
-        for (int ila=0; ila<4; ila++){
-            for (int ico=0; ico<nco[ila]; ico++){
-                aero_refi[ila][ico] = (float) aeroConstants.getDoubleValue("n400", 4,201+ila,ico+1);
-                aero_plan[ila][ico] = (float) aeroConstants.getDoubleValue("planarity", 4,201+ila, ico+1);
-                if(debugMode>=2 && geopar.RICH_GEO_DEBUG>0)System.out.format("CCDB RICH AERO    ila %4d  ico %3d  n = %8.5f  pla = %8.2f\n", 201+ila, ico+1, aero_refi[ila][ico], aero_plan[ila][ico]);
-            }
-        }
-
-        if(debugMode>=2){
-            int ndo[] = {16,22,32,32};
-            for (int ila=0; ila<4; ila++){
-                for (int ico=0; ico<ndo[ila]; ico++){
-                    for (int iq=0; iq<225; iq++) {
-                        int icompo = ico*225+iq+1;
-                        System.out.format(" KK 4  %4d %6d  1 312.0 6.0  1 310.0 7.0  1 313.0 10.0 \n", 201+ila, icompo+1);
-                    }
-                }
-            }
-        }
-
-    }
-
-
-    //------------------------------
-    public void init_GeoParametersTxT(int ifile){
-    //------------------------------
-    // To be moved to CCDB
-
-       int debugMode = 0;
-
-        if(ifile==1){
-
-            /*
-            * DC_OFFSETs
-            */
-            String dcoff_filename = new String("CALIB_DATA/DC_offsets_4013.txt");
-
-            try {
-
-                BufferedReader bf = new BufferedReader(new FileReader(dcoff_filename));
-                String currentLine = null;
-
-                while ( (currentLine = bf.readLine()) != null) {    
-
-                    String[] array = currentLine.split(" ");
-                    int idc    = Integer.parseInt(array[0]);
-                    int imatch = Integer.parseInt(array[1]);
-                    int iref   = Integer.parseInt(array[2]);
-                    int ipiv   = Integer.parseInt(array[3]);
-                    int isur   = Integer.parseInt(array[4]);
-
-                    float  ss  = Float.parseFloat(array[5]);
-                    float  sa  = Float.parseFloat(array[6]);
-
-                    int inp    = Integer.parseInt(array[7]);
-                    
-                    float  hr  = Float.parseFloat(array[8]);
-
-                    geopar.DO_ALIGNMENT    = idc;
-                    geopar.FORCE_DC_MATCH  = imatch;
-                    geopar.MISA_RICH_REF   = iref;
-                    geopar.MISA_PMT_PIVOT  = ipiv;
-                    geopar.APPLY_SURVEY    = isur;
-
-                    geopar.MISA_SHIFT_SCALE     = (double) ss ;
-                    geopar.MISA_ANGLE_SCALE     = (double) sa;
-
-                    if(debugMode>=1 || geopar.RICH_GEO_DEBUG>0){
-
-                        System.out.format("TEXT PARA    DO_ALIGNMENT                 %7d \n", geopar.DO_ALIGNMENT);
-                        System.out.format("TEXT PARA    FORCE_DC_MATCH               %7d \n", geopar.FORCE_DC_MATCH);
-                        System.out.format("TEXT PARA    MISA_RICH_REF                %7d \n", geopar.MISA_RICH_REF);
-                        System.out.format("TEXT PARA    MISA_PMT_PIVOT               %7d \n", geopar.MISA_PMT_PIVOT);
-                        System.out.format("TEXT PARA    APPLY_SURVEY                 %7d \n", geopar.APPLY_SURVEY);
-
-                        System.out.format("TEXT PARA    MISA_SHIFT_SCALE             %7.3f \n", geopar.MISA_SHIFT_SCALE);
-                        System.out.format("TEXT PARA    MISA_ANGLE_SCALE             %7.3f \n", geopar.MISA_ANGLE_SCALE);
-
-                    }
-
-                }
-
-            } catch (Exception e) {
-
-                System.err.format("Exception occurred trying to read '%s' \n", dcoff_filename);
-                e.printStackTrace();
-            }
-
-
-            double sscale = geopar.MISA_SHIFT_SCALE;
-            double ascale = geopar.MISA_ANGLE_SCALE / RICHGeoConstants.MRAD;  // to convert in rad
-
-
-            /*
-            *  SINGLE COMPONENT MISALIGNMENT
-            *  This comes on top of the RICH survey and global transformation
-            */
-            /*for (int ila=0; ila<NLAY+1; ila++){
-                for (int ico=0; ico<NCOMPO+1; ico++){
-                    layer_misa_shift[ila][ico] = new Vector3D(0., 0., 0.);
-                    layer_misa_angle[ila][ico] = new Vector3D(0., 0., 0.);
-                }
-            }*/
-
-            String misaco_filename = new String("CALIB_DATA/RICHlayer_misalignment.txt");
-
-            try {
-
-                BufferedReader bf = new BufferedReader(new FileReader(misaco_filename));
-                String currentLine = null;
-
-                while ( (currentLine = bf.readLine()) != null) {    
-
-                    String[] array = currentLine.split(" ");
-                    int isec = Integer.parseInt(array[0]);
-                    int lla = Integer.parseInt(array[1]);
-                    int cco = Integer.parseInt(array[2]);
-
-                    float  dx  = Float.parseFloat(array[3]);
-                    float  dy  = Float.parseFloat(array[4]);
-                    float  dz  = Float.parseFloat(array[5]);
-                    float  thx = Float.parseFloat(array[6]);
-                    float  thy = Float.parseFloat(array[7]);
-                    float  thz = Float.parseFloat(array[8]);
-
-                    int[] ind = {0,0};
-                    if(convert_indexes(lla, cco, ind)){
-
-                        int ila=ind[0];
-                        int ico=ind[1];
-                        if(debugMode>=0)System.out.format("MISA conversion %4d %3d --> %4d %3d \n",lla,cco,ila,ico);
-
-                        // the rotation is assumed to be in the component local ref system
-                        layer_misa_shift[ila][ico].add( new Vector3D( dx*sscale,  dy*sscale,  dz*sscale));
-                        layer_misa_angle[ila][ico].add( new Vector3D(thx*ascale, thy*ascale, thz*ascale));
-
-                        if(debugMode>=1 || geopar.RICH_GEO_DEBUG>0){
-                            if(layer_misa_shift[ila][ico].mag()>0 || layer_misa_angle[ila][ico].mag()>0){
-                                System.out.format("TXT MISA   layer %4d ico %3d  (%4d %3d)  shift %s  angle %s \n", ila,ico,lla,cco, 
-                                   layer_misa_shift[ila][ico].toStringBrief(3), layer_misa_angle[ila][ico].toStringBrief(3));
-                            }
-                        }
-
-                    }else{
-                        System.out.format("Unsupported imisalignment for layer %3d %3d \n",lla,cco);
-                    }
-                }
-
-            } catch (Exception e) {
-
-                System.err.format("Exception occurred trying to read '%s' \n", misaco_filename);
-                e.printStackTrace();
-            }
-
-            if(debugMode>=1 || geopar.RICH_GEO_DEBUG>0){
-                System.out.format("\n");
-                for (int ila=0; ila<NLAY; ila++){
-                    for(int ico=0; ico<NCOMPO; ico++){
-                        if(layer_misa_shift[ila][ico].multiply(10.).mag()>1.e-3 || layer_misa_angle[ila][ico].multiply(1000.).mag()>1.e-3){
-                            System.out.format("ALL MISA   layer %4d ico %3d  shift (mm) %s  angle (mrad) %s \n", ila,ico,
-                            layer_misa_shift[ila][ico].multiply(10.).toStringBrief(2), layer_misa_angle[ila][ico].multiply(1000.).toStringBrief(2));
-                        }
-                    }
-                }
-                System.out.format("\n");
-            }
-        }
-
-
-        if(ifile==3){
-
-            /*
-            * AEROGEL NOMINAL OPTCIS
-            */
-
-            String aero_filename = new String("CALIB_DATA/aerogel_passports.txt");
-
-            try {
-
-                BufferedReader bf = new BufferedReader(new FileReader(aero_filename));
-                String currentLine = null;
-
-                while ( (currentLine = bf.readLine()) != null) {    
-
-                    String[] array = currentLine.split(" ");
-                    int idlay = Integer.parseInt(array[1]);
-                    int iaer = Integer.parseInt(array[2]);
-                    
-                    if(debugMode>=1)System.out.format("Read optics for AERO lay %3d  compo %3d", idlay, iaer); 
-                    float refi = Float.parseFloat(array[5]);
-                    float plana = Float.parseFloat(array[11]);
-                    aero_refi[idlay-201][iaer-1] = refi;
-                    aero_plan[idlay-201][iaer-1] = plana;
-                    //aero_refi[idlay-201][iaer-1] = (float) RICHConstants.RICH_AEROGEL_INDEX;
-                    if(debugMode>=1)System.out.format(" n = %8.5f   pla = %8.2f \n", aero_refi[idlay-201][iaer-1], aero_plan[idlay-201][iaer-1]);
-                    
-                }
-
-            } catch (Exception e) {
-
-                System.err.format("Exception occurred trying to read '%s' \n", aero_filename);
-                e.printStackTrace();
-            }
-
-            if(debugMode>=1)System.out.format("initConstants: DONE \n");
-            
-        }
-
-    }
-
-
-    //------------------------------
-    public boolean convert_indexes(int lla, int cco, int[] ind){
-    //------------------------------
-
-        int[] lateral_compo = {11,5,6,9,10,7,8};
-
-        /*
-        *  Aerogel
-        */
-        if(lla==0 && cco==0){ind[0]=lla; ind[1]=cco; return true;}
-        if(lla>=201 && lla<=204 && cco==0){ind[0]=lla-200; ind[1]=cco; return true;}
-        if(lla==301 && cco>0 && cco<=7) {ind[0]=lateral_compo[cco-1]; ind[1]=0; return true;}
-        if(lla==302){
-            if(cco==0){ind[0]=12; ind[1]=0; return true;}
-            if(cco>0 && cco<11){ind[0]=12; ind[1]=cco; return true;}
-        }
-        if(lla==401 && cco==0){ind[0]=13; ind[1]=cco; return true;}
-
-        return false;
-    }
 
 
     //------------------------------
@@ -560,11 +212,11 @@ public class RICHGeoFactory{
 
             show_Shape3D(real_plane, null, null);
 
-            /* test misalignment angle and shift
+            /* test alignment angle and shift
             Face3D at = new Triangle3D( RDA, RDB, RDC);
             Shape3D test_plane = new Shape3D(at);
 
-            //misalign_TrackingPlane(test_plane, -1);
+            //align_TrackingPlane(test_plane, -1);
             show_Shape3D(test_plane, null, null);
 
             double aang = 10./57.3;
@@ -610,184 +262,221 @@ public class RICHGeoFactory{
         int debugMode = 0;
 
         /*
-        * relevant characterization of the basic tracking planes
-        */
-        Vector3D front   = new Vector3D(-0.42,   0.00,   0.91);
-        Vector3D left    = new Vector3D(-0.50,  -0.87,   0.00);
-        Vector3D right   = new Vector3D(-0.50,   0.87,   0.00);
-        Vector3D bottom  = new Vector3D(-1.00,   0.00,   0.00);
-        Vector3D back    = new Vector3D( 0.42,   0.00,  -0.91);
-        Vector3D sphere  = new Vector3D( 0.76,   0.00,  -0.65);
-
-        int factory_lay[] = {201,202,203,204,301,301,301,301,301,301,301,302,401};
-        int type_lay[] = {1, 1, 1, 1, 2, 2, 3, 3, 3, 3, 3, 4, 5};
-        String name_lay[] = {"aerogel_2cm_B1" ,"aerogel_2cm_B2", "aerogel_3cm_L1", "aerogel_3cm_L2", 
-                           "mirror_front_B1", "mirror_front_B2", "mirror_left_L1", "mirror_left_L2", "mirror_right_L1", "mirror_right_L2", "mirror_bottom", 
-                           "mirror_sphere", "mapmts"};
-        Vector3D view_lay[] = {front, front, front, front, front, front, left, left, right, right, bottom, sphere, back};
-
-        /*
         * Generate the layers of components
         */
-        for (int ilay=0; ilay<NLAY; ilay++){
+       for(int irich=1; irich<=geocal.nRICHes(); irich++){
 
-            int idlayer = factory_lay[ilay];
-            int tlayer = type_lay[ilay];
-            String slayer = name_lay[ilay];
-            Vector3D vlayer = view_lay[ilay];
-            if(debugMode>=1){
-                System.out.format("-------------------------\n");
-                System.out.format("Create Layer %d id  %d: %s dir %s \n",ilay, idlayer, slayer, vlayer.toStringBrief(2));
-                System.out.format("-------------------------\n");
-            }
-            RICHLayer layer = new RICHLayer(ilay, slayer, vlayer);
+            int isec = geocal.find_RICHSector(irich);
+            if(isec==0) continue;
 
-            //if(FactoryMode==0 && (ilay>3 && ilay<12)) continue;
-            if(FactoryMode==1 || (ilay<4 || ilay==12)) {
+            ArrayList<RICHLayer> modulelayers = new ArrayList<RICHLayer>();
+            richframes.add( survey_frame.clone() );
 
-            for (int ico=0; ico<get_RICHFactory_Size(idlayer); ico++){
-                RICHComponent compo = get_RICHFactory_Component(idlayer, ico);
-                compo.set_type(tlayer);
-                if(debugMode>=1)System.out.format(" Lay %3d component %3d  bary %s\n", idlayer, ico, get_CSGBary(compo.get_CSGVol()));
+            for (int ilay=0; ilay<NLAY; ilay++){
 
-                // define optical properties, so far only aerogel
-                if(idlayer<300){  
-                    compo.set_index((float) aero_refi[ilay][ico]);
-                    compo.set_planarity((float) aero_plan[ilay][ico]/10);  // converted into cm
-                }else{
-                    compo.set_index((float) 1.000);
-                    compo.set_planarity((float) 0.000);
+                RICHLayer layer = new RICHLayer(isec, ilay);
+                int idgea = layer.idgea();
+                modulelayers.add(layer);
+
+                if(debugMode>=1){
+                    
+                    System.out.format("-------------------------\n");
+                    System.out.format("Create Layer %4d %4d id %4d %4d: %s %4d  dir %s \n", isec, ilay, layer.id(), idgea, 
+                                       layer.name(), layer.type(), layer.get_Vinside().toStringBrief(2));
+                    System.out.format("-------------------------\n");
                 }
 
-                if(debugMode>=3 && idlayer==301){
-                    if(get_PlaneMirrorSide(compo).equals(slayer)){
-                        compo.showComponent();
-                        dump_StlComponent(compo.get_CSGVol());
+                if(FactoryMode==1 || layer.is_aerogel() || layer.is_mapmt()){
+
+                    for (int ico=0; ico<get_RICHFactory_Size(idgea); ico++){
+
+                        RICHComponent compo = get_RICHGeant4Component(isec, ilay, idgea, ico);
+                        if(debugMode>=1)System.out.format(" Lay %3d component %3d  bary %s\n", idgea, ico, get_CSGBary(compo.get_CSGVol()));
+                        compo.set_type(layer.type());
+
+                        // define optical properties, so far only aerogel
+                        if(layer.is_aerogel()){  
+                            compo.set_index( geocal.get_AeroNomIndex(isec, ilay, ico) );
+                            compo.set_planarity( geocal.get_AeroNomPlanarity(isec, ilay, ico)*RICHGeoConstants.CM);  
+                        }else{
+                            compo.set_index( 1.000);
+                            compo.set_planarity( 0.000);
+                        }
+
+                        if(debugMode>=3 && layer.is_planar_mirror()){
+                            if(get_PlaneMirrorSide(compo).equals(layer.name())){
+                                compo.showComponent();
+                                dump_StlComponent(compo.get_CSGVol());
+                            }
+                        }
+
+                        // regrouping of the planar mirros into planes
+                        if(layer.is_planar_mirror()){
+                            if(get_PlaneMirrorSide(compo).equals(layer.name())){
+                                if(debugMode>=1)System.out.format(" ---> add to Layer %3d %s id (%3d %3d) \n",ilay,layer.name(),idgea,ico);
+                                layer.add(compo); 
+                            }
+                        }else{
+                            layer.add(compo);
+                        }
+
+                    }
+
+                    rotate_IntoSector(isec, layer);
+
+                    /*
+                     * Generate and align the basic planes for tracking 
+                     */
+                    // QUE: il survey non corrisponde al nominale e sovrascrive il PIVOT
+
+                    if(debugMode>=1)System.out.format("generate surfaces for layer %d \n",ilay);
+
+                    generate_TrackingPlane(layer);
+
+                    if(geopar.DO_ALIGNMENT==1) align_TrackingPlane(layer);
+
+                    store_TrackingPlane(layer);
+
+                    if(FactoryMode>0 && layer.is_mapmt()){
+                        /*
+                        *  Generate Pixel map on the aligned MAPMT plane
+                        */
+                        List<Integer> compo_list = layer.get_CompoList();
+                        Shape3D compo_shape = layer.get_TrackingSurf();
+                        generate_PixelMap(layer, 0, compo_shape, compo_list);
+
+                        if(debugMode>=1)show_Shape3D(compo_shape, null, "CC");
                     }
                 }
 
-                // regrouping of the planar mirros into planes
-                if(idlayer!=301){
-                    layer.add(compo);
-                }else{
-                    if(get_PlaneMirrorSide(compo).equals(slayer)){
-                        if(debugMode>=1)System.out.format(" ---> add to Layer %3d %s id (%3d %3d) \n",ilay,slayer,idlayer,ico);
-                        layer.add(compo); 
-                    }
-                }
-
             }
-            }
-
-            if(debugMode>=1)System.out.format("add layer %d \n",ilay);
-            opticlayers.add(layer);
-
+            richlayers.add(modulelayers);
+            
         }
-
-
-        /*
-        * Generate and misalign the basic planes for tracking 
-        */
-
-        rich_frame = survey_frame.clone();
-        // QUE: il survey non corrisponde al nominale e sovrascrive il PIVOT
-
-        for (int ilay=0; ilay<NLAY; ilay++){
-
-            if(FactoryMode==0 && (ilay>3 && ilay<12)) continue;
-            if(debugMode>=1)System.out.format("generate surfaces for layer %d \n",ilay);
-
-            generate_TrackingPlane(ilay);
-
-            if(geopar.DO_ALIGNMENT==1)misalign_TrackingPlane(ilay);
-
-            store_TrackingPlane(ilay);
-
-        }
-
-        
-        if(FactoryMode>0){
-            /*
-            *  Generate Pixel map on the misaligned MAPMT plane
-            */
-            RICHLayer layer = get_Layer("mapmts");
-            List<Integer> compo_list = layer.get_CompoList();
-            Shape3D compo_misa = layer.get_TrackingSurf();
-            generate_Pixel_Map(layer.get_id(), 0, compo_misa, compo_list);
-
-            if(debugMode>=1)show_Shape3D(compo_misa, null, "CC");
-            if(debugMode>=1)show_RICH("Real RICH Geometry", "RR");
-        }
+        if(debugMode>=1)show_RICH("Real RICH Geometry", "RR");
 
     }
+
+
+    // ----------------
+    public void rotate_IntoSector(int isec, RICHLayer layer){
+    // ----------------
+
+    }
+
 
     // ----------------
     public void testTraj() {
     // ----------------
 
-        Plane3D pl_mapmt = get_MaPMTforTraj();
-        pl_mapmt.show();
+        int debugMode = 0;
 
-        Point3D pa[] = new Point3D[3];
-        for (int ia=0; ia<3; ia++){
-            Plane3D pl_aero = get_AeroforTraj(ia);
-            pl_aero.show();
-            pa[ia]=pl_aero.point();
-            System.out.format("Ref point %s \n",pa[ia].toStringBrief(2));
+        for(int irich=1; irich<=geocal.nRICHes(); irich++){
 
-        }
+            int isec = geocal.find_RICHSector(irich);
+            if(isec==0) continue;
 
-        Point3D IP = new Point3D(0.,0.,0.);
-        for (int ia=0; ia<3; ia++){
-            Line3D lin = new Line3D(IP, pa[ia]);
-            int iplane = select_AeroforTraj(lin, lin, lin);
-            System.out.format("For LIN %d select plane %d \n",ia,iplane);
+            Plane3D pl_mapmt = get_MaPMTforTraj(isec);
+            pl_mapmt.show();
 
+            Point3D pa[] = new Point3D[3];
+            for (int ia=0; ia<3; ia++){
+                Plane3D pl_aero = get_AeroforTraj(isec, ia);
+                pl_aero.show();
+                pa[ia]=pl_aero.point();
+                if(debugMode>=1)System.out.format("Ref point %s \n",pa[ia].toStringBrief(2));
+
+            }
+
+            Point3D IP = new Point3D(0.,0.,0.);
+            for (int ia=0; ia<3; ia++){
+                Line3D lin = new Line3D(IP, pa[ia]);
+                int iplane = select_AeroforTraj(isec, lin, lin, lin);
+                if(debugMode>=1)System.out.format("For LIN %d select plane %d \n",ia,iplane);
+
+            }
         }
 
     }
 
-    public Plane3D get_TrajPlane(int sector, int iplane) {
-        if(sector==4) {
-            if(iplane==DetectorLayer.RICH_MAPMT) return this.get_MaPMTforTraj();
-            else return this.get_AeroforTraj(iplane);
+    
+    //------------------------------
+    public int find_RICHSector(int irich ){
+    //------------------------------
+        return geocal.find_RICHSector(irich);
+    }
+
+
+    //------------------------------
+    public int nRICHes(){
+    //------------------------------
+        return geocal.nRICHes();
+    }
+
+
+    //------------------------------
+    public IndexedTable get_richTable(){
+    //------------------------------
+        return geocal.richTable;
+    }
+
+
+    //------------------------------
+    public Plane3D get_TrajPlane(int isec, int iplane) {
+    //------------------------------
+        
+        if(geocal.find_RICHModule(isec)>0){
+
+            if(iplane==DetectorLayer.RICH_MAPMT) return this.get_MaPMTforTraj(isec);
+            else return this.get_AeroforTraj(isec, iplane);
             }
         else return null;
     }
     
+
     //------------------------------
-    public Plane3D get_MaPMTforTraj() {
+    public Plane3D get_MaPMTforTraj(int isec) {
     //------------------------------
 
-        RICHLayer layer = get_Layer("mapmts");
-        return layer.get_TrajPlane();
-
+        if(geocal.find_RICHModule(isec)>0){
+            RICHLayer layer = get_Layer(isec, "MAPMT");
+            return layer.get_TrajPlane();
+        }else{
+            return null;
+        }
     }
 
 
     //------------------------------
-    public Plane3D get_AeroforTraj(int ilayer) {
+    public Plane3D get_AeroforTraj(int isec, int ilayer) {
     //------------------------------
 
         Plane3D layer = null;
-        if(ilayer==DetectorLayer.RICH_AEROGEL_B1)      layer = this.get_Layer("aerogel_2cm_B1").get_TrajPlane();
-        else if(ilayer==DetectorLayer.RICH_AEROGEL_B2) layer = this.get_Layer("aerogel_2cm_B2").get_TrajPlane();
-        else if(ilayer==DetectorLayer.RICH_AEROGEL_L1) layer = this.get_Layer("aerogel_3cm_L1").get_TrajPlane();
+        if(geocal.find_RICHModule(isec)>0){
 
-        return layer;
+            if(ilayer==DetectorLayer.RICH_AEROGEL_B1)      layer = this.get_Layer(isec, "AEROGEL_2CM_B1").get_TrajPlane();
+            else if(ilayer==DetectorLayer.RICH_AEROGEL_B2) layer = this.get_Layer(isec, "AEROGEL_2CM_b2").get_TrajPlane();
+            else if(ilayer==DetectorLayer.RICH_AEROGEL_L1) layer = this.get_Layer(isec, "AEROGEL_3CM_L1").get_TrajPlane();
+            return layer;
 
+        }else{
+            return null;
+        }
     }
 
 
     //------------------------------
-    public int select_AeroforTraj(Line3D first, Line3D second, Line3D third) {
+    public int select_AeroforTraj(int isec, Line3D first, Line3D second, Line3D third) {
     //------------------------------
 
-        RICHIntersection entra = get_Layer("aerogel_2cm_B2").find_Entrance(second, -2);
-        if(entra!=null) return 1;
+        if(geocal.find_RICHModule(isec)>0){
 
-        if(entra==null) entra = get_Layer("aerogel_3cm_L1").find_Entrance(third, -2);
-        if(entra!=null) return 2;
+            RICHIntersection entra = get_Layer(isec, "AEROGEL_2CM_B2").find_Entrance(second, -2);
+            if(entra!=null) return 1;
+
+            if(entra==null) entra = get_Layer(isec, "AEROGEL_3CM_L1").find_Entrance(third, -2);
+            if(entra!=null) return 2;
+        }
 
         // return a solution plane in any case
         return 0;
@@ -813,16 +502,15 @@ public class RICHGeoFactory{
 
 
     //------------------------------
-    public Vector3d get_Pixel_Center(int ipmt, int anode){
+    public Point3D get_Pixel_Center(int isec, int ipmt, int anode){
     //------------------------------
 
         int ilay = 12;
-        Face3D compo_face = get_Layer(ilay).get_CompoFace(ipmt-1, 0);
+        Face3D compo_face = get_Layer(isec, ilay).get_CompoFace(ipmt-1, 0);
         Vector3d Vertex = toVector3d( compo_face.point(1) );
-        //System.out.format("Misa vtx %8.3f %8.3f %8.3f \n",Vertex.x, Vertex.y, Vertex.z);
-        //System.out.println(pmtpixels.GetPixelCenter(anode));
+        
         Vector3d VPixel = Vertex.plus(pmtpixels.GetPixelCenter(anode));
-        return new Vector3d (VPixel.x, -VPixel.y, VPixel.z);
+        return new Point3D (VPixel.x, -VPixel.y, VPixel.z);
 
     }
 
@@ -945,7 +633,7 @@ public class RICHGeoFactory{
 
         if(debugMode>=2){
             Vector3D inside = layer.get_Vinside();
-            System.out.format("build_GlobalPlane: generate global plane for layer %3d \n",layer.get_id());
+            System.out.format("build_GlobalPlane: generate global plane for layer %3d \n",layer.id());
             System.out.format("inside vect: %s \n",inside.toStringBrief(3));
             System.out.format("orient vect: %s  --> %7.3f\n",orient.toStringBrief(3), orient.angle(inside)*57.3);
         }
@@ -968,8 +656,8 @@ public class RICHGeoFactory{
 
         layer.set_GlobalSurf( global_surf);
         if(debugMode>=1 && global_surf.size()>0){
-            String head = String.format("GLOB %3d 0 ",layer.get_id());
-            System.out.format("Globa %3d Normal %s \n",layer.get_id(),toString(get_Shape3D_Normal(global_surf)));
+            String head = String.format("GLOB %3d 0 ",layer.id());
+            System.out.format("Globa %3d Normal %s \n",layer.id(),toString(get_Shape3D_Normal(global_surf)));
             for (int ifa=0; ifa<global_surf.size(); ifa++){
                 System.out.format("Face %3d Normal %s \n",ifa,toTriangle3D(global_surf.face(ifa)).normal().asUnit().toStringBrief(3));
             }
@@ -1008,7 +696,7 @@ public class RICHGeoFactory{
                 Vector3D center = layer.get_CompoCenter(ico, normal);
 
                 Sphere3D sphere = new Sphere3D(center.x(), center.y(), center.z(), radius);
-                if(debugMode>=1)System.out.format(" AERO lay %3d ico %3d : sphere center %s radius %7.2f \n",layer.get_id(),ico,toString(center), radius);
+                if(debugMode>=1)System.out.format(" AERO lay %3d ico %3d : sphere center %s radius %7.2f \n",layer.id(),ico,toString(center), radius);
                 layer.set_TrackingSphere(sphere, ico);
 
             }
@@ -1027,7 +715,7 @@ public class RICHGeoFactory{
         Vector3D inside = layer.get_Vinside();
 
         if(debugMode>=2){
-            System.out.format("build_CompoSurfs: generate tracking plane for layer %3d \n",layer.get_id());
+            System.out.format("build_CompoSurfs: generate tracking plane for layer %3d \n",layer.id());
             System.out.format("inside vect: %s \n",inside.toStringBrief(3));
             System.out.format("orient vect: %s  --> %7.3f\n",orient.toStringBrief(3), orient.angle(inside)*57.3);
         }
@@ -1042,7 +730,7 @@ public class RICHGeoFactory{
                 /*
                 * Build from Nominal planes (nominal orientation)
                 */
-                Shape3D submir = generate_Nominal_Plane(layer.get_id(), ico+1);
+                Shape3D submir = generate_Nominal_Plane(layer, ico+1);
                 for(int ifa=0; ifa<submir.size(); ifa++) plane.addFace(submir.face(ifa)); 
                      
             }else{
@@ -1079,8 +767,8 @@ public class RICHGeoFactory{
 
             compo.set_TrackingSurf(plane);
             if(debugMode>=1 && plane.size()>0){
-                System.out.format("Compo %3d %3d Normal %s \n",layer.get_id(),ico,toString(get_Shape3D_Normal(plane)));
-                String head = String.format("COMP %3d %3d ",layer.get_id(),ico);
+                System.out.format("Compo %3d %3d Normal %s \n",layer.id(),ico,toString(get_Shape3D_Normal(plane)));
+                String head = String.format("COMP %3d %3d ",layer.id(),ico);
                 show_Shape3D(plane, null, head);
             }
         }
@@ -1148,10 +836,15 @@ public class RICHGeoFactory{
     }
 
     //------------------------------
-    public void misalign_Layer(RICHLayer layer){
+    public void align_Layer(RICHLayer layer){
     //------------------------------
 
         int debugMode = 0;
+
+        int isec = layer.sector();
+        int irich = geocal.find_RICHModule(isec);
+        if(irich==0) return;
+        RICHFrame rich_frame = richframes.get(irich-1);
 
         /*
         *  To account for SURVEY
@@ -1159,73 +852,72 @@ public class RICHGeoFactory{
         if(geopar.APPLY_SURVEY==1){
             if(debugMode>=1)System.out.format(" --> SURVEY %s %s \n", toString(rich_survey_shift), toString(rich_survey_angle));
 
-            misalign_Element( layer.get_GlobalSurf(), survey_frame, rich_survey_angle, rich_survey_shift);
-            misalign_Element( layer.get_TrackingSphere(), survey_frame, rich_survey_angle, rich_survey_shift);
+            align_Element( layer.get_GlobalSurf(), survey_frame, rich_survey_angle, rich_survey_shift);
+            align_Element( layer.get_TrackingSphere(), survey_frame, rich_survey_angle, rich_survey_shift);
             for(int ico=0; ico<layer.size(); ico++){
-                misalign_Element( layer.get_TrackingSurf(ico), survey_frame, rich_survey_angle, rich_survey_shift);
-                misalign_Element( layer.get_TrackingSphere(ico), survey_frame, rich_survey_angle, rich_survey_shift);
+                align_Element( layer.get_TrackingSurf(ico), survey_frame, rich_survey_angle, rich_survey_shift);
+                align_Element( layer.get_TrackingSphere(ico), survey_frame, rich_survey_angle, rich_survey_shift);
             }
         }
 
 
         /*
-        *  To account for global RICH misalignments
+        *  To account for global RICH alignments
         */
-        Vector3D rshift = layer_misa_shift[0][0];
-        Vector3D rangle = layer_misa_angle[0][0];
+        Vector3D rshift = geocal.get_AlignShift(isec,0,0);
+        Vector3D rangle = geocal.get_AlignAngle(isec,0,0);
         if(rangle.mag()>0 || rshift.mag()>0){
-            if(debugMode>=1)System.out.format(" -->  asRICH %s %s \n", toString(rshift), toString(rangle));
+            if(debugMode>=1)System.out.format(" -->  asRICH %s %s \n", rshift.toStringBrief(2), rangle.toStringBrief(3)); 
 
-            
             if(debugMode>=1)System.out.format("     --> global \n");
-            misalign_Element( layer.get_GlobalSurf(), rich_frame, rangle, rshift);
-            misalign_Element( layer.get_TrackingSphere(), rich_frame, rangle, rshift);
+            align_Element( layer.get_GlobalSurf(), rich_frame, rangle, rshift);
+            align_Element( layer.get_TrackingSphere(), rich_frame, rangle, rshift);
 
             for(int ico=0; ico<layer.size(); ico++){
                 if(debugMode>=1)System.out.format("     --> compo %3d \n",ico);
-                misalign_Element( layer.get_TrackingSurf(ico), rich_frame, rangle, rshift);
-                misalign_Element( layer.get_TrackingSphere(ico), rich_frame, rangle, rshift);
+                align_Element( layer.get_TrackingSurf(ico), rich_frame, rangle, rshift);
+                align_Element( layer.get_TrackingSphere(ico), rich_frame, rangle, rshift);
             }
         }
 
 
         /*
-        *  To account for Layer misalignment 
+        *  To account for Layer alignment 
         */
-        int ilay = layer.get_id();
+        int ilay = layer.id();
         RICHFrame lframe = layer.generate_LocalRef();
-        Vector3D lshift = layer_misa_shift[ilay+1][0];
-        Vector3D langle = layer_misa_angle[ilay+1][0];
+        Vector3D lshift = geocal.get_AlignShift(isec,ilay+1,0);
+        Vector3D langle = geocal.get_AlignAngle(isec,ilay+1,0);
         if(langle.mag()>0 || lshift.mag()>0){
-            if(debugMode>=1){System.out.format("    -->  asLayer  %d  %s %s \n", ilay, toString(lshift), toString(langle)); }
+            if(debugMode>=1){System.out.format("    -->  asLayer  %d  %s %s \n", ilay, lshift.toStringBrief(2), langle.toStringBrief(3)); }
 
             if(debugMode>=1)System.out.format("     --> global \n");
-            misalign_Element( layer.get_GlobalSurf(), lframe, langle, lshift);
-            misalign_Element( layer.get_TrackingSphere(), lframe, langle, lshift);
+            align_Element( layer.get_GlobalSurf(), lframe, langle, lshift);
+            align_Element( layer.get_TrackingSphere(), lframe, langle, lshift);
 
             for(int ico=0; ico<layer.size(); ico++){
                 if(debugMode>=1)System.out.format("     --> compo %3d \n",ico);
-                misalign_Element( layer.get_TrackingSurf(ico), lframe, langle, lshift);
-                misalign_Element( layer.get_TrackingSphere(ico), lframe, langle, lshift);
+                align_Element( layer.get_TrackingSurf(ico), lframe, langle, lshift);
+                align_Element( layer.get_TrackingSphere(ico), lframe, langle, lshift);
             }
         }
 
 
         /*
-        *  To account for single Component misalignment 
+        *  To account for single Component alignment 
         */
         if(layer.is_spherical_mirror()){
             for(int ico=0; ico<layer.size(); ico++){
 
                 RICHFrame cframe = layer.generate_LocalRef(ico);
-                Vector3D cangle = layer_misa_angle[ilay+1][ico+1];
-                Vector3D cshift = layer_misa_shift[ilay+1][ico+1];
+                Vector3D cshift = geocal.get_AlignShift(isec,ilay+1,ico+1);
+                Vector3D cangle = geocal.get_AlignAngle(isec,ilay+1,ico+1);
 
                 if(cangle.mag()==0 && cshift.mag()==0)continue;
-                if(debugMode==1){System.out.format("       -->  asCompo %3d  %s %s \n", ico, toString(cshift), toString(cangle));}
+                if(debugMode==1){System.out.format("       -->  asCompo %3d  %s %s \n", ico, cshift.toStringBrief(2), cangle.toStringBrief(3));}
 
-                misalign_Element( layer.get_TrackingSurf(ico), cframe, cangle, cshift);
-                misalign_Element( layer.get_TrackingSphere(ico), cframe, cangle, cshift);
+                align_Element( layer.get_TrackingSurf(ico), cframe, cangle, cshift);
+                align_Element( layer.get_TrackingSphere(ico), cframe, cangle, cshift);
                 if(!layer.CheckSphere(ico))System.out.format("Misalignment issue for lay %3d compo %3d \n",ilay,ico);
             }
         }
@@ -1233,24 +925,28 @@ public class RICHGeoFactory{
 
 
     //------------------------------
-    public void generate_TrackingPlane(int ilay){
+    public void generate_TrackingPlane(RICHLayer layer){
     //------------------------------
 
         int debugMode = 0;
 
-        RICHLayer layer = get_Layer(ilay);
-        Vector3D orient = layer.get_Vinside();
+        int isec = layer.sector();
+        int irich = geocal.find_RICHModule(isec);
+        if(irich==0) return;
+        RICHFrame rich_frame = richframes.get(irich-1);
 
+        Vector3D orient = layer.get_Vinside();
         if(debugMode>=1){
             System.out.format("------------------------\n");
-            System.out.format("Generate tracking for Layer %d %s view %s \n", ilay, layer.get_Name(), orient.toStringBrief(3));
+            System.out.format("Generate tracking for sector %3d  layer %4d  %s view %s \n", layer.sector(), layer.id(), 
+                                        layer.name(), orient.toStringBrief(3));
             System.out.format("------------------------\n");
         }
 
         /*
         *  Nominal plane just for reference 
         */
-        layer.set_NominalPlane( generate_Nominal_Plane(ilay, 0) );
+        layer.set_NominalPlane( generate_Nominal_Plane(layer, 0) );
 
 
         /*
@@ -1270,7 +966,7 @@ public class RICHGeoFactory{
         *  Select the pivot for the RICH rotations
         */
         if(layer.is_mapmt()) {
-            if(geopar.MISA_PMT_PIVOT==1) rich_frame.set_bref(layer.get_SurfBary());
+            if(geopar.ALIGN_PMT_PIVOT==1) rich_frame.set_bref(layer.get_SurfBary());
             if(debugMode>=1)System.out.format("RICH PIVOT %s \n",rich_frame.bref().toStringBrief(2));
         }
 
@@ -1283,30 +979,28 @@ public class RICHGeoFactory{
     }
 
     //------------------------------
-    public void misalign_TrackingPlane(int ilay){
+    public void align_TrackingPlane(RICHLayer layer) {
     //------------------------------
 
         int debugMode = 0;
 
         /*
-        *  Apply misalignment around given PIVOT
+        *  Apply alignment around given PIVOT
         */
 
         if(debugMode>=1){
             System.out.format("------------------------\n");
-            System.out.format("Misalign tracking for Layer %d %s\n", ilay, get_Layer(ilay).get_Name());
+            System.out.format("Align tracking for Layer %d %s\n", layer.id(), layer.name());
             System.out.format("------------------------\n");
         }
-
-        RICHLayer layer = get_Layer(ilay);
 
         /*
         *  Misalign surfs as required
         */
-        misalign_Layer(layer);
+        align_Layer(layer);
 
         /*
-        *  Check misalignment effect on survey plane
+        *  Check alignment effect on survey plane
         *//*
         if(debugMode>=1){
             System.out.format("Centre %s\n",rich_misa_center.toStringBrief(2));
@@ -1314,7 +1008,7 @@ public class RICHGeoFactory{
             System.out.format(" rich   angle %7.2f %7.2f %7.2f \n", this.rich_misa_angle.x*mrad, this.rich_misa_angle.y*mrad, this.rich_misa_angle.z*mrad);
             System.out.format(" rich   shift %7.2f %7.2f %7.2f \n", this.rich_misa_shift.x, this.rich_misa_shift.y, this.rich_misa_shift.z);
             show_Shape3D(rich_survey_plane,"Nominal survey", null);
-            //misalign_TrackingPlane(rich_survey_plane, 0);
+            //align_TrackingPlane(rich_survey_plane, 0);
             show_Shape3D(rich_survey_plane,"Misalig survey", null);
         }*/
 
@@ -1322,7 +1016,7 @@ public class RICHGeoFactory{
 
 
     //------------------------------
-    public void store_TrackingPlane(int ilay){
+    public void store_TrackingPlane(RICHLayer layer){
     //------------------------------
 
         int debugMode = 0;
@@ -1333,14 +1027,12 @@ public class RICHGeoFactory{
 
         if(debugMode>=1){
             System.out.format("------------------------\n");
-            System.out.format("Store    tracking for Layer %d %s\n", ilay, get_Layer(ilay).get_Name());
+            System.out.format("Store    tracking for Layer %d %s\n", layer.id(), layer.name());
             System.out.format("------------------------\n");
         }
 
-        RICHLayer layer = get_Layer(ilay);
-
         /* 
-        *  Store misalignmed tracking surfaces for fast tracking 
+        *  Store alignmed tracking surfaces for fast tracking 
         */
         layer.set_TrackingSurf( layer.merge_CompoSurfs());
         layer.set_CompoList( layer.merge_CompoList());
@@ -1349,7 +1041,7 @@ public class RICHGeoFactory{
 
 
     //------------------------------
-    public void generate_Pixel_Map(int ilay, int ico, Shape3D compo_plane, List<Integer> compo_list) {
+    public void generate_PixelMap(RICHLayer layer, int ico, Shape3D compo_plane, List<Integer> compo_list) {
     //------------------------------
     // generate the MAPMT pixel map starting from the corresponding
     // facet of the MAPMT plane aligned in the space
@@ -1357,12 +1049,11 @@ public class RICHGeoFactory{
 
         int debugMode = 0;
 
-        RICHLayer layer = get_Layer(ilay);
         if(layer.is_mapmt()){
 
             if(debugMode>=1){
                 System.out.format("------------------------\n");
-                System.out.format("Generate pixel map for Layer %d %s\n", ilay, get_Layer(ilay).get_Name());
+                System.out.format("Generate pixel map for Layer %d %s\n", layer.id(), layer.name());
                 System.out.format("------------------------\n");
             }
 
@@ -1410,12 +1101,12 @@ public class RICHGeoFactory{
  
 
     //------------------------------
-    public Shape3D generate_Nominal_Plane(int ilay, int ico){
+    public Shape3D generate_Nominal_Plane(RICHLayer layer, int ico){
     //------------------------------
 
         int debugMode = 0;
 
-        if(ilay<0 || ilay>=NLAY) return null;
+        int ilay = layer.id();
 
         Point3D extre1 = new Point3D(0.0, 0.0, 0.0);
         Point3D extre2 = new Point3D(0.0, 0.0, 0.0);
@@ -1423,7 +1114,7 @@ public class RICHGeoFactory{
         Point3D extre4 = new Point3D(0.0, 0.0, 0.0);
 
         //  Aerogel 2cm plane within B1 mirror 
-        if(ilay==0 && ico==0){
+        if(ilay==RICHLayerType.AEROGEL_2CM_B1.id() && ico==0){
             extre1 = new Point3D(-41.1598, 11.5495, 588.125);
             extre2 = new Point3D(-41.1598, -11.5495, 588.125);
             extre3 = new Point3D(-110.583, 51.6008, 555.752);
@@ -1431,7 +1122,7 @@ public class RICHGeoFactory{
         }
 
         //  Aerogel 2cm plane within B2 mirror
-        if(ilay==1 && ico==0){
+        if(ilay==RICHLayerType.AEROGEL_2CM_B2.id() && ico==0){
             extre1 = new Point3D(-111.353, 53.6256, 555.393);
             extre2 = new Point3D(-111.353, -53.6256, 555.393);
             extre3 = new Point3D(-165.777, 85.0457, 530.015);
@@ -1439,7 +1130,7 @@ public class RICHGeoFactory{
         }
 
         //  Aerogel 6cm plane within CFRP panel
-        if((ilay==2 || ilay==3) && ico==0){
+        if((ilay==RICHLayerType.AEROGEL_3CM_L1.id() || ilay==RICHLayerType.AEROGEL_3CM_L2.id()) && ico==0){
             extre1 = new Point3D(-167.565, 85.356, 530.003);
             extre2 = new Point3D(-167.565, -85.356, 530.003);
             extre3 = new Point3D(-240.137, 127.254, 496.162);
@@ -1447,7 +1138,7 @@ public class RICHGeoFactory{
         }
 
         // Front mirror
-        if((ilay==4 || ilay==5) && ico==0){
+        if((ilay==5 || ilay==6) && ico==0){
             extre1 = new Point3D(-37.165,  11.847,  587.781);
             extre2 = new Point3D(-37.165,  -11.847,  587.781);
             extre3 = new Point3D(-165.136,  85.728,  528.107);
@@ -1455,7 +1146,7 @@ public class RICHGeoFactory{
         }
 
         // Left-side mirror
-        if((ilay==6 || ilay==7) && ico==0){
+        if((ilay==7 || ilay==7) && ico==0){
             extre1 = new Point3D(-39.849,  12.095,  688.630);
             extre2 = new Point3D(-39.849,  12.095,  591.568);
             extre3 = new Point3D(-238.031, 126.515,  526.116);
@@ -1471,7 +1162,7 @@ public class RICHGeoFactory{
         }
 
         // Bottom mirror
-        if(ilay==10 && ico==0){
+        if(ilay==RICHLayerType.MIRROR_BOTTOM.id() && ico==0){
             extre1 = new Point3D(-39.763,  11.500,  591.601);
             extre2 = new Point3D(-39.763,  -11.500,  591.601);
             extre3 = new Point3D(-39.763,  11.500,  687.101);
@@ -1479,7 +1170,7 @@ public class RICHGeoFactory{
         }
 
         //  Spherical mirror
-        if(ilay==11){
+        if(ilay==RICHLayerType.MIRROR_SPHERE.id()){
             if(ico==0){
                 extre1 = new Point3D(-146.861, 77.9926, 629.86);
                 extre2 = new Point3D(-146.861, -77.9926, 629.86);
@@ -1549,7 +1240,7 @@ public class RICHGeoFactory{
         }
 
         // MA-PMTs
-        if(ilay==12  && ico==0){
+        if(ilay==RICHLayerType.MAPMT.id()  && ico==0){
             extre1 = new Point3D(-41.126,  15.850,  694.974);
             extre2 = new Point3D(-41.126,  -15.850,  694.974);
             extre3 = new Point3D(-151.514,  74.150,  643.499);
@@ -1559,7 +1250,7 @@ public class RICHGeoFactory{
         /*
         *  force the layer orientation 
         */
-        Vector3D vinside = get_Layer(ilay).get_Vinside();
+        Vector3D vinside = layer.get_Vinside();
 
         Triangle3D half1 = new Triangle3D( extre1, extre2, extre3);
         Triangle3D half2 = new Triangle3D( extre2, extre4, extre3);
@@ -1619,20 +1310,15 @@ public class RICHGeoFactory{
 
 
     //------------------------------
-    public double get_aerorefi(int ila, int ico){
-    //------------------------------
- 
-        return aero_refi[ila][ico];
-
-    }
-    
-
-    //------------------------------
-    public int get_LayerNumber(String slay){
+    public int get_LayerNumber(int isec, String slay){
     //------------------------------
         int debugMode = 0;
-        for (int ila=0; ila<opticlayers.size(); ila++){
-            if(opticlayers.get(ila).get_Name().equals(slay)) {
+
+        int irich = geocal.find_RICHModule(isec);
+        if(irich==0) return -1;
+
+        for (int ila=0; ila<richlayers.get(irich-1).size(); ila++){
+            if(richlayers.get(irich-1).get(ila).name().equals(slay)) {
                 if(debugMode>=1)System.out.format(" Find layer %s --> %4d \n",slay,ila);
                 return ila;
             }
@@ -1642,11 +1328,19 @@ public class RICHGeoFactory{
 
 
     //------------------------------
-    public RICHLayer get_Layer(String slay){
+    public RICHLayer get_Layer(int isec, String slay){
     //------------------------------
-        for (int ila=0; ila<opticlayers.size(); ila++){
-            if(opticlayers.get(ila).get_Name().equals(slay)) {
-                return opticlayers.get(ila);
+
+        int debugMode = 0;
+
+        int irich = geocal.find_RICHModule(isec);
+        if(debugMode>=1)System.out.format("get_Layer %4d %4d %s \n", irich, isec, slay);
+        if(irich==0) return null;
+
+        for (int ila=0; ila<richlayers.get(irich-1).size(); ila++){
+            if(debugMode>=1)System.out.format(" --> %4d %4d %4d %s \n", irich, isec, ila, richlayers.get(irich-1).get(ila).name());
+            if(richlayers.get(irich-1).get(ila).name().equals(slay)) {
+                return richlayers.get(irich-1).get(ila);
             }
         }  
         return null;
@@ -1654,98 +1348,146 @@ public class RICHGeoFactory{
 
 
     //------------------------------
-    public RICHLayer get_Layer(int ilay){ 
+    public RICHLayer get_Layer(int isec, int ilay){ 
     //------------------------------
-        if(ilay>-1 && ilay<NLAY) return opticlayers.get(ilay);
+
+        int debugMode = 0;
+
+        int irich = geocal.find_RICHModule(isec);
+        if(debugMode>=1)System.out.format("get_Layer %4d %4d %4d \n", irich, isec, ilay);
+        if(irich==0) return null;
+
+        if(ilay>-1 && ilay<NLAY) return richlayers.get(irich-1).get(ilay);
         return null; 
     }
 
 
     //------------------------------
-    public RICHComponent get_RICHFactory_Component(int idlay, int ico){ 
+    public RICHComponent get_RICHGeant4Component(int isec, int ilay, int idgea, int ico){ 
     //------------------------------
-        if(idlay==401) return new RICHComponent(ico, idlay, 1, richfactory.GetPhotocatode(ico+1));
-        if(idlay==201 || idlay==202 || idlay==203 || idlay==204 || idlay==301 || idlay==302) 
-                  return new RICHComponent(ico, idlay, 1, richfactory.getStlComponent(idlay, ico));
+
+        if(idgea==RICHLayerType.MAPMT.ccdb()) return new RICHComponent(isec, ico, idgea, 1, richfactory.GetPhotocatode(ico+1));
+
+        if(idgea==RICHLayerType.AEROGEL_2CM_B1.ccdb() || idgea==RICHLayerType.AEROGEL_2CM_B2.ccdb()  || 
+           idgea==RICHLayerType.AEROGEL_3CM_L1.ccdb() || idgea==RICHLayerType.AEROGEL_3CM_L2.ccdb()  || 
+           idgea==RICHLayerType.MIRROR_BOTTOM.ccdb()  || idgea==RICHLayerType.MIRROR_SPHERE.ccdb() ) 
+                  return new RICHComponent(isec, ilay, ico, 1, richfactory.getStlComponent(idgea, ico));
 
         return null;
     }
 
 
     //------------------------------
-    public int get_RICHFactory_Size(int idlay){ 
+    public int get_RICHFactory_Size(int idgea){ 
     //------------------------------
-        if(idlay==401) return 391;
-        if(idlay==201 || idlay==202 || idlay==203 || idlay==204 || idlay==301 || idlay==302) 
-                  {return richfactory.getStlNumber(idlay);}
+        if(idgea==RICHLayerType.MAPMT.ccdb()) return RICHGeoConstants.NPMT;
+        if(idgea==RICHLayerType.AEROGEL_2CM_B1.ccdb() || idgea==RICHLayerType.AEROGEL_2CM_B2.ccdb()  || 
+           idgea==RICHLayerType.AEROGEL_3CM_L1.ccdb() || idgea==RICHLayerType.AEROGEL_3CM_L2.ccdb()  || 
+           idgea==RICHLayerType.MIRROR_BOTTOM.ccdb()  || idgea==RICHLayerType.MIRROR_SPHERE.ccdb() ) 
+                  {return richfactory.getStlNumber(idgea);}
 
         return 0;
     }
 
+
     //------------------------------
-    public RICHComponent get_Component(int ilay, int ico){ 
+    public RICHComponent get_Component(int isec, int ilay, int ico){ 
     //------------------------------
-        return opticlayers.get(ilay).get(ico);
+
+        int irich = geocal.find_RICHModule(isec);
+        if(irich==0) return null;
+
+        return richlayers.get(irich-1).get(ilay).get(ico);
     }
 
 
     //------------------------------
-    public CSG get_CSGVolume(int ilay, int ico){
+    public CSG get_CSGVolume(int isec, int ilay, int ico){
     //------------------------------
-        return opticlayers.get(ilay).get(ico).get_CSGVol();
+
+        int irich = geocal.find_RICHModule(isec);
+        if(irich==0) return null;
+
+        return richlayers.get(irich-1).get(ilay).get(ico).get_CSGVol();
     }
 
      //------------------------------
-     public ArrayList<CSG> get_CSGLayerVolumes(int ilay){
+     public ArrayList<CSG> get_CSGLayerVolumes(int isec, int ilay){
      //------------------------------
+
+        int irich = geocal.find_RICHModule(isec);
+        if(irich==0) return null;
+
+        // ATT: get_CSGVolume should become a Layer method
         ArrayList<CSG> vols = new ArrayList<CSG>();
-        RICHLayer layer = opticlayers.get(ilay);
+        RICHLayer layer = richlayers.get(irich-1).get(ilay);
         for (int ico=0; ico<layer.size(); ico++){
-            CSG vol = get_CSGVolume(ilay, ico);
+            CSG vol = get_CSGVolume(isec, ilay, ico);
             if(vol!=null)vols.add(vol);
         }  
         return vols;
      }
 
+
      //------------------------------
-     public G4Stl get_StlVolume(int ilay, int ico){
+     public G4Stl get_StlVolume(int isec, int ilay, int ico){
      //------------------------------
-        RICHComponent compo = opticlayers.get(ilay).get(ico);
+
+        int irich = geocal.find_RICHModule(isec);
+        if(irich==0) return null;
+
+        RICHComponent compo = richlayers.get(irich-1).get(ilay).get(ico);
         if(compo.get_voltype()==2) return compo.get_StlVol();
         return null;
      }
 
+
      //------------------------------
-     public ArrayList<G4Stl> get_StlLayerVolumes(int ilay){
+     public ArrayList<G4Stl> get_StlLayerVolumes(int isec, int ilay){
      //------------------------------
+
+        int irich = geocal.find_RICHModule(isec);
+        if(irich==0) return null;
+
         ArrayList<G4Stl> vols = new ArrayList<G4Stl>();
-        RICHLayer layer = opticlayers.get(ilay);
+        RICHLayer layer = richlayers.get(irich-1).get(ilay);
         for (int ico=0; ico<layer.size(); ico++){
-            G4Stl vol = get_StlVolume(ilay, ico);
+            G4Stl vol = get_StlVolume(isec, ilay, ico);
             if(vol!=null)vols.add(vol);
         }  
         return vols;
      }
 
+
      //------------------------------
-     public G4Box get_BoxVolume(int ilay, int ico){
+     public G4Box get_BoxVolume(int isec, int ilay, int ico){
      //------------------------------
-        RICHComponent compo = opticlayers.get(ilay).get(ico);
+
+        int irich = geocal.find_RICHModule(isec);
+        if(irich==0) return null;
+
+        RICHComponent compo = richlayers.get(irich-1).get(ilay).get(ico);
         if(compo.get_voltype()==1) return compo.get_BoxVol();
         return null;
      }
 
+
      //------------------------------
-     public ArrayList<G4Box> get_BoxLayerVolumes(int ilay){
+     public ArrayList<G4Box> get_BoxLayerVolumes(int isec, int ilay){
      //------------------------------
+ 
+        int irich = geocal.find_RICHModule(isec);
+        if(irich==0) return null;
+
         ArrayList<G4Box> vols = new ArrayList<G4Box>();
-        RICHLayer layer = opticlayers.get(ilay);
+        RICHLayer layer = richlayers.get(irich-1).get(ilay);
         for (int ico=0; ico<layer.size(); ico++){
-            G4Box vol = get_BoxVolume(ilay, ico);
+            G4Box vol = get_BoxVolume(isec, ilay, ico);
             if(vol!=null)vols.add(vol);
         }  
         return vols;
      }
+
 
      //------------------------------
      public Vector3D toVector3D(Vector3d vin) {
@@ -1754,6 +1496,7 @@ public class RICHGeoFactory{
 	return vout;
      }
 
+
      //------------------------------
      public Vector3D toVector3D(Point3D pin) {
      //------------------------------
@@ -1761,9 +1504,11 @@ public class RICHGeoFactory{
 	return vout;
      }
 
+
      //------------------------------
      public Vector3d toVector3d(Vertex ver) {return  new Vector3d(ver.pos.x, ver.pos.y, ver.pos.z); }
      //------------------------------
+
 
      //------------------------------
      public Vector3d toVector3d(Vector3D vin) {
@@ -1864,25 +1609,30 @@ public class RICHGeoFactory{
 
         System.out.format(" -----------------------\n  %s \n ----------------------- \n", name);
 
-        for (int ilay=0; ilay<NLAY; ilay++){
-            String ini = head + " "+ ilay;
-            RICHLayer layer = get_Layer(ilay);
-            if(layer.is_aerogel() || layer.is_mapmt()){
-                show_Shape3D(layer.get_GlobalSurf(), null, ini);
-                if(layer.is_aerogel()){
-                    show_Shape3D(layer.get_TrackingSurf(), null, "AA");
-                    for(int ico=0; ico<layer.size(); ico++) System.out.format("HH %4d %4d %s \n", ilay, ico, layer.get_CompoBary(ico).toStringBrief(2));
+        for(int irich=1; irich<=geocal.nRICHes(); irich++){
+
+            int isec = geocal.find_RICHSector(irich);
+            if(isec==0) continue;
+
+            for (int ilay=0; ilay<NLAY; ilay++){
+                String ini = head + " "+ ilay;
+                RICHLayer layer = get_Layer(isec, ilay);
+                if(layer.is_aerogel() || layer.is_mapmt()){
+                    show_Shape3D(layer.get_GlobalSurf(), null, ini);
+                    if(layer.is_aerogel()){
+                        show_Shape3D(layer.get_TrackingSurf(), null, "AA");
+                        for(int ico=0; ico<layer.size(); ico++) System.out.format("HH %4d %4d %s \n", ilay, ico, layer.get_CompoBary(ico).toStringBrief(2));
+                    }
+                    if(layer.is_mapmt())show_Shape3D(layer.get_TrackingSurf(), null, "PP");
+
+                }else{
+                    if(layer.is_spherical_mirror()) show_Shape3D(layer.get_GlobalSurf(), null, ini);
+                    show_Shape3D(layer.get_TrackingSurf(), null, ini);
                 }
-                if(layer.is_mapmt())show_Shape3D(layer.get_TrackingSurf(), null, "PP");
-
-            }else{
-                if(layer.is_spherical_mirror()) show_Shape3D(layer.get_GlobalSurf(), null, ini);
-                show_Shape3D(layer.get_TrackingSurf(), null, ini);
             }
-        }
-      
-
+        } 
     }
+
 
     // ----------------
     public void show_Triangle3D(Triangle3D tri, String name){
@@ -1942,7 +1692,7 @@ public class RICHGeoFactory{
 
 
     //------------------------------
-    public void misalign_Element(Shape3D shape, RICHFrame frame, Vector3D angle, Vector3D shift) {
+    public void align_Element(Shape3D shape, RICHFrame frame, Vector3D angle, Vector3D shift) {
     //------------------------------
 
         int debugMode = 0;
@@ -1978,7 +1728,7 @@ public class RICHGeoFactory{
 
 
     //------------------------------
-    public void misalign_Element(Sphere3D sphere, RICHFrame frame, Vector3D angle, Vector3D shift) {
+    public void align_Element(Sphere3D sphere, RICHFrame frame, Vector3D angle, Vector3D shift) {
     //------------------------------
 
         int debugMode = 0;
@@ -2210,31 +1960,31 @@ public class RICHGeoFactory{
 
             if(pol.normal().angle(front)<5.e-3){
                  if(bary.x() > -100){
-                     return new String("mirror_front_B1");
+                     return new String("MIRROR_FRONT_B1");
                  }else{
-                     return new String("mirror_front_B2");
+                     return new String("MIRROR_FRONT_B2");
                  }
             }
             if(pol.normal().angle(left)<5.e-3){
                  if(bary.x() > -100){
-                     return new String("mirror_left_L1");
+                     return new String("MIRROR_LEFT_L1");
                  }else{
-                     return new String("mirror_left_L2");
+                     return new String("MIRROR_LEFT_L2");
                  }
             }
             if(pol.normal().angle(right)<5.e-3){
                  if(bary.x() > -100){
-                     return new String("mirror_right_L1");
+                     return new String("MIRROR_RIGHT_R1");
                  }else{
-                     return new String("mirror_right_L2");
+                     return new String("MIRROR_RIGHT_R2");
                  }
             }
             if(pol.normal().angle(bottom)<5.e-3){
-                 return new String("mirror_bottom");
+                 return new String("MIRROR_BOTTOM");
             }
             
         }
-        return new String("none");
+        return new String("UNDEFINED");
     }
 
 
@@ -2279,14 +2029,14 @@ public class RICHGeoFactory{
 
 
     // ----------------
-    public void dump_StlComponent(int ilay, int ico) {
+    public void dump_StlComponent(int isec, int ilay, int ico) {
     // ----------------
 
         System.out.format(" ------------------\n");
         System.out.format(" Dump of Stl %d in layer %d \n", ico, ilay);
         System.out.format(" ------------------\n");
         int ii=0;
-        for (Polygon pol: get_CSGVolume(ilay, ico).getPolygons()){
+        for (Polygon pol: get_CSGVolume(isec, ilay, ico).getPolygons()){
             System.out.format("  %4d ",ii);
             for (Vertex vert: pol.vertices ){
                 System.out.format(" Vtx %7.2f %7.2f %7.2f  ",vert.pos.x,vert.pos.y,vert.pos.z);
@@ -2299,16 +2049,16 @@ public class RICHGeoFactory{
 
 
     // ----------------
-    public Vector3d find_intersection_UpperHalf_RICH(Line3D ray){
+    public Point3D find_IntersectionSpheMirror(int isec, Line3D ray){
     // ----------------
 
         int debugMode = 0;
-        RICHIntersection inter = get_Layer("mirror_sphere").find_Entrance(ray, -1);
+        RICHIntersection inter = get_Layer(isec, "MIRROR_SPHERE").find_Entrance(ray, -1);
 
         if(inter!=null){
             if(debugMode>=1)  System.out.format("find_intersection with SPHERICAL (%d, %d): %s\n",
                  inter.get_layer(), inter.get_component(), inter.get_pos().toStringBrief(2));
-            return toVector3d(inter.get_pos());
+            return inter.get_pos();
         }else{
             if(debugMode>=1)  System.out.format("find NO intersection with SPHERICAL \n");
         }
@@ -2318,17 +2068,17 @@ public class RICHGeoFactory{
     }
 
     // ----------------
-    public Vector3d find_intersection_MAPMT(Line3D ray){
+    public Point3D find_IntersectionMAPMT(int isec, Line3D ray){
     // ----------------
 
         int debugMode = 0;
 
-        RICHIntersection inter = get_Layer("mapmts").find_Entrance(ray, -1);
+        RICHIntersection inter = get_Layer(isec, "MAPMT").find_Entrance(ray, -1);
 
         if(inter!=null){
             if(debugMode>=1)  System.out.format("find_intersection with MAPMT (%d, %d): %s\n",
                  inter.get_layer(), inter.get_component(), inter.get_pos().toStringBrief(2));
-            return toVector3d(inter.get_pos());
+            return inter.get_pos();
         }
 
         return null;
@@ -2336,10 +2086,22 @@ public class RICHGeoFactory{
 
 
     // ----------------
-    public boolean is_Spherical_Mirror (int ilay){
+    public boolean has_RICH(int isec){
     // ----------------
 
-        if(opticlayers.get(ilay).get_Name().equals("mirror_sphere"))return true;
+        if(geocal.find_RICHModule(isec)>0)return true;
+        return false;
+    }
+
+
+    // ----------------
+    public boolean is_Spherical_Mirror (int isec, int ilay){
+    // ----------------
+
+        int irich = geocal.find_RICHModule(isec);
+        if(irich==0) return false;
+
+        if(richlayers.get(irich-1).get(ilay).name().equals("mirror_sphere"))return true;
         return false;  
 
     }

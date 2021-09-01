@@ -38,10 +38,10 @@ public class RICHCluster extends ArrayList<RICHHit> {
     }
 
     // ----------------
-    public float get_charge() {
+    public double get_charge() {
     // ----------------
           // return measured charge
-          float clusterEnergy = 0;
+          double clusterEnergy = 0;
           for(int i=0; i<this.size(); i++) {
               clusterEnergy += this.get(i).get_duration();
           }
@@ -49,13 +49,13 @@ public class RICHCluster extends ArrayList<RICHHit> {
     }
 
     // ----------------
-    public float get_time() {
+    public double get_time() {
     // ----------------
-          return this.get(0).get_time();
+          return this.get(0).get_Time();
     }
 
     // ----------------
-    public float get_rawtime() {
+    public double get_rawtime() {
     // ----------------
           return this.get(0).get_rawtime();
     }
@@ -76,32 +76,32 @@ public class RICHCluster extends ArrayList<RICHHit> {
     }
 
     // ----------------
-    public float get_x() {
+    public double get_x() {
     // ----------------
         // returns x coordinate of first hit
         return this.get(0).get_x();
     }
 
     // ----------------
-      public float get_y() {
+      public double get_y() {
     // ----------------
         // returns y coordinate of first hit
         return this.get(0).get_y();
     }
 
     // ----------------
-     public float get_z() {
+     public double get_z() {
     // ----------------
         // returns z coordinate of first hit
 
-        if(RICHRecConstants.COSMIC_RUN==0){
+        if(RICHConstants.COSMIC_RUN==0){
             return this.get(0).get_z();
 
       }else{
             if(this.get(0).get_tile()<139){
                 return 0;
             }else{
-                return (float) RICHRecConstants.COSMIC_TRACKING_Z;
+                return  RICHConstants.COSMIC_TRACKING_Z;
             }
         }
      }
@@ -115,7 +115,7 @@ public class RICHCluster extends ArrayList<RICHHit> {
         double clusterTime    = 0;
         for(int i=0; i<this.size(); i++) {
             RICHHit hit = this.get(i);
-            clusterTime += hit.get_duration()*hit.get_time();              
+            clusterTime += hit.get_duration()*hit.get_Time();              
         }
         clusterTime /= clusterEnergy;
         return clusterTime;
@@ -132,8 +132,8 @@ public class RICHCluster extends ArrayList<RICHHit> {
         double clusy   = 0;
         double clusz   = 0;
 
-        if(RICHRecConstants.COSMIC_RUN==1 && this.get(0).get_tile()>138){
-            clusz   = RICHRecConstants.COSMIC_TRACKING_Z;
+        if(RICHConstants.COSMIC_RUN==1 && this.get(0).get_tile()>138){
+            clusz   = RICHConstants.COSMIC_TRACKING_Z;
         }
 
         for(int i=0; i<this.size(); i++) {
@@ -255,9 +255,9 @@ public class RICHCluster extends ArrayList<RICHHit> {
     // ----------------
     public boolean isgoodCluster() {
     // ----------------
-        if(Math.abs(this.get_time() - RICHRecConstants.EVENT_TIME) < RICHRecConstants.CLUSTER_TIME_WINDOW &&
-            this.get_size() >= RICHRecConstants.CLUSTER_MIN_SIZE  && 
-            this.get_charge() >= RICHRecConstants.CLUSTER_MIN_CHARGE) {
+        if(Math.abs(this.get_time() - RICHConstants.EVENT_TIME) < RICHConstants.CLUSTER_TIME_WINDOW &&
+            this.get_size() >= RICHConstants.CLUSTER_MIN_SIZE  && 
+            this.get_charge() >= RICHConstants.CLUSTER_MIN_CHARGE) {
             return true;
         } else {
             return false;
@@ -291,10 +291,10 @@ public class RICHCluster extends ArrayList<RICHHit> {
         if(this.get(0).get_pmt()!=hit.get_pmt())return addFlag;
 
         for(int j = 0; j< this.size(); j++) {
-            float tDiff = Math.abs(hit.get_time() - this.get(j).get_time());
+            double tDiff = Math.abs(hit.get_Time() - this.get(j).get_Time());
             int xDiff = Math.abs(hit.get_idx()  - this.get(j).get_idx());
             int yDiff = Math.abs(hit.get_idy()  - this.get(j).get_idy());
-            if(tDiff <= RICHRecConstants.CLUSTER_TIME_WINDOW && xDiff <= 1 && yDiff <= 1 && (xDiff + yDiff) >0) addFlag = true;
+            if(tDiff <= RICHConstants.CLUSTER_TIME_WINDOW && xDiff <= 1 && yDiff <= 1 && (xDiff + yDiff) >0) addFlag = true;
         }
         return addFlag;
     }

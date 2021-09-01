@@ -20,8 +20,8 @@ public class RingCherenkovResponse extends DetectorResponse {
     //    super();
     //}
     
-    public RingCherenkovResponse(int sector, int layer, int pmt){
-        this.getDescriptor().setSectorLayerComponent(sector, layer, pmt);
+    public RingCherenkovResponse(int sector, int layer, int component){
+        this.getDescriptor().setSectorLayerComponent(sector, layer, component);
     }
 
     public int getCluster(){ return this.cluster;}
@@ -44,6 +44,7 @@ public class RingCherenkovResponse extends DetectorResponse {
             int nrows = bank.rows();
             for(int row = 0; row < nrows; row++){
 
+                int anode = 0;
                 int good = 0;
                 double energy = 0.0;
                 double time = 0.0;
@@ -64,6 +65,7 @@ public class RingCherenkovResponse extends DetectorResponse {
                     int id   = bank.getShort("id", row); 
                     int cluster = bank.getShort("cluster", row); 
                     int xtalk = bank.getShort("xtalk", row);
+                    anode = bank.getShort("anode", row);
                     if(cluster==0 && xtalk==0)good=1;
                     energy = (double) bank.getShort("duration", row);
                     time = (double) bank.getFloat("time", row);
@@ -74,11 +76,10 @@ public class RingCherenkovResponse extends DetectorResponse {
                 }
 
                 if(good==1){
+
                     int sector = bank.getShort("sector", row);
-                    int layer= 1;  // only one layer used in matching
-                    int pmt = bank.getShort("pmt", row);
-                    RingCherenkovResponse  response = new RingCherenkovResponse(sector,layer,pmt);
-                    //response.setHitIndex((int) bank.getShort("id", row));
+                    int layer= bank.getShort("pmt", row);
+                    RingCherenkovResponse  response = new RingCherenkovResponse(sector,layer,anode);
                     response.setHitIndex(row);
                     response.getDescriptor().setType(type);
                     response.setPosition(x, y, z);

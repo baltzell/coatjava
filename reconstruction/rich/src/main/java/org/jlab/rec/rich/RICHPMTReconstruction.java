@@ -19,24 +19,22 @@ import org.jlab.detector.geom.RICH.RICHGeoFactory;
 public class RICHPMTReconstruction {
 
 
-    private RICHTool           tool;
     private RICHEvent          richevent;
+    private RICHGeoFactory     richgeo;
     private RICHio             richio;
-    private RICHRecParameters  recpar;
       
     // ----------------
-    public RICHPMTReconstruction(RICHEvent richeve, RICHTool richtool, RICHio io) {
+    public RICHPMTReconstruction(RICHEvent richeve, RICHGeoFactory richgeo, RICHio richio) {
     // ----------------
 
-        tool = richtool;
-        richevent = richeve;
-        richio = io;
-        recpar = new RICHRecParameters();
+        this.richevent = richeve;
+        this.richgeo = richgeo;
+        this.richio = richio;
 
     }
 
     // ----------------
-    public void processRawData(DataEvent event) {
+    public void process_RawData(DataEvent event, RICHParameters richpar, RICHCalibration richcal) {
     // ----------------
 
         int debugMode = 0;
@@ -62,11 +60,11 @@ public class RICHPMTReconstruction {
         Trails  = selectTrailEdges(allEdges);
 
         // build hits
-        Hits     = reconstructHits(Leads, Trails);
+        Hits     = reconstructHits(Leads, Trails, richcal);
         AllClusters = findClusters(Hits);
         Clusters = selectGoodClusters(AllClusters);
 
-        findXTalk(Hits, AllClusters);
+        find_XTalk(Hits, AllClusters, richpar);
 
         richevent.add_Hits(Hits);
         richevent.add_Clusters(Clusters);
@@ -114,7 +112,7 @@ public class RICHPMTReconstruction {
         for(int i = 0; i < allEdges.size(); i++) {
             RICHEdge edge = allEdges.get(i);
                 if(edge.passEdgeSelection()) {
-                        if(edge.get_polarity()==RICHRecConstants.LEADING_EDGE_POLARITY)Leads.add(edge);      
+                        if(edge.get_polarity()==RICHConstants.LEADING_EDGE_POLARITY)Leads.add(edge);      
                 }
         }      
 
@@ -144,7 +142,7 @@ public class RICHPMTReconstruction {
         {
             RICHEdge edge = allEdges.get(i);
                 if(edge.passEdgeSelection()) {
-                        if(edge.get_polarity()==RICHRecConstants.TRAILING_EDGE_POLARITY)Trails.add(edge);      
+                        if(edge.get_polarity()==RICHConstants.TRAILING_EDGE_POLARITY)Trails.add(edge);      
                 }
         }      
 
@@ -195,7 +193,7 @@ public class RICHPMTReconstruction {
     
 
     // ----------------
-    public ArrayList<RICHHit> reconstructHits(ArrayList<RICHEdge> Leads, ArrayList<RICHEdge >Trails) {
+    public ArrayList<RICHHit> reconstructHits(ArrayList<RICHEdge> Leads, ArrayList<RICHEdge >Trails, RICHCalibration richcal) {
     // ----------------
 
         int debugMode = 0;
@@ -221,7 +219,7 @@ public class RICHPMTReconstruction {
                   nhit++;
                   lead.set_hit(nhit);
                   trail.set_hit(nhit);
-                  RICHHit hit = new RICHHit(nhit, tool, richevent.getFTOFphase(), lead, trail);
+                  RICHHit hit = new RICHHit(nhit, richevent.getFTOFphase(), lead, trail, richgeo, richcal);
                   hits.add(hit);      
                   break;
 
@@ -261,7 +259,7 @@ public class RICHPMTReconstruction {
         for(int ihit=0; ihit<hits.size(); ihit++) {
             RICHHit hit = hits.get(ihit);
                 if(hit.get_cluster()==0)  {                       // this hit is not yet associated with a cluster
-                if(debugMode>=2)System.out.println("  Check hit "+hit.get_id()+" "+hit.get_pmt()+" "+hit.get_anode()+" "+hit.get_time());
+                if(debugMode>=2)System.out.println("  Check hit "+hit.get_id()+" "+hit.get_pmt()+" "+hit.get_anode()+" "+hit.get_Time());
 
                 for(int jclus=0; jclus<allclusters.size(); jclus++) {
                     RICHCluster cluster = allclusters.get(jclus);
@@ -350,7 +348,7 @@ public class RICHPMTReconstruction {
 
 
     // ----------------
-    public void findXTalk(ArrayList<RICHHit> hits, ArrayList<RICHCluster> allclusters) {
+    public void find_XTalk(ArrayList<RICHHit> hits, ArrayList<RICHCluster> allclusters, RICHParameters richpar) {
     // ----------------
 
         int debugMode = 0;
@@ -358,7 +356,7 @@ public class RICHPMTReconstruction {
             System.out.println("----------------");
             System.out.println("Search for Xtalk");
             System.out.println("----------------");
-            System.out.format(" %7.3f \n",recpar.GOODHIT_FRAC);
+            System.out.format(" %7.3f \n",richpar.GOODHIT_FRAC);
         }
 
         for(int ih=0; ih<hits.size(); ih++) {
@@ -370,7 +368,7 @@ public class RICHPMTReconstruction {
                 if(hiti.get_cluster()!=0)  continue; // this hit is not yet associated with a cluster
                 if(debugMode==6)System.out.println("Hit pair "+ih+" "+hiti.get_id()+" "+hiti.get_pmt()+" "+hiti.get_channel()+" "+hiti.get_duration()+" "+hiti.get_cluster()+" | " +jh+" "+hitj.get_id()+" "+hitj.get_pmt()+" "+hitj.get_channel()+" "+hitj.get_duration()+" "+hitj.get_cluster());
 
-                if(hiti.get_pmt()==hitj.get_pmt() && hitj.get_duration()*100 < hiti.get_duration()*recpar.GOODHIT_FRAC){
+                if(hiti.get_pmt()==hitj.get_pmt() && hitj.get_duration()*100 < hiti.get_duration()*richpar.GOODHIT_FRAC){
                     for(int k=-1; k<=1; k+=2 ) {
                         if(hiti.get_channel() == (k+hitj.get_channel())) {hitj.set_xtalk(1000+hiti.get_id()); if(debugMode==6)System.out.println(" E Xtalk "+hitj.get_xtalk());}
                     }
@@ -379,7 +377,7 @@ public class RICHPMTReconstruction {
         }
 
         for(int iclu=0; iclu<allclusters.size(); iclu++) {
-            if(allclusters.get(iclu).get_size()< RICHRecConstants.CLUSTER_MIN_SIZE) {
+            if(allclusters.get(iclu).get_size()< RICHConstants.CLUSTER_MIN_SIZE) {
                 RICHCluster clu = allclusters.get(iclu);
                 if(debugMode==6)System.out.println("  Cluster "+ iclu +" ID "+clu.get_id());
                 for(int ih = 0; ih< clu.size(); ih++) {
@@ -389,7 +387,7 @@ public class RICHPMTReconstruction {
                         RICHHit hitj = clu.get(jh);
                         if(debugMode==6)System.out.println("Hit pair "+ih+" "+hiti.get_id()+" "+hiti.get_pmt()+" "+hiti.get_channel()+" "+hiti.get_duration()+" | " +jh+" "+hitj.get_id()+" "+hitj.get_pmt()+" "+hitj.get_channel()+" "+hitj.get_duration());
 
-                        if(hitj.get_duration()*100 < hiti.get_duration()*recpar.GOODHIT_FRAC) {hitj.set_xtalk(hiti.get_id()); if(debugMode==6)System.out.println(" O Xtalk "+hitj.get_xtalk());}
+                        if(hitj.get_duration()*100 < hiti.get_duration()*richpar.GOODHIT_FRAC) {hitj.set_xtalk(hiti.get_id()); if(debugMode==6)System.out.println(" O Xtalk "+hitj.get_xtalk());}
 
                     }
                 }

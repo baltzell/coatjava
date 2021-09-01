@@ -15,19 +15,23 @@ import eu.mihosoft.vrl.v3d.Vertex;
 import eu.mihosoft.vrl.v3d.Vector3d;
 import eu.mihosoft.vrl.v3d.Polygon;
 
+/**
+* @author mcontalb
+* A layer in the RICH consists of an array of components
+*/
 public class RICHLayer extends ArrayList<RICHComponent> {
 
-    /**
-     * A layer in the RICH consists of an array of components
-     */
+    private static final double RAD = RICHGeoConstants.RAD;
 
-    private static final double MRAD = 1000.;
-    private static final double RAD = 180./Math.PI;
-
-    private int id;         // layer id
+    private int id;         // layer id in RICH reconstruction
+    private int idccdb;     // layer id in the CCDB database
+    private int idgea;      // layer id in RICHGeant4Factory
+    private int type;       // layer type (1=aerogel, 2=front mirror, 3=planar mirror, 4=spherical mirror, 5=mapmt)
+    private int sector;     // sector 
     private String name;    // layer name
+    private String vers;    // layer orientation label
 
-    private Vector3D vinside = null;    // layer name
+    private Vector3D vinside = new Vector3D(0., 0., 0.);    // layer orientation (normal versor)
 
     private Vector3D barycenter           = null;
     private Shape3D  global_surf          = null;
@@ -39,37 +43,59 @@ public class RICHLayer extends ArrayList<RICHComponent> {
     
     private RICHFrame local_frame = new RICHFrame();
 
-    // constructor
+
     // ----------------
-    public RICHLayer(int lid, String sname, Vector3D vec) {
+    public RICHLayer(int isec, int ilay) {
     // ----------------
-          this.id = lid;
-          this.name = sname;
-          this.vinside = vec.asUnit();
+
+        this.id     = ilay;
+        this.idccdb = RICHLayerType.get_Type(ilay).ccdb();
+        this.idgea  = RICHLayerType.get_Type(ilay).ccdb();
+        this.type   = RICHLayerType.get_Type(ilay).type();
+        this.name   = RICHLayerType.get_Type(ilay).name();
+        this.vers   = RICHLayerType.get_Type(ilay).vers();
+        this.sector = isec;
+
+        if(vers.equals("front")) vinside=RICHGeoConstants.vfront.asUnit();
+        if(vers.equals("left")) vinside = RICHGeoConstants.vleft.asUnit();
+        if(vers.equals("right")) vinside = RICHGeoConstants.vright.asUnit();
+        if(vers.equals("bottom")) vinside = RICHGeoConstants.vbottom.asUnit();
+        if(vers.equals("sphere")) vinside = RICHGeoConstants.vsphere.asUnit();
+        if(vers.equals("back")) vinside = RICHGeoConstants.vback.asUnit();
+
     }
 
+
     // ----------------
-    public int get_id() { return this.id; }
+    public int id() { return this.id; }
     // ----------------
 
     // ----------------
-    public void set_id(int lid) { this.id = lid; }
+    public int idccdb() { return this.idccdb; }
     // ----------------
 
     // ----------------
-    public String get_Name() { return this.name; }
+    public int idgea() { return this.idgea; }
     // ----------------
 
     // ----------------
-    public void set_Name(String sname) { this.name = sname; }
+    public int type() { return this.type; }
     // ----------------
 
     // ----------------
-    public Vector3D get_Vinside() { return this.vinside; }
+    public int sector() { return this.sector; }
     // ----------------
 
     // ----------------
-    public void set_Vinside(Vector3d vec) { this.vinside = toVector3D(vec).asUnit(); }
+    public String name() { return this.name; }
+    // ----------------
+
+    // ----------------
+    public Vector3D get_Vinside() { return vinside; }
+    // ----------------
+
+    // ----------------
+    public void set_Vinside(Vector3D vers) { this.vinside = vers; }
     // ----------------
 
     // ----------------
@@ -239,9 +265,9 @@ public class RICHLayer extends ArrayList<RICHComponent> {
         int debugMode = 0;
 
         double toIP = -1.;
-        if(get_Name().equals("mapmts")) toIP=1.;
+        if(name.equals("mapmts")) toIP=1.;
 
-        Point3D pos = toPoint3D( get_SurfBary(-1, vinside.multiply(toIP)) );
+        Point3D pos =  get_SurfBary(-1, vinside.multiply(toIP)).toPoint3D() ;
         Vector3D ver = get_LayerNormal(vinside.multiply(toIP) );
         Plane3D plane = new Plane3D(pos, ver);
 
@@ -285,7 +311,7 @@ public class RICHLayer extends ArrayList<RICHComponent> {
             icomi=0;
             icoma=this.size();
         }
-        if(debugMode>=1)System.out.format(" Generate bary for lay %3d and compos %4d:%4d\n", this.get_id(), icomi,icoma);
+        if(debugMode>=1)System.out.format(" Generate bary for lay %3d and compos %4d:%4d\n", id, icomi, icoma);
 
         for (int ico=icomi; ico<icoma; ico++){
 
@@ -457,9 +483,13 @@ public class RICHLayer extends ArrayList<RICHComponent> {
         Vector3D  vcross = new Vector3D(0.,0.,0.);
         Point3D   v0     = new Point3D(0.,0.,0.);
 
-        double aero_dim = 20;
+        double aero_dim = RICHGeoConstants.AERO_REF_DIMENSION*RICHGeoConstants.CM;
         double aero_sca = 1.;
-        if(id==0 && (icompo==0 || icompo==1)) {aero_dim=16.5; aero_sca = 20/16.5;}
+        // first two tiles are shorter
+        if(id==RICHLayerType.AEROGEL_2CM_B1.id() && (icompo==0 || icompo==1)) {
+            aero_dim=RICHGeoConstants.AERO_CUT_DIMENSION*RICHGeoConstants.CM;  
+            aero_sca = aero_dim/aero_sca;
+        }
  
         int found = 0;
         for(int i=0; i<verts.size(); i++){
@@ -616,7 +646,10 @@ public class RICHLayer extends ArrayList<RICHComponent> {
     public RICHIntersection find_Entrance(Line3D ray, int ico){
     // ----------------
 
-        return find_Intersection(ray, ico, 0, 1, 0);
+        RICHIntersection test = find_Intersection(ray, ico, 0, 1, 0);
+        if(test==null) test = find_Intersection(ray, ico, 0, 0, 0);
+
+        return test;
 
     }
 
@@ -632,8 +665,10 @@ public class RICHLayer extends ArrayList<RICHComponent> {
     public RICHIntersection find_Exit(Line3D ray, int ico){
     // ----------------
 
-        return find_Intersection(ray, ico, 1, 1, 0);
+        RICHIntersection test = find_Intersection(ray, ico, 1, 1, 0);
+        if(test==null) test = find_Intersection(ray, ico, 1, 0, 0);
 
+        return test;
     }
 
     // ----------------
@@ -662,7 +697,7 @@ public class RICHLayer extends ArrayList<RICHComponent> {
         if(ico<-2 || ico>=this.size()) return null;
 
         boolean global = true;
-        int ilay = this.get_id();
+        int ilay = id;
         Shape3D plane = this.get_GlobalSurf();
         String  splane = "global surf";
         Vector3D glnorm = this.get_LayerNormal(vinside);
@@ -690,7 +725,7 @@ public class RICHLayer extends ArrayList<RICHComponent> {
             if(exit==0) ee="into";
             String ef="forw";
             if(post==0) ef="back";
-            System.out.format("Find intersection (%s, %s) with %s of layer %d %s : %d on faces ",ef,ee,splane,this.get_id(),this.get_Name(),nint);
+            System.out.format("Find intersection (%s, %s) with %s of layer %d %s : %d on faces ",ef,ee,splane,id,name,nint);
             for (int ii=0; ii<nint; ii++)System.out.format(" %4d (%4d) | ",ifaces.get(ii),this.get_CompoIndex(ii));
             System.out.format(" \n");
         }
@@ -714,7 +749,7 @@ public class RICHLayer extends ArrayList<RICHComponent> {
                 norm = this.get_FaceNormal(-1, iface);
             }
             if(debugMode>=1)  System.out.format(" ila %3d ico %3d ifa %3d:  pos %s  (z range %7.2f : %7.2f)  vers %7.3f cfr %7.3f  normal %s glnorm %s\n",
-                              this.get_id(),ifacompo,iface,G4inter.toStringBrief(2),ray.origin().z(),point.z(),vers,Delta_z, norm.toStringBrief(3),
+                              id,ifacompo,iface,G4inter.toStringBrief(2),ray.origin().z(),point.z(),vers,Delta_z, norm.toStringBrief(3),
                               glnorm.toStringBrief(3));
 
             if(G4inter.distance(ray.origin())<RICHGeoConstants.PHOTON_DISTMIN_TRACING){if(debugMode>=1)System.out.format("     --> too close \n"); continue;}
@@ -738,7 +773,7 @@ public class RICHLayer extends ArrayList<RICHComponent> {
                 int icompo = ico;
                 if(icompo==-1)icompo=ifacompo;
                     
-                intersection = new RICHIntersection(ilay, icompo, iface, exit, point, norm);
+                intersection = new RICHIntersection(sector, ilay, icompo, iface, exit, point, norm);
                 if(this.is_aerogel()){ 
                     if(icompo>=0) intersection.set_nout(get(icompo).get_index());
                     if(debugMode>=1)System.out.format("         --> save aerogel entrance for ilay %4d icompo %4d (%4d %4d) nindx %7.5f \n",
@@ -753,7 +788,7 @@ public class RICHLayer extends ArrayList<RICHComponent> {
                 int icompo = ico;
                 if(icompo==-1)icompo=ifacompo;
 
-                intersection = new RICHIntersection(ilay, icompo, iface, exit, point, norm);
+                intersection = new RICHIntersection(sector, ilay, icompo, iface, exit, point, norm);
                 if(this.is_aerogel()){
                     if(icompo>=0)intersection.set_nin(get(icompo).get_index());
                     if(debugMode>=1)System.out.format("         --> save aerogel exit     for ilay %4d icompo %4d (%4d %4d) nindx %7.5f \n",
@@ -779,7 +814,7 @@ public class RICHLayer extends ArrayList<RICHComponent> {
                 if(new_point.distance(intersection.get_pos())<RICHGeoConstants.PHOTON_DISTMIN_SPHERE){
 
                     Vector3D new_norm = sphere.getNormal(new_point.x(), new_point.y(), new_point.z()).asUnit().multiply(-1.0);
-                    new_inter = new RICHIntersection(ilay, icompo, 0, exit, new_point, new_norm);
+                    new_inter = new RICHIntersection(sector, ilay, icompo, 0, exit, new_point, new_norm);
 
                 }
             }
@@ -934,7 +969,7 @@ public class RICHLayer extends ArrayList<RICHComponent> {
         double diffmax=0;
         for(Point3D p:pts){
             double diff = p.distance(center)-radius;
-            if(debugMode>=1)System.out.format("Check ila %3d ico %3d point %s: %7.3f \n",this.get_id(),ico,p.toStringBrief(2),diff);
+            if(debugMode>=1)System.out.format("Check ila %3d ico %3d point %s: %7.3f \n",id,ico,p.toStringBrief(2),diff);
             if(diff>diffmax)diffmax=diff;
         }
 
@@ -962,36 +997,94 @@ public class RICHLayer extends ArrayList<RICHComponent> {
     */
 
     // ----------------
-    public boolean is_aerogel() { return this.get(0).is_aerogel(); } 
+    public boolean is_2cm_aerogel() {
     // ----------------
 
-    // ----------------
-    public boolean is_spherical_mirror() { return this.get(0).is_spherical_mirror(); } 
-    // ----------------
+        if( id==RICHLayerType.AEROGEL_2CM_B1.id() || id==RICHLayerType.AEROGEL_2CM_B2.id() ) return true;
+        return false;
+
+    }
+
 
     // ----------------
-    public boolean is_planar_mirror() { return this.get(0).is_planar_mirror(); } 
+    public boolean is_3cm_aerogel() {
     // ----------------
 
-    // ----------------
-    public boolean is_front_mirror() { return this.get(0).is_front_mirror(); } 
-    // ----------------
+        if( id==RICHLayerType.AEROGEL_3CM_L1.id() || id==RICHLayerType.AEROGEL_3CM_L2.id() ) return true;
+        return false;
+
+    }
+
 
     // ----------------
-    public boolean is_lateral_mirror() { return this.get(0).is_lateral_mirror(); } 
+    public boolean is_aerogel() {
     // ----------------
 
+        if( is_2cm_aerogel() || is_3cm_aerogel() ) return true;
+        return false;
+
+    }
+
     // ----------------
-    public boolean is_mirror() { return this.get(0).is_mirror(); } 
+    public boolean is_spherical_mirror() { 
     // ----------------
+
+        if( id==RICHLayerType.MIRROR_SPHERE.id()) return true;
+        return false;
+
+    }
+
+    // ----------------
+    public boolean is_planar_mirror() { 
+    // ----------------
+
+        if( is_front_mirror() || is_lateral_mirror() ) return true;
+        return false;
+    }
+
+
+    // ----------------
+    public boolean is_front_mirror() { 
+    // ----------------
+
+        if( id==RICHLayerType.MIRROR_FRONT_B1.id() || id==RICHLayerType.MIRROR_FRONT_B2.id() ) return true;
+        return false;
+    }
+
+
+    // ----------------
+    public boolean is_lateral_mirror() { 
+    // ----------------
+
+        if( id==RICHLayerType.MIRROR_LEFT_L1.id()  || id==RICHLayerType.MIRROR_LEFT_L2.id()  ||
+            id==RICHLayerType.MIRROR_RIGHT_R1.id() || id==RICHLayerType.MIRROR_RIGHT_R2.id() ||
+            id==RICHLayerType.MIRROR_BOTTOM.id() ) return true;
+        return false;
+    }
+
+
+    // ----------------
+    public boolean is_mirror() { 
+    // ----------------
+
+        if( is_planar_mirror() || is_spherical_mirror() ) return true;
+        return false;
+    }
+
+
+    // ----------------
+    public boolean is_mapmt() { 
+    // ----------------
+
+        if( id==RICHLayerType.MAPMT.id() ) return true;
+        return false;
+    }
+
 
     // ----------------
     public boolean is_optical() { return this.get(0).is_optical(); } 
     // ----------------
 
-    // ----------------
-    public boolean is_mapmt() { return this.get(0).is_mapmt(); } 
-    // ----------------
 
     // ----------------
     public void merge_Shape3D(Shape3D shape, Shape3D other) {

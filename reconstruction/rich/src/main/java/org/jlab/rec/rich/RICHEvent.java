@@ -8,8 +8,7 @@ import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
 
 import org.jlab.geom.prim.Point3D;
-import org.jlab.geometry.prim.Line3d;
-import eu.mihosoft.vrl.v3d.Vector3d;
+import org.jlab.geom.prim.Vector3D;
 
 import org.jlab.clas.detector.DetectorResponse;
 import org.jlab.detector.geom.RICH.RICHRay;
@@ -23,7 +22,7 @@ public class RICHEvent {
     private int runID;
     private int eventID;
     private float eventTime;
-    private long exeStart;
+    private long CPUTime;
     private int  phase;
 
     private static double MRAD = 1000.;
@@ -77,7 +76,7 @@ public class RICHEvent {
     // ----------------
 
     // ----------------
-    public void set_exeStart(long exetime) { exeStart = exetime; }
+    public void set_CPUTime(long CPUTime) { this.CPUTime = CPUTime; }
     // ----------------
 
     //------------------------------
@@ -153,7 +152,7 @@ public class RICHEvent {
     // ----------------
 
     // ----------------
-    public long get_exeStart() {return exeStart;}
+    public long get_CPUTime() {return CPUTime;}
     // ----------------
 
     //------------------------------
@@ -394,7 +393,7 @@ public class RICHEvent {
      
 
     // ----------------
-    public void get_pid(RICHParticle hadron, int recotype, RICHRecParameters recpar) {
+    public void get_pid(RICHParticle hadron, int recotype, RICHParameters richpar) {
     // ----------------
 
         int debugMode = 0;
@@ -431,66 +430,64 @@ public class RICHEvent {
                 double etac = reco.get_EtaC();
                 if(reco.get_OK()!=SELE) continue;
 
-                RICHHit hit = hits.get( pho.get_hit_index() );
-     
                 if(debugMode>=1)System.out.format("calc prob for photon %d \n",pho.get_id());
 
                 // prob for backgound
-                prob = pho.pid_probability(hadron, hit, 0, recotype);
-                if(prob-1>=recpar.RICH_BKG_PROBABILITY){
+                prob = pho.pid_probability(hadron, 0, recotype);
+                if(prob-1>=richpar.RICH_BKG_PROBABILITY){
                     lh_bg += Math.log(prob);
                     ch_bg += Math.log(prob)*etac;
                     n_bg++;
                     reco.set_BgProb(Math.log(prob));
-                    if(debugMode>=2)System.out.format(" --> etac %8.4f for background %g %g \n", etac*MRAD, prob, Math.log(prob));
+                    if(debugMode>=2)System.out.format(" --> etac %8.4f for background %10.4g %10.4g \n", etac*MRAD, prob, Math.log(prob));
                 }else{
                     //System.out.format("ATT: wrong prob  for background %g \n",prob-1);
                 }
 
                 // prob for electron
-                prob = pho.pid_probability(hadron, hit, 11, recotype);
-                if(prob-1>=recpar.RICH_BKG_PROBABILITY){
+                prob = pho.pid_probability(hadron, 11, recotype);
+                if(prob-1>=richpar.RICH_BKG_PROBABILITY){
                     lh_el += Math.log(prob);
                     ch_el += Math.log(prob)*etac;
                     n_el++;
                     reco.set_ElProb(Math.log(prob));
-                    if(debugMode>=2)System.out.format("- --> etac %8.4f for electron %g %g \n", etac*MRAD, prob, Math.log(prob));
+                    if(debugMode>=2)System.out.format("- --> etac %8.4f for electron %10.4g %10.4g \n", etac*MRAD, prob, Math.log(prob));
                 }else{
                     //System.out.format("ATT: wrong prob  for electron %g \n",prob-1);
                 }
 
                 // prob for pion
-                prob=pho.pid_probability(hadron, hit, 211, recotype);
-                if(prob-1>=recpar.RICH_BKG_PROBABILITY){
+                prob=pho.pid_probability(hadron, 211, recotype);
+                if(prob-1>=richpar.RICH_BKG_PROBABILITY){
                     lh_pi += Math.log(prob);
                     ch_pi += Math.log(prob)*etac;
                     n_pi++;
                     reco.set_PiProb(Math.log(prob));
-                    if(debugMode>=1)System.out.format(" --> etac %8.4f for pion %g %g \n", etac*MRAD, prob, Math.log(prob));
+                    if(debugMode>=1)System.out.format(" --> etac %8.4f for pion %10.4g %10.4g \n", etac*MRAD, prob, Math.log(prob));
                 }else{
                     //System.out.format("ATT: wrong prob  for pion %g \n",prob-1);
                 }
 
                 // prob for kaon
-                prob=pho.pid_probability(hadron, hit, 321, recotype);
-                if(prob-1>=recpar.RICH_BKG_PROBABILITY){
+                prob=pho.pid_probability(hadron, 321, recotype);
+                if(prob-1>=richpar.RICH_BKG_PROBABILITY){
                     lh_k  += Math.log(prob);
                     ch_k  += Math.log(prob)*etac;
                     n_k++;
                     reco.set_KProb(Math.log(prob));
-                    if(debugMode>=1)System.out.format(" --> etac %8.4f for kaon %g %g \n", etac*MRAD, prob, Math.log(prob));
+                    if(debugMode>=1)System.out.format(" --> etac %8.4f for kaon %10.4g %10.4g \n", etac*MRAD, prob, Math.log(prob));
                 }else{
                     //System.out.format("ATT: wrong prob  for kaon %g \n",prob-1);
                 }
 
                 // prob for proton
-                prob=pho.pid_probability(hadron, hit, 2212, recotype);
-                if(prob-1>=recpar.RICH_BKG_PROBABILITY){
+                prob=pho.pid_probability(hadron, 2212, recotype);
+                if(prob-1>=richpar.RICH_BKG_PROBABILITY){
                     lh_pr += Math.log(prob);
                     ch_pr += Math.log(prob)*etac;
                     reco.set_PrProb(Math.log(prob));
                     n_pr++;
-                    if(debugMode>=1)System.out.format(" --> etac %8.4f for proton %g %g \n", etac*MRAD, prob, Math.log(prob));
+                    if(debugMode>=1)System.out.format(" --> etac %8.4f for proton %10.4g %10.4g \n", etac*MRAD, prob, Math.log(prob));
                 }else{
                     //System.out.format("ATT: wrong prob  for proton %g \n",prob-1);
                 }
@@ -510,8 +507,8 @@ public class RICHEvent {
         lh_pr -= lh_bg;
 
         
-        if(debugMode>=1)System.out.format("raw likelihoods %3d %g %3d %g %3d %g %3d %g %3d %g | %g %g %g %g | %g \n",n_el,lh_el,n_pi,lh_pi,n_k,lh_k,n_pr,lh_pr,n_bg,lh_bg, 
-                      ch_el, ch_pi, ch_k, ch_pr, ch_had);
+        if(debugMode>=1)System.out.format("raw likelihoods %3d %10.4g %3d %10.4g %3d %10.4g %3d %10.4g %3d %10.4g | %10.4g %10.4g %10.4g %10.4g | %10.4g \n",
+                      n_el,lh_el,n_pi,lh_pi,n_k,lh_k,n_pr,lh_pr,n_bg,lh_bg, ch_el, ch_pi, ch_k, ch_pr, ch_had);
 
         double newRQ = 0.0;
         RICHSolution hreco = new RICHSolution();
@@ -521,9 +518,10 @@ public class RICHEvent {
 
         newRQ = hreco.assign_PID(lh_el, lh_pi, lh_k, lh_pr, lh_bg);
         hadron.set_RICHpid(hreco.get_BestH());
-        if(debugMode>=1)System.out.format("%s eve %8d  mom %6.2f xy %7.2f %7.2f %7.2f %7.2f %8.2f %8.4f  Npho %5d %8.4f %3d %g %3d %g --> %8.5f %7.2f %7.2f %3d %3d\n", 
+        if(debugMode>=1)System.out.format("%s eve %8d  mom %6.2f xy %7.2f %7.2f %7.2f %7.2f %8.2f %8.4f  Npho %5d %8.4f %3d %10.4g %3d %10.4g --> %8.5f %7.2f %7.2f %3d %3d\n", 
             hstri,eventID, hadron.get_momentum(), 
-            hadron.lab_origin.x(), hadron.lab_origin.y(), hadron.meas_hit.x, hadron.meas_hit.y, hadron.get_changle(0,0)*MRAD, hadron.refi_emission,
+            hadron.direct_ray.origin().x(), hadron.direct_ray.origin().y(), hadron.get_HitPos().x(), hadron.get_HitPos().y(), 
+            hadron.get_changle(0,0)*MRAD, hadron.refi_emission,
             n_el, lh_el, hadron.analytic.get_BestH(), hadron.analytic.get_Bestprob(), hadron.analytic.get_secH(), hadron.analytic.get_secprob(), 
             newRQ, ch_el*MRAD, ch_had*MRAD, hadron.get_CLASpid(), hadron.get_RICHpid());
 
@@ -539,33 +537,34 @@ public class RICHEvent {
         System.out.format(" ------------------------------------ \n");
         for(int hid=0; hid<hadrons.size(); hid++) {
             RICHParticle had = hadrons.get(hid);
-            System.out.format(" had %3d %3d %3d %3d [ %8.2f %8.2f %8.2f -->  %8.2f %8.2f %8.2f ] [ %8.2f %8.2f %8.2f -->  %8.2f %8.2f %8.2f ]  [ %8.2f %8.2f -->  %8.2f %8.2f ]\n", 
-                              hid,had.get_id(),had.get_ParentIndex(),had.get_hit_index(), 
-                              had.lab_emission.x, had.lab_emission.y, had.lab_emission.z ,had.ref_emission.x, had.ref_emission.y, had.ref_emission.z,
-                              had.meas_hit.x, had.meas_hit.y, had.meas_hit.z, had.ref_impact.x, had.ref_impact.y, had.ref_impact.z,
+            System.out.format(" had %3d %3d %3d %3d [ %s -->  %s ] [ %s -->  %s ]  [ %8.2f %8.2f -->  %8.2f %8.2f ]\n", 
+                              hid,had.get_id(),had.get_ParentIndex(),had.get_HitIndex(), 
+                              had.lab_emission.toStringBrief(2),
+                              had.ref_emission.toStringBrief(2),
+                              had.get_HitPos().toStringBrief(2), had.ref_impact.toStringBrief(2),
                               had.lab_phi*RAD, had.lab_theta*RAD, had.ref_phi*RAD, had.ref_theta*RAD);
             for(int ipho=0; ipho<photons.size(); ipho++) {
                 RICHParticle pho = photons.get(ipho);
                 if(pho.get_ParentIndex()==hid){
-                    System.out.format(" pho %3d id %3d  hit %3d  had %3d  type %3d  meas[ %7.1f %7.1f %7.1f %8.2f ]  analyt[ %8.2f %8.2f ] traced[%8.2f %7.1f %7.1f %7.1f%8.2f ] \n",
-                                      ipho, pho.get_id(), pho.get_ParentIndex(), pho.get_hit_index(), pho.get_type(),
-                                      pho.meas_hit.x, pho.meas_hit.y, pho.meas_hit.z, pho.get_meas_time(),
-                                      pho.analytic.get_EtaC()*MRAD, pho.get_start_time()+pho.analytic.get_time(),
-                                      pho.traced.get_EtaC()*MRAD, pho.traced.get_hit().x, pho.traced.get_hit().y, pho.traced.get_hit().z, pho.get_start_time()+pho.traced.get_time());
+                    System.out.format(" pho %3d id %3d  hit %3d  had %3d  type %3d  meas[ %s %8.2f ]  analyt[ %8.2f %8.2f ] traced[%8.2f %s %8.2f ] \n",
+                                      ipho, pho.get_id(), pho.get_ParentIndex(), pho.get_HitIndex(), pho.get_type(),
+                                      pho.get_HitPos().toStringBrief(2), pho.get_HitTime(),
+                                      pho.analytic.get_EtaC()*MRAD, pho.get_StartTime()+pho.analytic.get_time(),
+                                      pho.traced.get_EtaC()*MRAD, pho.traced.get_hit().toStringBrief(2), pho.get_StartTime()+pho.traced.get_time());
                 }
             }    
         }    
     }
 
     // ----------------
-    public void select_Photons(RICHRecParameters recpar, int recotype){
+    public void select_Photons(RICHParameters richpar, int recotype){
     // ----------------
         int debugMode = 0;
         int jj=0;
         for( RICHParticle pho: photons){
             if(pho.get_type()==0){
 
-                RICHHit hit = get_Hit( pho.get_hit_index() );
+                RICHHit hit = get_Hit( pho.get_HitIndex() );
                 RICHParticle had = get_Hadron( pho.get_ParentIndex() );
 
                 RICHSolution reco = new RICHSolution();
@@ -576,15 +575,15 @@ public class RICHEvent {
                 }
                 if(recotype==1) {reco = pho.traced; stype="traced";}
 
-                double htime = hit.get_time();
-                double dtime = pho.get_start_time() + reco.get_time() - htime;
+                double htime = hit.get_Time();
+                double dtime = pho.get_StartTime() + reco.get_time() - htime;
 
                 int irefle = reco.get_RefleType();
                 if(irefle<0 || irefle>2) continue;
 
                 double CHMI = had.minChAngle(irefle);
                 double CHMA = had.maxChAngle(irefle);
-                double DTMA = recpar.RICH_TIME_RMS*3;
+                double DTMA = richpar.RICH_TIME_RMS*3;
 
                 double etaC = reco.get_EtaC();
 
@@ -606,7 +605,7 @@ public class RICHEvent {
     }
 
     // ----------------
-    public void analyze_Photons(){
+    public void analyze_Photons(RICHRayTrace richtrace){
     // ----------------
 
         int debugMode = 0;
@@ -617,12 +616,12 @@ public class RICHEvent {
                 RICHParticle richhadron = get_Hadron( photon.get_ParentIndex() );
                 if(debugMode>=1){
                     System.out.format(" --------------------------------- \n");
-                    System.out.format(" Analyze Photon %4d  from  Hadron %3d  meas hit %7.2f %7.2f %7.2f \n",jj,richhadron.get_id(), 
-                                       photon.meas_hit.x,photon.meas_hit.y,photon.meas_hit.z);
+                    System.out.format(" Analyze Photon %4d  from  Hadron %3d  meas hit %s \n",jj,richhadron.get_id(), 
+                                       photon.get_HitPos().toStringBrief(2));
                     System.out.format(" --------------------------------- \n");
                 }
                 if (richhadron.get_Status()==1){
-                    photon.find_EtaC_analytic_migrad(richhadron);
+                    richtrace.find_EtaC_analytic_migrad(richhadron, photon);
                 }else{
                     if(debugMode>=1)System.out.format(" Hadron pointing to mirror, skip analytic analysis \n");
                 }
@@ -632,7 +631,7 @@ public class RICHEvent {
     }
 
     // ----------------
-    public void trace_Photons(RICHTool tool){
+    public void trace_Photons(RICHRayTrace richtrace){
     // ----------------
 
         int debugMode = 0;
@@ -643,11 +642,11 @@ public class RICHEvent {
                 RICHParticle richhadron = get_Hadron( photon.get_ParentIndex() );
                 if(debugMode>=1){
                     System.out.format(" --------------------------------- \n");
-                    System.out.format(" Trace Photon %4d  from  Hadron %3d  meas hit %7.2f %7.2f %7.2f \n",jj,richhadron.get_id(), 
-                                       photon.meas_hit.x,photon.meas_hit.y,photon.meas_hit.z);
+                    System.out.format(" Trace Photon %4d  from  Hadron %3d  meas hit %s \n",jj,richhadron.get_id(), 
+                                       photon.get_HitPos().toStringBrief(2));
                     System.out.format(" --------------------------------- \n");
                 }
-                photon.find_EtaC_raytrace_steps(richhadron, tool);
+                richtrace.find_EtaC_raytrace_steps(richhadron, photon);
             }
             jj++;
         }
@@ -655,7 +654,7 @@ public class RICHEvent {
 
 
     // ----------------
-    public void associate_Throws(RICHRecParameters recpar) {
+    public void associate_Throws(RICHParameters richpar) {
     // ----------------
 
         int debugMode = 0;
@@ -666,16 +665,16 @@ public class RICHEvent {
         int jj=0;
         for( RICHParticle photon: photons){
             if(photon.get_type()==0){
-                if(debugMode>=1)System.out.format(" Look for pho id %4d  xy %8.2f %8.2f  time %7.2f \n",photon.get_id(),photon.meas_hit.x,photon.meas_hit.y, photon.get_meas_time());
+                if(debugMode>=1)System.out.format(" Look for pho id %4d  xy %8.2f %8.2f  time %7.2f \n",
+                           photon.get_id(),photon.get_HitPos().x(),photon.get_HitPos().y(), photon.get_HitTime());
                 int ii=0;
                 double distmin = 99999;
                 for( RICHParticle trial: photons){
                     if(trial.get_type()>0){
-                        double dist = trial.meas_hit.distance(photon.meas_hit);
-                        //if(debugMode>=0)System.out.format("  -->  %4d %8.2f %8.2f  dist %8.2f  prev %8.2f \n",ii, trial.meas_hit.x, trial.meas_hit.y, dist, distmin);
+                        double dist = trial.get_HitPos().distance(photon.get_HitPos());
                         if(dist < distmin){
                             distmin = dist;
-                            if(distmin<recpar.THROW_ASSOCIATION_CUT){
+                            if(distmin<richpar.THROW_ASSOCIATION_CUT){
                                 photon.trial_pho = trial;
                             }
                         }
@@ -683,13 +682,13 @@ public class RICHEvent {
                     ii++; 
                 }
                 if(photon.trial_pho!=null && distmin<4){
-                    double tprob=photon.trial_pho.time_probability(photon.get_meas_time(), 1);
+                    double tprob=photon.trial_pho.time_probability(photon.get_HitTime(), 1);
                     if(tprob-1>1.e-3){
-                        match_chi2+=Math.pow((distmin/recpar.RICH_HITMATCH_RMS),2);
+                        match_chi2+=Math.pow((distmin/richpar.RICH_HITMATCH_RMS),2);
                         match_nchi2++;
                         if(debugMode>=1)System.out.format("  -->  store throw id %d  xy %8.2f %8.2f  time %7.2f  --> dist %7.2f  ch2 %7.2f  tprob %8.6f %10.2f \n",
-                            photon.trial_pho.get_id(),photon.trial_pho.meas_hit.x,photon.trial_pho.meas_hit.y, photon.trial_pho.get_meas_time(), 
-                            distmin, (distmin/recpar.RICH_HITMATCH_RMS), tprob-1, match_chi2);
+                            photon.trial_pho.get_id(),photon.trial_pho.get_HitPos().x(),photon.trial_pho.get_HitPos().y(), photon.trial_pho.get_HitTime(), 
+                            distmin, (distmin/richpar.RICH_HITMATCH_RMS), tprob-1, match_chi2);
                     }
                 }
             }
@@ -701,21 +700,22 @@ public class RICHEvent {
     }
 
     // ----------------
-    public void throw_Photons(RICHParticle hadron, int Npho, double theta, int type, RICHTool tool){
+    public void throw_Photons(RICHParticle hadron, int Npho, double theta, int type, RICHRayTrace richtrace, RICHParameters richpar){
     // ----------------
 
         int debugMode = 0;
-        Vector3d vhad = hadron.direct_ray.diff().normalized();
+        Vector3D vhad = hadron.direct_ray.toVector().asUnit();
 
         // Define Cherenkov rotation
-        Vector3d vax = (vhad.cross(Vector3d.X_ONE)).normalized();
+        Vector3D X_ONE = new Vector3D(1., 0., 0.);
+        Vector3D vax = (vhad.cross(X_ONE)).asUnit();
         Quaternion qch = new Quaternion(theta, vax);
-        Vector3d vch = (qch.rotate(vhad)).normalized();
+        Vector3D vch = (qch.rotate(vhad)).asUnit();
 
         if(debugMode>=3){
-            System.out.format("   -->  vhad %8.3f %8.3f %8.3f | %8.3f %8.3f \n", vhad.x, vhad.y, vhad.z, hadron.lab_theta*RAD, hadron.lab_phi*RAD);
-            System.out.format("   -->  vax  %8.3f %8.3f %8.3f | %8.3f %8.3f \n", vax.x, vax.y, vax.z, vax.angle(Vector3d.Z_ONE)*RAD, Math.atan2(vax.y, vax.x)*RAD);
-            System.out.format("   -->  vch  %8.3f %8.3f %8.3f | %8.3f %8.3f \n", vch.x, vch.y, vch.z, vch.angle(Vector3d.Z_ONE)*RAD, Math.atan2(vch.y, vch.x)*RAD);
+            System.out.format("   -->  vhad %s | %8.3f %8.3f \n", vhad.toStringBrief(2), hadron.lab_theta*RAD, hadron.lab_phi*RAD);
+            System.out.format("   -->  vax  %s | %8.3f %8.3f \n", vax.toStringBrief(2), vax.theta()*RAD, vax.phi()*RAD);
+            System.out.format("   -->  vch  %s | %8.3f %8.3f \n", vch.toStringBrief(2), vch.theta()*RAD, vch.phi()*RAD);
             System.out.format("   -->  resulting angle %8.3f %8.3f \n", vch.angle(vhad)*MRAD, vch.angle(vhad)*RAD); 
         }
 
@@ -738,30 +738,28 @@ public class RICHEvent {
       
             // Define Cone rotation
             Quaternion qco = new Quaternion(cophi, vhad);
-            Vector3d vpho = qco.rotate(vch).normalized();
+            Vector3D vpho = (qco.rotate(vch)).asUnit();
             
-            double vpho_phi = Math.atan2(vpho.y, vpho.x);
-            double vpho_th = vpho.angle(Vector3d.Z_ONE);
             double che_th = vch.angle(vhad);
-            if(debugMode>=3) System.out.format(" %d %8.2f --> vpho %8.3f %8.3f %8.3f | %8.3f %8.3f --> %8.3f %8.3f\n", 
-                             photons.size(), cophi*RAD, vpho.x, vpho.y, vpho.z, vpho_th*RAD, vpho_phi*RAD, che_th*MRAD, che_th*RAD);
+            if(debugMode>=3) System.out.format(" %d %8.2f --> vpho %s | %8.3f %8.3f --> %8.3f %8.3f\n", 
+                             photons.size(), cophi*RAD, vpho.toStringBrief(2), vpho.theta()*RAD, vpho.phi()*RAD, che_th*MRAD, che_th*RAD);
 
-            RICHParticle photon = new RICHParticle(photons.size(), hadron.get_id(), 0, 1.e-6, 22, tool);
-            photon.set_points(hadron, hadron.lab_emission.plus(vpho.times(400)));
-            photon.set_start_time(hadron.get_start_time());
+            Point3D extrap = new Point3D(hadron.lab_emission, vpho.multiply(400));
+            RICHParticle photon = new RICHParticle(photons.size(), hadron, null, extrap, richpar);
+            photon.set_rotated_points(hadron);
             photon.set_type(type);
-            photon.traced.set_EtaC((float) theta);
-            photon.traced.set_theta((float) vpho_th);
-            photon.traced.set_phi((float) vpho_phi);
+            photon.traced.set_EtaC(theta);
+            photon.traced.set_theta(vpho.theta());
+            photon.traced.set_phi(vpho.phi());
 
-            ArrayList<RICHRay> rays = tool.RayTrace(photon.lab_emission, photon.ilay_emission, photon.ico_emission, vpho);
+            ArrayList<RICHRay> rays = richtrace.RayTrace(photon, vpho);
             if(rays!=null) {
                 if(debugMode>=2) System.out.format(" Photon traced till PMT detection \n");
                 
                 photon.traced.set_raytracks(rays);
 
-                photon.set_meas_hit( photon.traced.get_hit() );
-                photon.set_meas_time( photon.get_start_time() + photon.traced.get_time() );
+                photon.set_HitPos( photon.traced.get_hit() );
+                photon.set_HitTime( photon.get_StartTime() + photon.traced.get_time() );
                 String head = String.format(" THROW %7de %3d ",eventID,photon.get_id());
                 if(debugMode>=1)photon.traced.dump_raytrack(head);
 
@@ -770,8 +768,7 @@ public class RICHEvent {
                     if(debugMode>=1)System.out.format(" --> detected \n");
                     photons.add(photon);
                     fac=1;
-                    if (photon.traced.get_rayrefle()>2)fac=2.;
-                    //if (photon.traced.get_rayrefle()>2)fac=4.;
+                    if (photon.traced.get_Nrefle()>2)fac=2.;
                     nk++;
                 }
             }
