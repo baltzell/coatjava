@@ -159,25 +159,6 @@ public class DCEngine extends ReconstructionEngine {
             "/geometry/beam/position"
         };
 
-        // Get the constants for the correct variation
-        String ccDBVar = this.getEngineConfigString("variation");
-        if (ccDBVar!=null) {
-            System.out.println("["+this.getName()+"] run with constants variation based on yaml = "+ccDBVar);
-        }
-        else {
-            ccDBVar = System.getenv("COAT_DC_VARIATION");
-            if (ccDBVar!=null) {
-                System.out.println("["+this.getName()+"] run with constants variation chosen based on env = "+ccDBVar);
-            }
-        } 
-        if (ccDBVar==null) {
-            System.out.println("["+this.getName()+"] run with default constants");
-        }
-        // Load the calibration constants
-        String dcvariationName = Optional.ofNullable(ccDBVar).orElse("default");
-        variationName = dcvariationName;
-        this.getConstantsManager().setVariation(dcvariationName);
-
         requireConstants(Arrays.asList(dcTables));
         // Get the constants for the correct variation
         String geomDBVar = this.getEngineConfigString("dcGeometryVariation");
@@ -225,7 +206,22 @@ public class DCEngine extends ReconstructionEngine {
         //}
         tSurf.LoadSurfaces(targetPosition, targetLength,dcDetector, ftofDetector, ecalDetector, richDetector);
 
-        
+        // Get the constants for the correct variation
+        String ccDBVar = this.getEngineConfigString("variation");
+        if (ccDBVar!=null) {
+            System.out.println("["+this.getName()+"] run with constants variation based on yaml = "+ccDBVar);
+        }
+        else {
+            ccDBVar = System.getenv("COAT_DC_VARIATION");
+            if (ccDBVar!=null) {
+                System.out.println("["+this.getName()+"] run with constants variation chosen based on env = "+ccDBVar);
+            }
+        } 
+        if (ccDBVar==null) {
+            System.out.println("["+this.getName()+"] run with default constants");
+        }
+        // Load the calibration constants
+        String dcvariationName = Optional.ofNullable(ccDBVar).orElse("default");
         variationName = dcvariationName;
         this.getConstantsManager().setVariation(dcvariationName);
     }
