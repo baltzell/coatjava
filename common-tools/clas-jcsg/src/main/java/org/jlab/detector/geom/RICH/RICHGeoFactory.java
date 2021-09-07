@@ -455,7 +455,7 @@ public class RICHGeoFactory{
         if(geocal.find_RICHModule(isec)>0){
 
             if(ilayer==DetectorLayer.RICH_AEROGEL_B1)      layer = this.get_Layer(isec, "AEROGEL_2CM_B1").get_TrajPlane();
-            else if(ilayer==DetectorLayer.RICH_AEROGEL_B2) layer = this.get_Layer(isec, "AEROGEL_2CM_b2").get_TrajPlane();
+            else if(ilayer==DetectorLayer.RICH_AEROGEL_B2) layer = this.get_Layer(isec, "AEROGEL_2CM_B2").get_TrajPlane();
             else if(ilayer==DetectorLayer.RICH_AEROGEL_L1) layer = this.get_Layer(isec, "AEROGEL_3CM_L1").get_TrajPlane();
             return layer;
 
