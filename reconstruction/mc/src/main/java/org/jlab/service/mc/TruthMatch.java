@@ -61,6 +61,10 @@ public class TruthMatch extends ReconstructionEngine {
             return false;
         }
 
+        if (event.hasBank("REC::Particle") == false) {
+            return false;
+        }
+
         /**
          * ********************************************************
          * The 1st thing, let's load MC particles
@@ -296,14 +300,18 @@ public class TruthMatch extends ReconstructionEngine {
 // True hit information from the MC::True banl
     class MCHit {
 
+        /**
+         * TODO: pid should be removed, it is not needed anymore.
+         */
+        
         public int pid;      // MC particle id (pdg code)
         public int otid;     // id of the original (gernerated) particle that eventually caused the hit
-        public int hitn;     // Hit id: it corresponds to the position of rec hits.
+        public int hitn;     // Hit id: it corresponds to the position of the corresponding dgtized hit in the adc bank
         public byte detector; // Detector code descriptor
 
         @Override
         public String toString() {
-            String str = "***** RecHit object ******\n";
+            String str = "***** MCHit object ******\n";
 
             str += "* pid = " + String.valueOf(pid) + "\n";
             str += "* otid = " + String.valueOf(otid) + "\n";
@@ -343,16 +351,16 @@ public class TruthMatch extends ReconstructionEngine {
             mcotid = -1;
         }
         public short id;            // cluster id
-        public short mcotid;        // mc track id
+        public short mcotid;        // id of the original MC particls
         public short rectid;        // rec track id
         public short pindex;        // index of the rec particle
         public int nHitMatched;     // number of hits MC matched
         public short size;          // number of hits
-        public byte detector;
-        public byte layer;
-        public byte superlayer;
-        public byte sector;
-        public float energy;
+        public byte detector;       // The detector
+        public byte layer;          // layer
+        public byte superlayer;     // Superlayer
+        public byte sector;         // Sector
+        public float energy;        // energy
 
         @Override
         public String toString() {
@@ -466,7 +474,6 @@ public class TruthMatch extends ReconstructionEngine {
             mcp.put((short) (i), curPart);
         }
         return mcp;
-
     }
 
     /**
@@ -501,6 +508,10 @@ public class TruthMatch extends ReconstructionEngine {
 
     Map<Byte, Map<Integer, MCHit>> getMCHits(DataBank mctrue, Map<Short, MCPart> mcp) {
 
+        /**
+         * TODO: The 2nd argument is not needed anymore, should be cleaned up
+         */
+        
         Map<Byte, Map<Integer, MCHit>> dmchits = new HashMap<>();
 
         for (int i = 0; i < mctrue.rows(); i++) {
@@ -1968,6 +1979,10 @@ public class TruthMatch extends ReconstructionEngine {
 
         for (int j = 0; j < recp.size(); j++) {
             MCRecMatch p = recp.get(j);
+            
+            //Long.toBinaryString(mcp.get((short) mchitsInBMT.get(hitID).otid).MCLayersTrk)
+            //System.out.println( Long.toBinaryString(p.RecLayersTrk) + "     " +  Long.toBinaryString(p.MCLayersTrk));
+                    
             bankRecMatch.setShort("pindex", j, p.pindex);
             bankRecMatch.setShort("mcTindex", j, p.id);
             bankRecMatch.setLong("RecLayersTrk", j, p.RecLayersTrk);
