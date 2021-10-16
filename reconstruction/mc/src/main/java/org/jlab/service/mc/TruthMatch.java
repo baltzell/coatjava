@@ -229,7 +229,7 @@ public class TruthMatch extends ReconstructionEngine {
             Map<Short, List<RecCluster>> clsPerRecp = mapClustersToParticles(recp.keySet(), allCls, "Rec");
             //PrintClsPerMc(clsPerMCp);
 
-            List<MCRecMatch> MCRecMatches = MakeMCRecMatch(mcp, recp, clsPerMCp);
+            List<MCRecMatch> MCRecMatches = MakeMCRecMatch(mcp,  clsPerMCp);
             List<MCRecMatch> RecMCMatches = MakeRecMCMatch(recp, clsPerRecp);
             bankWriter(event, MCRecMatches, RecMCMatches);
         } catch (Exception ex) {
@@ -303,7 +303,6 @@ public class TruthMatch extends ReconstructionEngine {
         /**
          * TODO: pid should be removed, it is not needed anymore.
          */
-        
         public int pid;      // MC particle id (pdg code)
         public int otid;     // id of the original (gernerated) particle that eventually caused the hit
         public int hitn;     // Hit id: it corresponds to the position of the corresponding dgtized hit in the adc bank
@@ -511,7 +510,6 @@ public class TruthMatch extends ReconstructionEngine {
         /**
          * TODO: The 2nd argument is not needed anymore, should be cleaned up
          */
-        
         Map<Byte, Map<Integer, MCHit>> dmchits = new HashMap<>();
 
         for (int i = 0; i < mctrue.rows(); i++) {
@@ -1803,7 +1801,7 @@ public class TruthMatch extends ReconstructionEngine {
      * and the value is the list of clusters for that MC::Particle
      * @return
      */
-    List<MCRecMatch> MakeMCRecMatch(Map<Short, MCPart> mcp, Map<Short, RecPart> recp, Map<Short, List<RecCluster>> clsPerMCp) {
+    List<MCRecMatch> MakeMCRecMatch(Map<Short, MCPart> mcp, Map<Short, List<RecCluster>> clsPerMCp) {
 
         List<MCRecMatch> recMatch = new ArrayList<>();
 
@@ -1815,7 +1813,6 @@ public class TruthMatch extends ReconstructionEngine {
             match.MCLayersTrk = mcp.get(imc).MCLayersTrk;
             match.MCLayersNeut = mcp.get(imc).MCLayersNeut;
 
-            
             /**
              * Generally speaking it is possible that all clusters of a given MC
              * particles will not have the same Rec::Particle. So we will make a
@@ -1979,10 +1976,9 @@ public class TruthMatch extends ReconstructionEngine {
 
         for (int j = 0; j < recp.size(); j++) {
             MCRecMatch p = recp.get(j);
-            
+
             //Long.toBinaryString(mcp.get((short) mchitsInBMT.get(hitID).otid).MCLayersTrk)
             //System.out.println( Long.toBinaryString(p.RecLayersTrk) + "     " +  Long.toBinaryString(p.MCLayersTrk));
-                    
             bankRecMatch.setShort("pindex", j, p.pindex);
             bankRecMatch.setShort("mcTindex", j, p.id);
             bankRecMatch.setLong("RecLayersTrk", j, p.RecLayersTrk);
@@ -2176,4 +2172,107 @@ public class TruthMatch extends ReconstructionEngine {
 
         return nSL >= nMinSL;
     }
+
+    /**
+     * Check whether the track is reconstructable in CVT
+     * reconstractable in DC
+     *
+     * @param word to be checked
+     * @return Whether the the CVT track is reconstructable
+     */
+    public Boolean CheckCVTAcceptance(Long word) {
+        
+        
+        //std::cout<<"Word is "<<word<<std::endl;
+        int bstR1 = CountNSetBits(word, (short)BSTStartBit, (short)(BSTStartBit + 1) ) == 2 ? 1 : 0;
+        int bstR2 = CountNSetBits(word, (short)(BSTStartBit+2), (short)(BSTStartBit + 3)) == 2 ? 1 : 0;
+        int bstR3 = CountNSetBits(word, (short)(BSTStartBit+4), (short)(BSTStartBit + 5)) == 2 ? 1 : 0;
+        int nSVTCross = (int)bstR1 + (int)bstR2 + (int)bstR3;
+        
+        
+        int nBMT_Z = CountNSetBits(word, (short)(BMTStartBit + 1), (short)(BMTStartBit + 1)) + 
+                CountNSetBits(word, (short)(BMTStartBit + 2), (short)(BMTStartBit + 2)) 
+                + CountNSetBits(word, (short)(BMTStartBit + 4), (short)(BMTStartBit + 4));
+        int nBMT_C = CountNSetBits(word, (short)(BMTStartBit), (short)BMTStartBit) + 
+                CountNSetBits(word, (short)(BMTStartBit + 3), (short)(BMTStartBit + 3)) + 
+                CountNSetBits(word, (short)(BMTStartBit + 5), (short)(BMTStartBit + 5));
+        
+        
+            //  1 BMT Z-detector cross + 2 SVT crosses;
+            //  2 BMT Z-detector cross +1 SVT cross + 1 BMT C-detector cross ;
+
+        
+        
+        return ( (nBMT_Z >= 1) && (nSVTCross >= 2) ) || ( (nBMT_Z >= 2) && (nSVTCross >= 1) && (nBMT_C >= 1) );
+        
+    }
+    
+    
+    
+    /**
+     *
+     * @param word // The status word to be checked
+     * @param EC_part // ECal part: 0 for PCal, 1 for EC_in and 2 for EC_out
+     * @return // true if the corresponding ECal layer bit is set
+     */
+    public Boolean CheckECalLayers(Long word, short EC_part) {
+
+        if (EC_part != 0 || EC_part != 1 || EC_part != 2) {
+            throw new RuntimeException(" The 2nd argument value should be 0,1 or 2 // representing PCal, EC_in and EC_out respectively");
+        }
+
+        return CountNSetBits(word, (short) (EC_part + ECalStartBit), (short) (EC_part + ECalStartBit)) > 0;
+    }
+
+    /**
+     *
+     * @param word // The status word to be checked
+     * @param layer // CND layer: 0 for layer 1, 1 for layer 2, 2 for layer 3
+     * @return // true if the corresponding CND layer bit is set
+     */
+    public Boolean CheckCNDLayers(Long word, short layer) {
+
+        if (layer != 0 || layer != 1 || layer != 2) {
+            throw new RuntimeException(" The 2nd argument value should be 0,1 or 2 // representing CND layers, 1, 2 and 3 respectively");
+        }
+
+        return CountNSetBits(word, (short) (layer + CNDStartBit), (short) (layer + CNDStartBit)) > 0;
+    }
+
+    /**
+     *
+     * @param word // The status word to be checked
+     * @return // true if CTOF bit is set
+     */
+    public Boolean CheckCTOF(Long word) {
+
+        return CountNSetBits(word, (short) CTOFBit, (short) CTOFBit) > 0;
+    }
+
+    /**
+     *
+     * @param word // The status word to be checked
+     * @param layer // FTCalHodo: 0 for Hodo layer 1, 1 for Hodo layer 2, 2 for
+     * FTCal
+     * @return // true if the corresponding FTCalHodo bit is set
+     */
+    public Boolean CheckFTHodoLayers(Long word, short layer) {
+
+        if (layer != 0 || layer != 1) {
+            throw new RuntimeException(" The 2nd argument value should be 0 or 1 // representing FTHodo layers, 1, 2  respectively");
+        }
+
+        return CountNSetBits(word, (short) (layer + FTHodoStartBit), (short) (layer + FTHodoStartBit)) > 0;
+    }
+
+    /**
+     *
+     * @param word // The status word to be checked
+     * @return // true if CTOF bit is set
+     */
+    public Boolean CheckFTCal(Long word) {
+
+        return CountNSetBits(word, (short) FTCalBit, (short) FTCalBit) > 0;
+    }
+
 }
