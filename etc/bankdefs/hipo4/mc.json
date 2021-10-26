@@ -117,7 +117,7 @@
         ]
     },
         {
-        "name": "MC::RecMatch1",
+        "name": "MC::RecMatch",
         "group": 40,
         "item" : 6,
         "info": "Rec::Particle -> MC::Particle matching",
