@@ -112,7 +112,7 @@
 	    {"name":"mclayer1",      "type":"L",  "info":"layers from the 1st set of detectors hit by MC particle"},
 	    {"name":"mclayer2",      "type":"L",  "info":"layers from the 2nd set of detectors hit by MC particle"},
 	    {"name":"player1",       "type":"L",  "info":"layers from the 1st set of detectors hit by Recon particle"},
-	    {"name":"player2",       "type":"L",  "info":"layers from the 2nd set of detectors hit by Recon particle"}
+	    {"name":"player2",       "type":"L",  "info":"layers from the 2nd set of detectors hit by Recon particle"},
 	    {"name":"quality",       "type":"F",  "info":"matching quality parameter"}
         ]
     },
@@ -127,7 +127,7 @@
 	    {"name":"player1",       "type":"L",  "info":"layers from the 1st set of detectors hit by Recon particle"},
 	    {"name":"player2",       "type":"L",  "info":"layers from the 1st set of detectors hit by Recon particle"},
 	    {"name":"mclayer1",      "type":"L",  "info":"layers from the 1st set of detectors hit by MC particle"},
-	    {"name":"mclayer2",      "type":"L",  "info":"layers from the 2nd set of detectors hit by MC particle"}
+	    {"name":"mclayer2",      "type":"L",  "info":"layers from the 2nd set of detectors hit by MC particle"},
 	    {"name":"quality",       "type":"F",  "info":"matching quality parameter"}
         ]
     }
