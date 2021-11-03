@@ -1958,21 +1958,24 @@ public class TruthMatch extends ReconstructionEngine {
 
     void bankWriter(DataEvent event, List<MCRecMatch> mcp, List<MCRecMatch> recp) {
 
-        DataBank bank = event.createBank("MC::IsParticleMatched", mcp.size());
+        DataBank bank = event.createBank("MC::GenMatch", mcp.size());
 
         for (int j = 0; j < mcp.size(); j++) {
             MCRecMatch p = mcp.get(j);
-            bank.setShort("mcTindex", j, p.id);
+            bank.setShort("mcindex", j, p.id);
             bank.setShort("pindex", j, p.pindex);
-            bank.setLong("MCLayersTrk", j, p.MCLayersTrk);
-            bank.setLong("MCLayersNeut", j, p.MCLayersNeut);
-            bank.setLong("RecLayersTrk", j, p.RecLayersTrk);
-            bank.setLong("RecLayersNeut", j, p.RecLayersNeut);
+            bank.setLong("mclayer1", j, p.MCLayersTrk);
+            bank.setLong("mclayer2", j, p.MCLayersNeut);
+            bank.setLong("player1", j, p.RecLayersTrk);
+            bank.setLong("player2", j, p.RecLayersNeut);
+            bank.setLong("quality", j, p.RecLayersNeut);
+            Float quality = 0.5F;
+            bank.setFloat("quality", j, quality);
         }
 
         event.appendBanks(bank);
 
-        DataBank bankRecMatch = event.createBank("MC::IsRecParticleMatched", recp.size());
+        DataBank bankRecMatch = event.createBank("MC::RecMatc", recp.size());
 
         for (int j = 0; j < recp.size(); j++) {
             MCRecMatch p = recp.get(j);
@@ -1980,11 +1983,13 @@ public class TruthMatch extends ReconstructionEngine {
             //Long.toBinaryString(mcp.get((short) mchitsInBMT.get(hitID).otid).MCLayersTrk)
             //System.out.println( Long.toBinaryString(p.RecLayersTrk) + "     " +  Long.toBinaryString(p.MCLayersTrk));
             bankRecMatch.setShort("pindex", j, p.pindex);
-            bankRecMatch.setShort("mcTindex", j, p.id);
-            bankRecMatch.setLong("RecLayersTrk", j, p.RecLayersTrk);
-            bankRecMatch.setLong("RecLayersNeut", j, p.RecLayersNeut);
-            bankRecMatch.setLong("MCLayersTrk", j, p.MCLayersTrk);
-            bankRecMatch.setLong("MCLayersNeut", j, p.MCLayersNeut);
+            bankRecMatch.setShort("mcindex", j, p.id);
+            bankRecMatch.setLong("player1", j, p.RecLayersTrk);
+            bankRecMatch.setLong("player2", j, p.RecLayersNeut);
+            bankRecMatch.setLong("mclayer1", j, p.MCLayersTrk);
+            bankRecMatch.setLong("mclayer2", j, p.MCLayersNeut);
+            Float quality = 0.5F;
+            bank.setFloat("quality", j, quality);            
         }
 
         event.appendBank(bankRecMatch);
