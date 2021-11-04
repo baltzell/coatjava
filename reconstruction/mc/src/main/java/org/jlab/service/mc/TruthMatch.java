@@ -4,6 +4,7 @@ import org.jlab.clas.reco.ReconstructionEngine;
 import org.jlab.detector.base.DetectorType;
 import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
+import org.jlab.clas.pdg.PDGDatabase;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -229,8 +230,9 @@ public class TruthMatch extends ReconstructionEngine {
             Map<Short, List<RecCluster>> clsPerRecp = mapClustersToParticles(recp.keySet(), allCls, "Rec");
             //PrintClsPerMc(clsPerMCp);
 
-            List<MCRecMatch> MCRecMatches = MakeMCRecMatch(mcp,  clsPerMCp);
+            List<MCRecMatch> MCRecMatches = MakeMCRecMatch(mcp, clsPerMCp);
             List<MCRecMatch> RecMCMatches = MakeRecMCMatch(recp, clsPerRecp);
+            CalculateMatchCuality(event, MCRecMatches, RecMCMatches);
             bankWriter(event, MCRecMatches, RecMCMatches);
         } catch (Exception ex) {
             System.err.println("The DataSet in the  mapClustersToParticles should be either 'Rec' or 'MC' ");
@@ -389,6 +391,7 @@ public class TruthMatch extends ReconstructionEngine {
             pindex = -1;
             MCLayersTrk = 0L;
             RecLayersTrk = 0L;
+            quality = 0F;
         }
         public short id;            // MC particle id
         public short pindex;        // pindex index of the rec particle in the REC::Particle bank
@@ -396,6 +399,8 @@ public class TruthMatch extends ReconstructionEngine {
         public long MCLayersNeut;    // See description below
         public long RecLayersTrk;    // See description below
         public long RecLayersNeut;   // See description below
+
+        public float quality;
 
         // *********************************************** Description of "MCLayersTrk" ************************************************************
         //**** BMT Layer ****|*** BST Layer **** | ******************************************* DC layers *******************************************
@@ -1956,6 +1961,97 @@ public class TruthMatch extends ReconstructionEngine {
         return recMatch;
     }
 
+    void CalculateMatchCuality(DataEvent event, List<MCRecMatch> mcp, List<MCRecMatch> recp) {
+
+        // At this stage we know that MC::Particle and REC::Particle must exist, so will not additionaly check for them
+        DataBank mcPartBank = event.getBank("MC::Particle");
+
+        for (int j = 0; j < mcp.size(); j++) {
+            MCRecMatch mcMatch = mcp.get(j);
+            Integer pid = mcPartBank.getInt("pid", j);
+            Integer charge = PDGDatabase.getParticleById(pid).charge();
+            //System.out.println("pid = " + mcPartBank.getInt("pid", j) + "    Charge = " + charge);
+            Float quality = 0.F;
+
+            if (charge != 0) {
+                if (CheckDCAcceptance(mcMatch.MCLayersTrk, (short) 5, (short) 4) || CheckCVTAcceptance(mcMatch.MCLayersTrk)) {
+                    quality = 0.95F;
+
+                    if (CheckDCAcceptance(mcMatch.RecLayersTrk, (short) 5, (short) 4) || CheckCVTAcceptance(mcMatch.RecLayersTrk)) {
+                        quality = 0.98F;
+                    }
+                }
+            } else {
+
+                if (pid == 2112 || pid == -2112) {
+
+                    if (CountNSetBits(mcMatch.MCLayersNeut, (short) 0, (short) 6) > 0) {
+                        quality = 0.91F;
+
+                        if (CountNSetBits(mcMatch.RecLayersNeut, (short) 0, (short) 6) > 0) {
+                            quality = 0.92F;
+                        }
+                    }
+                } else if (pid == 22) {
+                    if (CountNSetBits(mcMatch.RecLayersNeut, (short) 0, (short) 0) > 0 || CountNSetBits(mcMatch.RecLayersNeut, (short) 3, (short) 6) > 0) {
+                        quality = 0.93F;
+                        if (CountNSetBits(mcMatch.RecLayersNeut, (short) 0, (short) 0) > 0 || CountNSetBits(mcMatch.RecLayersNeut, (short) 3, (short) 6) > 0) {
+                            quality = 0.94F;
+                        }
+                    }
+                }
+
+            }
+
+            mcMatch.quality = quality;
+        }
+
+        // At this stage we know that MC::Particle and REC::Particle must exist, so will not additionaly check for them
+        DataBank recPartBank = event.getBank("REC::Particle");
+
+        for (int j = 0; j < recp.size(); j++) {
+            MCRecMatch recMatch = recp.get(j);
+            Integer pid = recPartBank.getInt("pid", j);
+            Integer charge = recPartBank.getInt("charge", j);
+
+            Float quality = 0.F;
+
+            //Integer charge = PDGDatabase.getParticleById(pid).charge();
+            if (charge != 0) {
+                if (CheckDCAcceptance(recMatch.RecLayersTrk, (short) 5, (short) 4) || CheckCVTAcceptance(recMatch.RecLayersTrk)) {
+                    quality = 0.95F;
+
+                    if (CheckDCAcceptance(recMatch.MCLayersTrk, (short) 5, (short) 4) || CheckCVTAcceptance(recMatch.MCLayersTrk)) {
+                        quality = 0.98F;
+                    }
+                }
+            } else {
+
+                if (pid == 2112 || pid == -2112) {
+
+                    if (CountNSetBits(recMatch.RecLayersNeut, (short) 0, (short) 6) > 0) {
+                        quality = 0.91F;
+
+                        if (CountNSetBits(recMatch.MCLayersNeut, (short) 0, (short) 6) > 0) {
+                            quality = 0.92F;
+                        }
+                    }
+                } else if (pid == 22) {
+                    if (CountNSetBits(recMatch.RecLayersNeut, (short) 0, (short) 0) > 0 || CountNSetBits(recMatch.RecLayersNeut, (short) 3, (short) 6) > 0) {
+                        quality = 0.93F;
+                        if (CountNSetBits(recMatch.RecLayersNeut, (short) 0, (short) 0) > 0 || CountNSetBits(recMatch.RecLayersNeut, (short) 3, (short) 6) > 0) {
+                            quality = 0.94F;
+                        }
+                    }
+                }
+
+            }
+
+            recMatch.quality = quality;
+        }
+
+    }
+
     void bankWriter(DataEvent event, List<MCRecMatch> mcp, List<MCRecMatch> recp) {
 
         DataBank bank = event.createBank("MC::GenMatch", mcp.size());
@@ -1968,14 +2064,12 @@ public class TruthMatch extends ReconstructionEngine {
             bank.setLong("mclayer2", j, p.MCLayersNeut);
             bank.setLong("player1", j, p.RecLayersTrk);
             bank.setLong("player2", j, p.RecLayersNeut);
-            bank.setLong("quality", j, p.RecLayersNeut);
-            Float quality = 0.5F;
-            bank.setFloat("quality", j, quality);
+            bank.setFloat("quality", j, p.quality);
         }
 
         event.appendBanks(bank);
 
-        DataBank bankRecMatch = event.createBank("MC::RecMatc", recp.size());
+        DataBank bankRecMatch = event.createBank("MC::RecMatch", recp.size());
 
         for (int j = 0; j < recp.size(); j++) {
             MCRecMatch p = recp.get(j);
@@ -1988,8 +2082,7 @@ public class TruthMatch extends ReconstructionEngine {
             bankRecMatch.setLong("player2", j, p.RecLayersNeut);
             bankRecMatch.setLong("mclayer1", j, p.MCLayersTrk);
             bankRecMatch.setLong("mclayer2", j, p.MCLayersNeut);
-            Float quality = 0.5F;
-            bank.setFloat("quality", j, quality);            
+            bankRecMatch.setFloat("quality", j, p.quality);
         }
 
         event.appendBank(bankRecMatch);
@@ -2179,41 +2272,32 @@ public class TruthMatch extends ReconstructionEngine {
     }
 
     /**
-     * Check whether the track is reconstructable in CVT
-     * reconstractable in DC
+     * Check whether the track is reconstructable in CVT reconstractable in DC
      *
      * @param word to be checked
      * @return Whether the the CVT track is reconstructable
      */
     public Boolean CheckCVTAcceptance(Long word) {
-        
-        
-        //std::cout<<"Word is "<<word<<std::endl;
-        int bstR1 = CountNSetBits(word, (short)BSTStartBit, (short)(BSTStartBit + 1) ) == 2 ? 1 : 0;
-        int bstR2 = CountNSetBits(word, (short)(BSTStartBit+2), (short)(BSTStartBit + 3)) == 2 ? 1 : 0;
-        int bstR3 = CountNSetBits(word, (short)(BSTStartBit+4), (short)(BSTStartBit + 5)) == 2 ? 1 : 0;
-        int nSVTCross = (int)bstR1 + (int)bstR2 + (int)bstR3;
-        
-        
-        int nBMT_Z = CountNSetBits(word, (short)(BMTStartBit + 1), (short)(BMTStartBit + 1)) + 
-                CountNSetBits(word, (short)(BMTStartBit + 2), (short)(BMTStartBit + 2)) 
-                + CountNSetBits(word, (short)(BMTStartBit + 4), (short)(BMTStartBit + 4));
-        int nBMT_C = CountNSetBits(word, (short)(BMTStartBit), (short)BMTStartBit) + 
-                CountNSetBits(word, (short)(BMTStartBit + 3), (short)(BMTStartBit + 3)) + 
-                CountNSetBits(word, (short)(BMTStartBit + 5), (short)(BMTStartBit + 5));
-        
-        
-            //  1 BMT Z-detector cross + 2 SVT crosses;
-            //  2 BMT Z-detector cross +1 SVT cross + 1 BMT C-detector cross ;
 
-        
-        
-        return ( (nBMT_Z >= 1) && (nSVTCross >= 2) ) || ( (nBMT_Z >= 2) && (nSVTCross >= 1) && (nBMT_C >= 1) );
-        
+        //std::cout<<"Word is "<<word<<std::endl;
+        int bstR1 = CountNSetBits(word, (short) BSTStartBit, (short) (BSTStartBit + 1)) == 2 ? 1 : 0;
+        int bstR2 = CountNSetBits(word, (short) (BSTStartBit + 2), (short) (BSTStartBit + 3)) == 2 ? 1 : 0;
+        int bstR3 = CountNSetBits(word, (short) (BSTStartBit + 4), (short) (BSTStartBit + 5)) == 2 ? 1 : 0;
+        int nSVTCross = (int) bstR1 + (int) bstR2 + (int) bstR3;
+
+        int nBMT_Z = CountNSetBits(word, (short) (BMTStartBit + 1), (short) (BMTStartBit + 1))
+                + CountNSetBits(word, (short) (BMTStartBit + 2), (short) (BMTStartBit + 2))
+                + CountNSetBits(word, (short) (BMTStartBit + 4), (short) (BMTStartBit + 4));
+        int nBMT_C = CountNSetBits(word, (short) (BMTStartBit), (short) BMTStartBit)
+                + CountNSetBits(word, (short) (BMTStartBit + 3), (short) (BMTStartBit + 3))
+                + CountNSetBits(word, (short) (BMTStartBit + 5), (short) (BMTStartBit + 5));
+
+        //  1 BMT Z-detector cross + 2 SVT crosses;
+        //  2 BMT Z-detector cross +1 SVT cross + 1 BMT C-detector cross ;
+        return ((nBMT_Z >= 1) && (nSVTCross >= 2)) || ((nBMT_Z >= 2) && (nSVTCross >= 1) && (nBMT_C >= 1));
+
     }
-    
-    
-    
+
     /**
      *
      * @param word // The status word to be checked
