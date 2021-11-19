@@ -65,7 +65,7 @@ public class TruthMatch extends ReconstructionEngine {
         if (event.hasBank("REC::Particle") == false) {
             return false;
         }
-
+        
         /**
          * ********************************************************
          * The 1st thing, let's load MC particles
@@ -657,7 +657,7 @@ public class TruthMatch extends ReconstructionEngine {
             int layer = (hitsBank.getInt("layer", ihit) - 1) / 3;  // PCAL 1(U)2(V)3(W), ECIN 4(U)5(V)6(W). ECOut 7(U)8(V)9(W)
 
             int ECalLayerBit = ECalStartBit + layer;
-
+            
             mcp.get((short) mchitsInECal.get(curHit.id).otid).MCLayersNeut |= 1L << ECalLayerBit;
 
             if (curHit.cid == -2 || !mchitsInECal.containsKey(curHit.id)) {
