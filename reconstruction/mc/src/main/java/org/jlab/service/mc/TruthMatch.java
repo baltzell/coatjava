@@ -65,7 +65,7 @@ public class TruthMatch extends ReconstructionEngine {
         if (event.hasBank("REC::Particle") == false) {
             return false;
         }
-        
+
         /**
          * ********************************************************
          * The 1st thing, let's load MC particles
@@ -234,6 +234,47 @@ public class TruthMatch extends ReconstructionEngine {
             List<MCRecMatch> RecMCMatches = MakeRecMCMatch(recp, clsPerRecp);
             CalculateMatchCuality(event, MCRecMatches, RecMCMatches);
             bankWriter(event, MCRecMatches, RecMCMatches);
+
+            /*
+                Some debugging
+             */
+//            DataBank dbRecMatch = event.getBank("MC::RecMatch");
+//            DataBank dbRecPart = event.getBank("REC::Particle");
+//            DataBank dbMCPart = event.getBank("MC::Particle");
+//            DataBank dbtrkBank = event.getBank("TimeBasedTrkg::TBTracks");
+//            DataBank dbrectrkBank = event.getBank("REC::Track");
+//            DataBank dbdcBank = event.getBank("DC::tdc");
+//            DataBank dbHitsBank = event.getBank("TimeBasedTrkg::TBHits");
+//            DataBank dbMCTrue = event.getBank("MC::True");
+
+//            System.out.println("=========                     DEBUGGING                      =========");
+//
+//            System.out.println("========= MC::Particle Bank =========");
+//            dbMCPart.show();
+//            System.out.println("========= REC::Particle Bank =========");
+//            dbRecPart.show();
+//            System.out.println("========= MC::RecMatch Bank =========");
+//            dbRecMatch.show();
+//            System.out.println("========= TimeBasedTrkg::TBTracks =========");
+//            dbtrkBank.show();
+//            System.out.println("========= REC::Track =========");
+//            dbrectrkBank.show();
+//            System.out.println("========= DC::tdc =========");
+//            dbdcBank.show();
+//            System.out.println("========= TimeBasedTrkg::TBHits =========");
+//            dbHitsBank.show();
+//            System.out.println("========= MC::True =========");
+//            dbMCTrue.show();
+//
+//            for( Short pind : clsPerRecp.keySet() ){
+//                System.out.println( " ===== Clusters for pind " + pind + " are =====" );
+//                List<RecCluster> clusters = clsPerRecp.get(pind);
+//                
+//                for( RecCluster curCl : clusters ){
+//                
+//                    System.out.println("== " + curCl.toString() );
+//                }
+//            }
         } catch (Exception ex) {
             System.err.println("The DataSet in the  mapClustersToParticles should be either 'Rec' or 'MC' ");
             Logger.getLogger(TruthMatch.class.getName()).log(Level.SEVERE, null, ex);
@@ -657,7 +698,7 @@ public class TruthMatch extends ReconstructionEngine {
             int layer = (hitsBank.getInt("layer", ihit) - 1) / 3;  // PCAL 1(U)2(V)3(W), ECIN 4(U)5(V)6(W). ECOut 7(U)8(V)9(W)
 
             int ECalLayerBit = ECalStartBit + layer;
-            
+
             mcp.get((short) mchitsInECal.get(curHit.id).otid).MCLayersNeut |= 1L << ECalLayerBit;
 
             if (curHit.cid == -2 || !mchitsInECal.containsKey(curHit.id)) {
@@ -1229,6 +1270,9 @@ public class TruthMatch extends ReconstructionEngine {
                 //System.out.println("Bitwise representation of LayersTrk is " + Long.toBinaryString(mcp.get((short) mchitsInBMT.get(hitID).otid).MCLayersTrk));
                 if (!mchitsInBMT.containsKey(hitID)) {
                     // We need only hits that correspond to an MCHit
+
+                    System.out.println("*********** This BMT hit is not in MCHit!!  " + hitID);
+
                     continue;
                 }
 
@@ -1289,8 +1333,8 @@ public class TruthMatch extends ReconstructionEngine {
             //tbHitIDs.put(tbHitsBank.getInt("id", itbHit) - 1, (short)tbHitsBank.getShort("trkID", itbHit) - 1);
             //tbHitIDs.put(tbHitsBank.getInt("id", itbHit) - 1, (short)(tbHitsBank.getByte("trkID", itbHit) - 1));
 
-            if (tbTrkID2RecTrInd.containsKey((short) tbHitsBank.getByte("trkID", itbHit))) {
-                tbHitIDs.put(tbHitsBank.getInt("id", itbHit) - 1, (short) tbTrkID2RecTrInd.get((short) tbHitsBank.getByte("trkID", itbHit)));
+            if (tbTrkID2RecTrInd.containsKey((short) tbHitsBank.getByte("trkID", itbHit) ) ) {
+                tbHitIDs.put(tbHitsBank.getInt("id", itbHit) - 1, (short) tbTrkID2RecTrInd.get((short) tbHitsBank.getByte("trkID", itbHit) ));
             }
         }
 
@@ -1317,6 +1361,7 @@ public class TruthMatch extends ReconstructionEngine {
                 //System.out.println("======== siz of trkBanks is " + trkBank.rows() + "  hitid is " + curHit.id + "   tbHitIDs.get(curHit.id) is " + tbHitIDs.get(curHit.id) + "   the Pindex is " + trkBank.getShort("pindex", tbHitIDs.get(curHit.id)));
 
                 curHit.pindex = trkBank.getShort("pindex", tbHitIDs.get(curHit.id));
+                //System.out.println( "iHit = " + iHit + "   pindex = " + curHit.pindex);
             } else {
                 curHit.pindex = -1;
             }
@@ -1646,25 +1691,44 @@ public class TruthMatch extends ReconstructionEngine {
         if ((event.hasBank("TimeBasedTrkg::TBHits") == false) || (event.hasBank("REC::Track") == false)) {
             return null;
         }
-
+        
         DataBank trkBank = event.getBank("REC::Track");
+
         /**
          * In the case of DC, a cluster is a single DC hit.
          */
         DataBank clBank = event.getBank("TimeBasedTrkg::TBHits");
+        DataBank tbtrkBank = event.getBank("TimeBasedTrkg::TBTracks");
+        
+        /*
+        * We need to get a conversion from HitID to Rec::Track Ind
+        */
+        Map<Short, Short> tbTrkID2RecTrInd = new HashMap();
+        for (short iRec = 0; iRec < trkBank.rows(); iRec++) {
+            Byte det = trkBank.getByte("detector", iRec);
+            Short index = trkBank.getShort("index", iRec);
+
+            if (det == DetectorType.DC.getDetectorId()) {
+                tbTrkID2RecTrInd.put(tbtrkBank.getShort("id", index), iRec);
+            }
+        }
+        
+        
 
         for (int iCL = 0; iCL < clBank.rows(); iCL++) {
 
             short clID = (short) iCL;
-            short trkID = (short) (clBank.getByte("trkID", iCL) - 1);
+            short trkID = (short) (clBank.getByte("trkID", iCL) );
 
             if (trkID < 0) {
                 // This should not happen, just in case
                 continue;
             }
-            short pindex = trkBank.getShort("pindex", trkID);
+            //System.out.println("trkID = " + trkID);
+            int trInd = tbTrkID2RecTrInd.get(trkID );
+            short pindex = trkBank.getShort("pindex", trInd);
             RecCluster curCl = new RecCluster();
-            curCl.id = (short) iCL;
+            curCl.id = (short) (clBank.getShort("id", iCL) - 1);
             curCl.detector = (byte) DetectorType.DC.getDetectorId();
             curCl.energy = -1;
             curCl.rectid = 0;
@@ -1672,6 +1736,7 @@ public class TruthMatch extends ReconstructionEngine {
             curCl.layer = clBank.getByte("layer", iCL);
             curCl.sector = clBank.getByte("sector", iCL);
             curCl.pindex = pindex;
+            //System.out.println("id = " + curCl.id + "   pindex = " + pindex);
             curCl.size = 1;
             curCl.superlayer = clBank.getByte("superlayer", iCL);
             cls.add(curCl);
@@ -2055,7 +2120,6 @@ public class TruthMatch extends ReconstructionEngine {
     void bankWriter(DataEvent event, List<MCRecMatch> mcp, List<MCRecMatch> recp) {
 
         DataBank bank = event.createBank("MC::GenMatch", mcp.size());
-
         for (int j = 0; j < mcp.size(); j++) {
             MCRecMatch p = mcp.get(j);
             bank.setShort("mcindex", j, p.id);
