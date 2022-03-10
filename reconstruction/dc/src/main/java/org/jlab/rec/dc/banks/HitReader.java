@@ -12,12 +12,16 @@ import org.jlab.rec.dc.timetodistance.TimeToDistanceEstimator;
 import cnuphys.snr.NoiseReductionParameters;
 import cnuphys.snr.clas12.Clas12NoiseAnalysis;
 import cnuphys.snr.clas12.Clas12NoiseResult;
+import eu.mihosoft.vrl.v3d.Vector3d;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jlab.clas.swimtools.Swimmer;
 import org.jlab.detector.geant4.v2.DCGeant4Factory;
+import org.jlab.geom.prim.Plane3D;
+import org.jlab.geom.prim.Point3D;
+import org.jlab.geom.prim.Vector3D;
 import org.jlab.rec.dc.Constants;
 import org.jlab.utils.groups.IndexedTable;
 
@@ -285,6 +289,8 @@ public class HitReader {
             hit.set_TrkgStatus(0);
             hit.calc_CellSize(dcDetector);
             hit.calc_GeomCorr(dcDetector, 0);
+            Plane3D pl = new Plane3D(hit.get_WireLine().midpoint(), hit.getPlaneNormal(dcDetector));
+            hit.set_WirePlane(pl);
             double posError = hit.get_CellSize() / Math.sqrt(12.);
             hit.set_DocaErr(posError);
             hits.add(hit);   
@@ -466,6 +472,9 @@ public class HitReader {
             hit.set_AssociatedClusterID(clusterID[i]);
             hit.set_AssociatedHBTrackID(trkID[i]); 
             
+            Plane3D pl = new Plane3D(hit.get_WireLine().midpoint(), hit.getPlaneNormal(DcDetector));
+            hit.set_WirePlane(pl);
+           
             //if(hit.betaFlag == 0)
             if(passHit(hit.betaFlag)) {
                 hits.add(hit);        

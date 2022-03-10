@@ -5,6 +5,7 @@ import org.jlab.clas.clas.math.FastMath;
 import org.jlab.clas.swimtools.Swimmer;
 import org.jlab.detector.geant4.v2.DCGeant4Factory;
 import org.jlab.geom.prim.Line3D;
+import org.jlab.geom.prim.Plane3D;
 import org.jlab.rec.dc.Constants;
 import org.jlab.rec.dc.timetodistance.TimeToDistanceEstimator;
 import org.jlab.geom.prim.Point3D;
@@ -590,6 +591,18 @@ public class FittedHit extends Hit implements Comparable<Hit> {
         this._WireMaxSag = _WireMaxSag;
     }
     
+    
+    
+    private Plane3D _WirePlane;
+    
+    public Plane3D get_WirePlane() {
+        return _WirePlane;
+    }
+
+    public void set_WirePlane(Plane3D _WirePlane) {
+        this._WirePlane = _WirePlane;
+    }
+    
     private Line3D _WireLine;
     
     public Line3D get_WireLine() {
@@ -1036,7 +1049,7 @@ public class FittedHit extends Hit implements Comparable<Hit> {
 //        this.set_AssociatedClusterID(this.get_AssociatedClusterID());
         this.setAssociatedStateVec(st);
         this.set_TrkResid(this.get_Doca() * Math.signum(st.getProjectorDoca()) - st.getProjectorDoca());
-        this.setB(st.getB());
+        this.setB(st.getB().mag());
         this.setSignalPropagTimeAlongWire(st.x(), st.y(), DcDetector);
         this.setSignalTimeOfFlight();
         this.set_Doca(this.get_Doca());
@@ -1086,6 +1099,18 @@ public class FittedHit extends Hit implements Comparable<Hit> {
             hitClone.betaFlag = this.betaFlag;
             
         return hitClone;
+    }
+
+    public Vector3D getPlaneNormal(DCGeant4Factory dcDetector) {
+        int sector = this.get_Sector();
+        int slayer = this.get_Superlayer();
+        int layer = this.get_Layer();
+        Vector3d p1= dcDetector.getWireLeftend(sector-1, slayer-1, layer-1, 1);
+        Vector3d p2= dcDetector.getWireRightend(sector-1, slayer-1, layer-1, 1);
+        Vector3d p3= dcDetector.getWireMidpoint(sector-1, slayer-1, layer-1, 110);
+        Vector3d n = p1.minus(p2).cross(p3.minus(p2));
+        
+        return new Vector3D(n.x, n.y, n.z).asUnit();
     }
 
     

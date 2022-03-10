@@ -9,6 +9,7 @@ package org.jlab.rec.dc.track.fit;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 import org.jlab.clas.swimtools.Swim;
+import org.jlab.rec.dc.Constants;
 /**
  *
  * @author ziegler
@@ -18,7 +19,7 @@ public class RungeKuttaDoca {
     private static final Logger LOGGER = Logger.getLogger(RungeKuttaDoca.class.getName());
 
     private final float[] _b = new float[3];
-    final double v = 0.0029979245;
+    final double v = Constants.LIGHTVEL;
     private final ArrayList<Double> k1;
     private final ArrayList<Double> k2;
     private final ArrayList<Double> k3;
@@ -45,8 +46,8 @@ public class RungeKuttaDoca {
         double stepSize = 1.0;
         dcSwim.Bfield(sector, fVec.x, fVec.y, fVec.z, bf);
         
-        fVec.B = Math.sqrt(bf[0]*bf[0]+bf[1]*bf[1]+bf[2]*bf[2]);
-        double s  = fVec.B;
+        fVec.B.setXYZ(bf[0], bf[1], bf[2]); 
+        double s  = fVec.B.mag();
         double z = fVec.z;
         final double Zi = fVec.z;
         double BatMeas = 0;
@@ -68,10 +69,10 @@ public class RungeKuttaDoca {
             this.RK4transport( sector, Q, x, y, z, tx, ty, s, dcSwim,
                         dPath, fVec);
             
-            if( Math.abs(fVec.B - BatMeas)<0.0001)
+            if( Math.abs(fVec.B.mag() - BatMeas)<0.0001)
                 stepSize*=2;
                     
-            BatMeas = fVec.B;
+            BatMeas = fVec.B.mag();
         }
         
     }
@@ -117,7 +118,8 @@ public class RungeKuttaDoca {
         fVec.tx = tx;
         fVec.ty = ty;
         fVec.Q = q;
-        fVec.B = Math.sqrt(_b[0]*_b[0]+_b[1]*_b[1]+_b[2]*_b[2]);
+        fVec.B.setXYZ(_b[0], _b[1], _b[2]);
+        
         fVec.deltaPath = Math.sqrt((x0-x)*(x0-x)+(y0-y)*(y0-y)+h*h)+dPath;
        
         
@@ -324,7 +326,7 @@ public class RungeKuttaDoca {
         fVec.tx = tx;
         fVec.ty = ty;
         fVec.Q = q;
-        fVec.B = Math.sqrt(_b[0]*_b[0]+_b[1]*_b[1]+_b[2]*_b[2]);
+        fVec.B.setXYZ(_b[0], _b[1], _b[2]);
         fVec.deltaPath = Math.sqrt((x0-x)*(x0-x)+(y0-y)*(y0-y)+h*h)+dPath;
         fCov.covMat.set(C);
         //LOGGER.log(Level.FINE, "Transported matrix");

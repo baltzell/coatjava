@@ -1,6 +1,7 @@
 package org.jlab.rec.dc.trajectory;
 
 import Jama.*;
+import org.jlab.geom.prim.Vector3D;
 /**
  * A StateVec describes a cross measurement in the DC.  It is characterized by a point in the DC
  * tilted coordinate system at each wire plane (i.e. constant z) and by unit tangent vectors in the x and y 
@@ -74,13 +75,13 @@ public class StateVec extends Matrix {
         this.z = z;
     }
     
-    private double b;
+    private Vector3D b;
 
-    public double getB() {
+    public Vector3D getB() {
         return b;
     }
 
-    public void setB(double b) {
+    public void setB(Vector3D b) {
         this.b = b;
     }
     // KF projector --> get Wire midPoint match

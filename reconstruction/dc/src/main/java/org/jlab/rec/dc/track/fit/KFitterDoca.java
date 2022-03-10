@@ -232,9 +232,11 @@ public class KFitterDoca {
             
             double[] K = new double[5];
             double V = mv.measurements.get(k).unc[0]*KFScale;
-            double[] H = mv.H(new double[]{sv.trackTraj.get(k).x, sv.trackTraj.get(k).y},
+            double[] H = mv.H(sv.trackTraj.get(k),
                     mv.measurements.get(k).z,
-                    mv.measurements.get(k).wireLine[0]);
+                    mv.measurements.get(k).wireLine[0],
+                    mv.measurements.get(k).wirePlaneNorm[0],
+                    mv.measurements.get(k).wirePlaneD[0]);
             Matrix CaInv = this.filterCovMat(H, sv.trackCov.get(k).covMat, V);
             if (CaInv != null) {
                     sv.trackCov.get(k).covMat = CaInv;
@@ -247,10 +249,14 @@ public class KFitterDoca {
                 K[j] = (H[0] * sv.trackCov.get(k).covMat.get(j, 0) +
                         H[1] * sv.trackCov.get(k).covMat.get(j, 1)) / V;
             }
-            
-            double h = mv.h(new double[]{sv.trackTraj.get(k).x, sv.trackTraj.get(k).y},
+            //double h=mv.h(new double[]{x_filt, y_filt},
+                //    mv.measurements.get(k).z,
+                //    mv.measurements.get(k).wireLine[0]); 
+            double h = mv.h(sv.trackTraj.get(k),
                     mv.measurements.get(k).z,
-                    mv.measurements.get(k).wireLine[0]);
+                    mv.measurements.get(k).wireLine[0],
+                    mv.measurements.get(k).wirePlaneNorm[0],
+                    mv.measurements.get(k).wirePlaneD[0]);
             
             double signMeas = 1;
             double sign = 1;
@@ -272,14 +278,22 @@ public class KFitterDoca {
             double tx_filt = sv.trackTraj.get(k).tx + K[2] * (signMeas*Math.abs(mv.measurements.get(k).doca[0]) - sign*Math.abs(h));
             double ty_filt = sv.trackTraj.get(k).ty + K[3] * (signMeas*Math.abs(mv.measurements.get(k).doca[0]) - sign*Math.abs(h));
             double Q_filt = sv.trackTraj.get(k).Q + K[4] * (signMeas*Math.abs(mv.measurements.get(k).doca[0]) - sign*Math.abs(h));
-               
+            
+            StateVec stF = sv.trackTraj.get(k).clone();
+            stF.x+=x_filt;
+            stF.y+=y_filt;
+            stF.tx+=tx_filt;
+            stF.ty+=ty_filt;
+            stF.Q+=Q_filt;
             //USE THE DOUBLE HIT
             if(mv.measurements.get(k).doca[1]!=-99) { 
                 //now filter using the other Hit
                 V = mv.measurements.get(k).unc[1]*KFScale;
-                H = mv.H(new double[]{x_filt, y_filt},
+                H = mv.H(stF,
                     mv.measurements.get(k).z,
-                    mv.measurements.get(k).wireLine[1]);
+                    mv.measurements.get(k).wireLine[1],
+                    mv.measurements.get(k).wirePlaneNorm[1],
+                    mv.measurements.get(k).wirePlaneD[1]);
                 CaInv = this.filterCovMat(H, sv.trackCov.get(k).covMat, V);
                 if (CaInv != null) {
                         sv.trackCov.get(k).covMat = CaInv;
@@ -291,10 +305,14 @@ public class KFitterDoca {
                 K[j] = (H[0] * sv.trackCov.get(k).covMat.get(j, 0) +
                         H[1] * sv.trackCov.get(k).covMat.get(j, 1)) / V;
                 }
-                h=mv.h(new double[]{x_filt, y_filt},
+                //h=mv.h(new double[]{x_filt, y_filt},
+                //    mv.measurements.get(k).z,
+                //    mv.measurements.get(k).wireLine[1]);   
+                h = mv.h(stF,
                     mv.measurements.get(k).z,
-                    mv.measurements.get(k).wireLine[1]);   
-            
+                    mv.measurements.get(k).wireLine[1],
+                    mv.measurements.get(k).wirePlaneNorm[1],
+                    mv.measurements.get(k).wirePlaneD[1]);
                 signMeas = Math.signum(mv.measurements.get(k).doca[1]);
                 sign = Math.signum(h);
                 //if(this.interNum>1)
@@ -358,9 +376,15 @@ public class KFitterDoca {
             path += sv.trackTraj.get(0).deltaPath;
             svc.setPathLength(path);
             double V0 = mv.measurements.get(0).unc[0];
-            double h0 = mv.h(new double[]{sv.trackTraj.get(0).x, sv.trackTraj.get(0).y},
+            //double h0 = mv.h(new double[]{sv.trackTraj.get(0).x, sv.trackTraj.get(0).y},
+            //        mv.measurements.get(0).z,
+            //        mv.measurements.get(0).wireLine[0]);
+             double h0 = mv.h(sv.trackTraj.get(0),
                     mv.measurements.get(0).z,
-                    mv.measurements.get(0).wireLine[0]);
+                    mv.measurements.get(0).wireLine[0],
+                    mv.measurements.get(0).wirePlaneNorm[0],
+                    mv.measurements.get(0).wirePlaneD[0]);
+             
             svc.setProjector(mv.measurements.get(0).wireLine[0].origin().x());
             svc.setProjectorDoca(h0);
             kfStateVecsAlongTrajectory.add(svc); 
@@ -370,9 +394,14 @@ public class KFitterDoca {
             //USE THE DOUBLE HIT
             if(mv.measurements.get(0).doca[1]!=-99) { 
                 V0 = mv.measurements.get(0).unc[1];
-                h0 = mv.h(new double[]{sv.trackTraj.get(0).x, sv.trackTraj.get(0).y},
+                //h0 = mv.h(new double[]{sv.trackTraj.get(0).x, sv.trackTraj.get(0).y},
+                //    mv.measurements.get(0).z,
+                //    mv.measurements.get(0).wireLine[1]);
+                h0 = mv.h(sv.trackTraj.get(0),
                     mv.measurements.get(0).z,
-                    mv.measurements.get(0).wireLine[1]);
+                    mv.measurements.get(0).wireLine[1],
+                    mv.measurements.get(0).wirePlaneNorm[1],
+                    mv.measurements.get(0).wirePlaneD[1]);
                 res = (mv.measurements.get(0).doca[1] - h0);
                 chi2 += (mv.measurements.get(0).doca[1] - h0) * (mv.measurements.get(0).doca[1] - h0) / V0;
                 nRj[mv.measurements.get(0).region-1]+=res*res/mv.measurements.get(0).error;
@@ -384,9 +413,14 @@ public class KFitterDoca {
                 sv.transport(sector, k1, k1 + 1, sv.trackTraj.get(k1), sv.trackCov.get(k1));
 
                 double V = mv.measurements.get(k1 + 1).unc[0];
-                double h = mv.h(new double[]{sv.trackTraj.get(k1 + 1).x, sv.trackTraj.get(k1 + 1).y},
-                    mv.measurements.get(k1 + 1).z,
-                    mv.measurements.get(k1 + 1).wireLine[0]);
+                //double h = mv.h(new double[]{sv.trackTraj.get(k1 + 1).x, sv.trackTraj.get(k1 + 1).y},
+                //    mv.measurements.get(k1 + 1).z,
+                //    mv.measurements.get(k1 + 1).wireLine[0]);
+                 double h = mv.h(sv.trackTraj.get(k1+1),
+                        mv.measurements.get(k1+1).z,  
+                        mv.measurements.get(k1+1).wireLine[0],
+                        mv.measurements.get(k1+1).wirePlaneNorm[0],
+                        mv.measurements.get(k1+1).wirePlaneD[0]);
                 svc = new org.jlab.rec.dc.trajectory.StateVec(sv.trackTraj.get(k1 + 1).x,
                         sv.trackTraj.get(k1 + 1).y,
                         sv.trackTraj.get(k1 + 1).tx,
@@ -404,9 +438,14 @@ public class KFitterDoca {
                 //USE THE DOUBLE HIT
                 if(mv.measurements.get(k1 + 1).doca[1]!=-99) { 
                     V = mv.measurements.get(k1 + 1).unc[1];
-                    h = mv.h(new double[]{sv.trackTraj.get(k1 + 1).x, sv.trackTraj.get(k1 + 1).y},
-                    mv.measurements.get(k1 + 1).z,
-                    mv.measurements.get(k1 + 1).wireLine[1]);
+                    //h = mv.h(new double[]{sv.trackTraj.get(k1 + 1).x, sv.trackTraj.get(k1 + 1).y},
+                    //mv.measurements.get(k1 + 1).z,
+                    //mv.measurements.get(k1 + 1).wireLine[1]);
+                    h = mv.h(sv.trackTraj.get(k1+1),
+                        mv.measurements.get(k1+1).z,  
+                        mv.measurements.get(k1+1).wireLine[1],
+                        mv.measurements.get(k1+1).wirePlaneNorm[1],
+                        mv.measurements.get(k1+1).wirePlaneD[1]);
                     res = (mv.measurements.get(k1 + 1).doca[1]  - h);
                     chi2 += (mv.measurements.get(k1 + 1).doca[1]  - h) * (mv.measurements.get(k1 + 1).doca[1]  - h) / V;
                     nRj[mv.measurements.get(k1 + 1).region-1]+=res*res/V;

@@ -391,6 +391,7 @@ public class ClusterCleanerUtilities {
             newhitPos.set_WireLength(hit.get_WireLength());
             newhitPos.set_WireMaxSag(hit.get_WireMaxSag());
             newhitPos.set_WireLine(hit.get_WireLine());
+            newhitPos.set_WirePlane(hit.get_WirePlane());
             newhitPos.set_LeftRightAmb(1);
             newhitPos.updateHitPositionWithTime(event, 1, hit.getB(), tab, DcDetector, tde); // assume the track angle is // to the layer, so that cosTrkAng =1
 
@@ -418,6 +419,7 @@ public class ClusterCleanerUtilities {
             newhitNeg.set_WireLength(hit.get_WireLength());
             newhitNeg.set_WireMaxSag(hit.get_WireMaxSag());
             newhitNeg.set_WireLine(hit.get_WireLine());
+            newhitNeg.set_WirePlane(hit.get_WirePlane());
             newhitNeg.set_LeftRightAmb(-1);
             newhitNeg.updateHitPositionWithTime(event, 1, hit.getB(), tab, DcDetector, tde); // assume the track angle is // to the layer
 

@@ -6,8 +6,10 @@ import java.util.List;
 import java.util.logging.Logger;
 import org.jlab.detector.geant4.v2.DCGeant4Factory;
 import org.jlab.geom.prim.Line3D;
+import org.jlab.geom.prim.Plane3D;
 import org.jlab.geom.prim.Point3D;
 import org.jlab.geom.prim.Vector3D;
+import org.jlab.rec.dc.Constants;
 import org.jlab.rec.dc.hit.FittedHit;
 import org.jlab.rec.dc.track.Track;
 
@@ -19,31 +21,65 @@ public class MeasVecsDoca {
 
     public int ndf=0;
     
-    public double[] H(double[] stateV, double Z, Line3D wireLine) {
+    public double[] H(StateVecsDoca.StateVec sv, double Z, Line3D wireLine, Vector3D n, double d) {
         double[] hMatrix = new double[2];
-        double[] stateVec = new double[2];
+        
+        StateVecsDoca.StateVec stF = sv.clone();
+            
         double Err = 0.025;
         double[][] Result = new double[2][2];
         for(int i = 0; i < 2; i++) {
-            stateVec[0] = stateV[0] + (double)Math.pow(-1, i) * Err;
-            stateVec[1] = stateV[1];
-            Result[i][0] = h(stateVec, Z, wireLine);
+            stF.x = sv.x + (double)Math.pow(-1, i) * Err;
+            stF.y = sv.y;
+            Result[i][0] = h(stF, Z, wireLine, n, d);
         }
         for(int i = 0; i < 2; i++) {
-            stateVec[0] = stateV[0];
-            stateVec[1] = stateV[1] + (double)Math.pow(-1, i) * Err;
-            Result[i][1] = h(stateVec, Z, wireLine);
+            stF.x = sv.x;
+            stF.y = sv.y + (double)Math.pow(-1, i) * Err;
+            Result[i][1] = h(stF, Z, wireLine, n, d);
         }
         hMatrix[0] = (Result[0][0]-Result[1][0])/(2.*Err);
         hMatrix[1] = (Result[0][1]-Result[1][1])/(2.*Err);
         
         return hMatrix;
     }
+    final double v = Constants.LIGHTVEL;
+    double h(StateVecsDoca.StateVec sv, double z, Line3D wire, Vector3D n, double d) {
+        double x = sv.x;
+        double y = sv.y;
+        double tx = sv.tx;
+        double ty = sv.ty;
+        double Q = sv.Q;
+        double Bx = sv.B.x();
+        double By = sv.B.y();
+        double Bz = sv.B.z();
+        double C = Math.sqrt(1 + tx*tx + ty*ty);
+        double Ax = C*( ty*(tx*Bx + Bz) - (1+tx*tx)*By);
+        double Ay = C*(-tx*(ty*By + Bz) + (1+ty*ty)*Bx);
+        double tB = n.x()*tx+n.y()*ty+n.z();
+        double tC = n.x()*x + n.y()*y + n.z()*z -d;
+        double tA = 0.5*Q*v*(Ax*n.x()+Ay*n.y());
+        double s = 0;
+        double delta = tB*tB-4*tA*tC;
+        if(delta>0 && Math.abs(tA)>1.e-09) {
+            double s1 = (-tB-Math.sqrt(delta))/(2*tA);
+            double s2 = (-tB+Math.sqrt(delta))/(2*tA);
 
+            if(Math.abs(s1)<Math.abs(s2)) {
+                s = s1;
+            } else {
+                s = s2;
+            }
+        }
+        
+        return h(new double[]{x + tx*s + Q*v*Ax*s*s/2,y + ty*s + Q*v*Ay*s*s/2}, z+s, wire);
+    }
+    
     public double h(double[] stateV, double Z, Line3D wireLine) {
        
         Line3D WL = new Line3D();
         WL.copy(wireLine);
+        
         WL.copy(WL.distance(new Point3D(stateV[0], stateV[1], Z)));
         
         //LOGGER.log(Level.FINE, Math.signum(-WL.direction().x())+
@@ -81,7 +117,8 @@ public class MeasVecsDoca {
                     
                     HitOnTrack hot = new HitOnTrack(slayr, X, Z,  
                             trkcand.get(c).get(s).get(h).get_WireMaxSag(),
-                            trkcand.get(c).get(s).get(h).get_WireLine()
+                            trkcand.get(c).get(s).get(h).get_WireLine(),
+                            trkcand.get(c).get(s).get(h).get_WirePlane()
                     );
                     double err_sl1 = trkcand.get(c).get(s).get_fittedCluster().get_clusterLineFitSlopeErr();
 
@@ -116,6 +153,8 @@ public class MeasVecsDoca {
                     hOTS.get(i - 1)._doca[1] = hOTS.get(i)._doca[0];
                     hOTS.get(i - 1)._Unc[1] = hOTS.get(i)._Unc[0];
                     hOTS.get(i - 1)._wireLine[1] = hOTS.get(i)._wireLine[0];
+                    hOTS.get(i - 1)._wirePlaneNorm[1] = hOTS.get(i)._wirePlaneNorm[0];
+                    hOTS.get(i - 1)._wirePlaneD[1] = hOTS.get(i)._wirePlaneD[0];
                     hOTS.remove(i);
                 }
             }
@@ -135,6 +174,8 @@ public class MeasVecsDoca {
             meas.doca = hOTS.get(i)._doca;
             meas.wireMaxSag = hOTS.get(i)._wireMaxSag;
             meas.wireLine = hOTS.get(i)._wireLine;
+            meas.wirePlaneNorm = hOTS.get(i)._wirePlaneNorm;
+            meas.wirePlaneD = hOTS.get(i)._wirePlaneD;
             this.measurements.add(i, meas);
         }
     }
@@ -155,7 +196,8 @@ public class MeasVecsDoca {
                 double X = sl1 * Z + it1;
                 HitOnTrack hot = new HitOnTrack(slayr, X, Z, 
                         hitOnTrk.get_WireMaxSag(),
-                        hitOnTrk.get_WireLine());
+                        hitOnTrk.get_WireLine(),
+                        hitOnTrk.get_WirePlane());
                 
                 hot._doca[0] = trk.get_ListOfHBSegments().get(s).get(h).get_Doca();
                 
@@ -178,6 +220,8 @@ public class MeasVecsDoca {
                     hOTS.get(i - 1)._doca[1] = hOTS.get(i)._doca[0];
                     hOTS.get(i - 1)._Unc[1] = hOTS.get(i)._Unc[0];
                     hOTS.get(i - 1)._wireLine[1] = hOTS.get(i)._wireLine[0];
+                    hOTS.get(i - 1)._wirePlaneNorm[1] = hOTS.get(i)._wirePlaneNorm[0];
+                    hOTS.get(i - 1)._wirePlaneD[1] = hOTS.get(i)._wirePlaneD[0];
                     hOTS.remove(i);
                 }
             }
@@ -198,10 +242,16 @@ public class MeasVecsDoca {
             meas.wireMaxSag = hOTS.get(i)._wireMaxSag;
             meas.wireLine[0] = hOTS.get(i)._wireLine[0];
             meas.wireLine[1] = hOTS.get(i)._wireLine[1];
+            meas.wirePlaneNorm[0] = hOTS.get(i)._wirePlaneNorm[0];
+            meas.wirePlaneNorm[1] = hOTS.get(i)._wirePlaneNorm[1];
+            meas.wirePlaneD[0] = hOTS.get(i)._wirePlaneD[0];
+            meas.wirePlaneD[1] = hOTS.get(i)._wirePlaneD[1];
             this.measurements.add(i, meas);
             //LOGGER.log(Level.FINE, " measurement "+i+" = "+meas.x+" at "+meas.z);
         }
     }
+
+    
     
     public class MeasVec {
         
@@ -214,6 +264,8 @@ public class MeasVecsDoca {
         public double[] doca = new double[2];
         public double wireMaxSag;
         public Line3D[] wireLine = new Line3D[2];
+        public Vector3D[] wirePlaneNorm = new Vector3D[2];
+        public double[] wirePlaneD = new double[2];
         public boolean reject = false;
         int region;
         
@@ -234,13 +286,17 @@ public class MeasVecsDoca {
         private double[] _doca = new double[2];
         private double _wireMaxSag;
         private Line3D[] _wireLine = new Line3D[2];
+        private Vector3D[] _wirePlaneNorm = new Vector3D[2];
+        private double[] _wirePlaneD = new double[2];
         private int region;
 
-        HitOnTrack(int superlayer, double X, double Z, double wiremaxsag, Line3D wireLine) {
+        HitOnTrack(int superlayer, double X, double Z, double wiremaxsag, Line3D wireLine, Plane3D wirePlane) {
             _X = X;
             _Z = Z;
             _wireMaxSag = wiremaxsag;
             _wireLine[0] = wireLine;
+            _wirePlaneNorm[0] = wirePlane.normal();
+            _wirePlaneD[0] = wirePlane.normal().dot(wirePlane.point().toVector3D());
             _doca[0] = -99;
             _doca[1] = -99;
             _Unc[0] = 1;

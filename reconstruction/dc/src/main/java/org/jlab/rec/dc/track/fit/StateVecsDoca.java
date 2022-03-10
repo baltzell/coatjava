@@ -10,6 +10,7 @@ import org.jlab.clas.swimtools.Swim;
 import org.jlab.rec.dc.Constants;
 import org.jlab.rec.dc.track.Track;
 import org.jlab.geom.prim.Point3D;
+import org.jlab.geom.prim.Vector3D;
 /**
  * 
  * @author ziegler
@@ -20,7 +21,7 @@ public class StateVecsDoca {
     
     private final double Bmax = 2.366498; // averaged
     
-    final double speedLight = 0.002997924580;
+    final double speedLight = Constants.LIGHTVEL;
     public double[] Z;
    // public List<B> bfieldPoints = new ArrayList<B>();
     public Map<Integer, StateVec> trackTraj = new HashMap<Integer, StateVec>();
@@ -75,7 +76,7 @@ public class StateVecsDoca {
         Matrix5x5.copy(covMat.covMat, fCov.covMat);
         double s  = 0;
         double z = Z[i];
-        double BatMeas = iVec.B;
+        double BatMeas = iVec.B.mag();
         
         while(Math.signum(Zf - Z[i]) *z<Math.signum(Zf - Z[i]) *Zf) {
             //LOGGER.log(Level.FINE, " RK step num "+(j+1)+" = "+(float)s+" nSteps = "+nSteps);
@@ -134,10 +135,10 @@ public class StateVecsDoca {
             //} 
             // end add process noise
             
-            if( Math.abs(fVec.B - BatMeas)<0.0001)
+            if( Math.abs(fVec.B.mag() - BatMeas)<0.0001)
                 stepSize*=2;
                     
-            BatMeas = fVec.B;
+            BatMeas = fVec.B.mag();
         }
         
         return fCov.covMat;
@@ -168,7 +169,7 @@ public class StateVecsDoca {
         Matrix5x5.copy(covMat.covMat, fCov.covMat);
         double s  = 0;
         double z = Z[i];
-        double BatMeas = iVec.B;
+        double BatMeas = iVec.B.mag();
         
         while(Math.signum(Z[f] - Z[i]) *z<Math.signum(Z[f] - Z[i]) *Z[f]) {
             //LOGGER.log(Level.FINE, " RK step num "+(j+1)+" = "+(float)s+" nSteps = "+nSteps);
@@ -227,10 +228,10 @@ public class StateVecsDoca {
             //} 
             // end add process noise
             
-            if( Math.abs(fVec.B - BatMeas)<0.0001)
+            if( Math.abs(fVec.B.mag() - BatMeas)<0.0001)
                 stepSize*=2;
                     
-            BatMeas = fVec.B;
+            BatMeas = fVec.B.mag();
         }
         this.trackTraj.put(f, fVec);
         this.trackCov.put(f, fCov);
@@ -539,16 +540,41 @@ public class StateVecsDoca {
         public double tx;   //track px/pz in the tilted sector coordinate system at z
         public double ty;   //track py/pz in the tilted sector coordinate system at z
         public double Q;    //track q/p
-        double B;
+        Vector3D B = new Vector3D(0,0,0);
         double deltaPath;
         
         StateVec(int k) {
             this.k = k;
         }
+        public StateVec(StateVec s) {
+            this(s.k);
+            this.copy(s);
+        }
 
+        public StateVec(int k, StateVec s) {
+            this(k);
+            this.copy(s);
+        }
+
+
+        public final void copy(StateVec s) {
+            this.z = s.z;
+            this.x = s.x;
+            this.y = s.y;
+            this.tx = s.tx;
+            this.ty = s.ty;
+            this.Q = s.Q;
+            this.B = s.B;
+            this.deltaPath = s.deltaPath;
+        }
+        
+        public StateVec clone() {
+            return new StateVec(this.k, this);
+        }
+        
         String printInfo() {
             return this.k+"] = "+(float)this.x+", "+(float)this.y+", "+(float)this.z+", "
-                    +(float)this.tx+", "+(float)this.ty+", "+(float)1./this.Q+" B = "+(float)this.B;
+                    +(float)this.tx+", "+(float)this.ty+", "+(float)1./this.Q+" B = "+(float)this.B.y();
         }
     }
     /**
