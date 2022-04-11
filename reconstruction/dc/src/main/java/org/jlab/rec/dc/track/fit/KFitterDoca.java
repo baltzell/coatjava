@@ -280,11 +280,11 @@ public class KFitterDoca {
             double Q_filt = sv.trackTraj.get(k).Q + K[4] * (signMeas*Math.abs(mv.measurements.get(k).doca[0]) - sign*Math.abs(h));
             
             StateVec stF = sv.trackTraj.get(k).clone();
-            stF.x+=x_filt;
-            stF.y+=y_filt;
-            stF.tx+=tx_filt;
-            stF.ty+=ty_filt;
-            stF.Q+=Q_filt;
+            stF.x=x_filt;
+            stF.y=y_filt;
+            stF.tx=tx_filt;
+            stF.ty=ty_filt;
+            stF.Q=Q_filt;
             //USE THE DOUBLE HIT
             if(mv.measurements.get(k).doca[1]!=-99) { 
                 //now filter using the other Hit

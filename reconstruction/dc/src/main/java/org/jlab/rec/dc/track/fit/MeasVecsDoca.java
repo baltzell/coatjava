@@ -33,6 +33,7 @@ public class MeasVecsDoca {
             stF.y = sv.y;
             Result[i][0] = h(stF, Z, wireLine, n, d);
         }
+        stF = sv.clone();
         for(int i = 0; i < 2; i++) {
             stF.x = sv.x;
             stF.y = sv.y + (double)Math.pow(-1, i) * Err;
