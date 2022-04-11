@@ -11,7 +11,9 @@ import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
 import org.jlab.jnp.hipo4.data.SchemaFactory;
 import org.jlab.logging.DefaultLogger;
+import org.jlab.service.dc.DCHBClustering;
 import org.jlab.service.dc.DCHBEngine;
+import org.jlab.service.dc.DCHBPostClusterConv;
 import org.jlab.service.dc.DCTBEngine;
 import org.jlab.service.ec.ECEngine;
 import org.jlab.service.ftof.FTOFTBEngine;
@@ -29,10 +31,14 @@ public class EBReconstructionTest {
         MagFieldsEngine enf = new MagFieldsEngine();
         enf.init();
         enf.processDataEvent(ev);
-        DCHBEngine engineDCHB = new DCHBEngine();
-        engineDCHB.init();
-        engineDCHB.processDataEvent(ev);
+        DCHBClustering engineHBC = new DCHBClustering();
+        engineHBC.init();
+        engineHBC.processDataEvent(ev); 
 
+        DCHBPostClusterConv engineHB = new DCHBPostClusterConv();
+        engineHB.init();
+        engineHB.processDataEvent(ev);
+        
         DCTBEngine engineDCTB = new DCTBEngine();
         engineDCTB.init();
         engineDCTB.processDataEvent(ev);
