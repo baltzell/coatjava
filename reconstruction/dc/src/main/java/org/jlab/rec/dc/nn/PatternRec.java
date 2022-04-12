@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jlab.detector.geant4.v2.DCGeant4Factory;
+import org.jlab.geom.prim.Plane3D;
 import org.jlab.rec.dc.cluster.Cluster;
 import org.jlab.rec.dc.cluster.ClusterCleanerUtilities;
 import org.jlab.rec.dc.cluster.ClusterFinder;
@@ -154,6 +155,7 @@ public class PatternRec {
                             fhit.set_AssociatedClusterID(fclus.get_Id());
                             fhit.set_TrkgStatus(0);
                             fhit.updateHitPosition(DcDetector); 
+                            fhit.set_WirePlane(new Plane3D(fhit.get_WireLine().midpoint(), fhit.getPlaneNormal(DcDetector)));
                         }
                 
                         cf.SetFitArray(fclus, "TSC"); 
