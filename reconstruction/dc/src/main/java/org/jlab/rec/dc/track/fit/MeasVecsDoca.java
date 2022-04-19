@@ -62,7 +62,7 @@ public class MeasVecsDoca {
         double tA = 0.5*Q*v*(Ax*n.x()+Ay*n.y());
         double s = 0;
         double delta = tB*tB-4*tA*tC;
-        if(delta>0 && Math.abs(tA)>1.e-09) {
+        if(delta>=0 && Math.abs(tA)>1.e-09) { // enough B-field curvature
             double s1 = (-tB-Math.sqrt(delta))/(2*tA);
             double s2 = (-tB+Math.sqrt(delta))/(2*tA);
 
@@ -71,6 +71,9 @@ public class MeasVecsDoca {
             } else {
                 s = s2;
             }
+        } else {
+            if(Math.abs(tB)>0)
+                s = -tC/tB;
         }
         
         return h(new double[]{x + tx*s + Q*v*Ax*s*s/2,y + ty*s + Q*v*Ay*s*s/2}, z+s, wire);

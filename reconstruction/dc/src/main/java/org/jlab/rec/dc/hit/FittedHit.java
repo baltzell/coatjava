@@ -1104,12 +1104,12 @@ public class FittedHit extends Hit implements Comparable<Hit> {
     public Vector3D getPlaneNormal(DCGeant4Factory dcDetector) {
         int sector = this.get_Sector();
         int slayer = this.get_Superlayer();
-        int layer = this.get_Layer();
-        Vector3d p1= dcDetector.getWireLeftend(sector-1, slayer-1, layer-1, 1);
-        Vector3d p2= dcDetector.getWireRightend(sector-1, slayer-1, layer-1, 1);
-        Vector3d p3= dcDetector.getWireMidpoint(sector-1, slayer-1, layer-1, 110);
-        Vector3d n = p1.minus(p2).cross(p3.minus(p2));
-        
+//        int layer = this.get_Layer();
+//        Vector3d p1= dcDetector.getWireLeftend(sector-1, slayer-1, layer-1, 1);
+//        Vector3d p2= dcDetector.getWireRightend(sector-1, slayer-1, layer-1, 1);
+//        Vector3d p3= dcDetector.getWireMidpoint(sector-1, slayer-1, layer-1, 110);
+//        Vector3d n = p1.minus(p2).cross(p3.minus(p2));
+        Vector3d n = dcDetector.getPlaneNormal(sector-1, slayer-1);
         return new Vector3D(n.x, n.y, n.z).asUnit();
     }
 
