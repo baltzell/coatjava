@@ -542,6 +542,7 @@ public final class DCGeant4Factory extends Geant4Factory {
             }
 
             for(int isuper=0; isuper<dbref.nsuperlayers(); isuper++) {
+                norm[isec][isuper] = new Vector3d(0,0,1);
                 norm[isec][isuper].rotateZ(Math.toRadians(dbref.getAlignmentThetaZ(isec, isuper/2)));
                 norm[isec][isuper].rotateX(Math.toRadians(dbref.getAlignmentThetaX(isec, isuper/2)));
                 norm[isec][isuper].rotateY(Math.toRadians(dbref.getAlignmentThetaY(isec, isuper/2)));
