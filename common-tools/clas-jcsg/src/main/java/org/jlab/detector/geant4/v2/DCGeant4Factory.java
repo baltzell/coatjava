@@ -97,19 +97,19 @@ final class DCdatabase {
 
             superwidth[isuper] = wpdist[isuper] * (nsenselayers[isuper] + nguardlayers[isuper] - 1) * cellthickness[isuper];
         }
-
+        double scaleTest=5;
         int alignrows = cp.length(dcdbpath+"alignment/dx");
         for(int irow = 0; irow< alignrows; irow++) {
                int isec = cp.getInteger(dcdbpath + "alignment/sector",irow)-1;
                int ireg = cp.getInteger(dcdbpath + "alignment/region",irow)-1;
 
-               align_dx[isec][ireg]=cp.getDouble(dcdbpath + "alignment/dx",irow);
-               align_dy[isec][ireg]=cp.getDouble(dcdbpath + "alignment/dy",irow);
-               align_dz[isec][ireg]=cp.getDouble(dcdbpath + "alignment/dz",irow);
+               align_dx[isec][ireg]=scaleTest*cp.getDouble(dcdbpath + "alignment/dx",irow);
+               align_dy[isec][ireg]=scaleTest*cp.getDouble(dcdbpath + "alignment/dy",irow);
+               align_dz[isec][ireg]=scaleTest*cp.getDouble(dcdbpath + "alignment/dz",irow);
 
-               align_dthetax[isec][ireg]=cp.getDouble(dcdbpath + "alignment/dtheta_x",irow);
-               align_dthetay[isec][ireg]=cp.getDouble(dcdbpath + "alignment/dtheta_y",irow);
-               align_dthetaz[isec][ireg]=cp.getDouble(dcdbpath + "alignment/dtheta_z",irow);
+               align_dthetax[isec][ireg]=scaleTest*cp.getDouble(dcdbpath + "alignment/dtheta_x",irow);
+               align_dthetay[isec][ireg]=scaleTest*cp.getDouble(dcdbpath + "alignment/dtheta_y",irow);
+               align_dthetaz[isec][ireg]=scaleTest*cp.getDouble(dcdbpath + "alignment/dtheta_z",irow);
         }
         
         int endplatesrows = cp.length(dcdbpath+"endplatesbow/coefficient");
@@ -468,6 +468,7 @@ public final class DCGeant4Factory extends Geant4Factory {
     private final Wire[][][][] wires;
     private final Vector3d[][][] layerMids;
     private final Vector3d[][] regionMids;
+     private final Vector3d[][] norm; //wire plane normal vector
 
     public static boolean MINISTAGGERON=true;
     public static boolean MINISTAGGEROFF=false;
@@ -506,6 +507,7 @@ public final class DCGeant4Factory extends Geant4Factory {
         wires = new Wire[dbref.nsectors()][dbref.nsuperlayers()][][];
         layerMids = new Vector3d[dbref.nsectors()][dbref.nsuperlayers()][];
         regionMids = new Vector3d[dbref.nsectors()][dbref.nregions()];
+        norm = new Vector3d[dbref.nsectors()][dbref.nsuperlayers()];
 
         for(int isec = 0; isec < dbref.nsectors(); isec++) {
             for(int iregion=0; iregion<dbref.nregions(); iregion++) {
@@ -540,6 +542,9 @@ public final class DCGeant4Factory extends Geant4Factory {
             }
 
             for(int isuper=0; isuper<dbref.nsuperlayers(); isuper++) {
+                norm[isec][isuper].rotateZ(Math.toRadians(dbref.getAlignmentThetaZ(isec, isuper/2)));
+                norm[isec][isuper].rotateX(Math.toRadians(dbref.getAlignmentThetaX(isec, isuper/2)));
+                norm[isec][isuper].rotateY(Math.toRadians(dbref.getAlignmentThetaY(isec, isuper/2)));
                 wires[isec][isuper]   = new Wire[dbref.nsenselayers(isuper)][dbref.nsensewires()];
                 for(int ilayer=0; ilayer<dbref.nsenselayers(isuper); ilayer++) {
                     layerMids[isec][isuper][ilayer].add(regionMids[isec][isuper/2].times(-1.0));
@@ -547,7 +552,7 @@ public final class DCGeant4Factory extends Geant4Factory {
                     layerMids[isec][isuper][ilayer].rotateX(Math.toRadians(dbref.getAlignmentThetaX(isec, isuper/2)));
                     layerMids[isec][isuper][ilayer].rotateY(Math.toRadians(dbref.getAlignmentThetaY(isec, isuper/2)));
                     layerMids[isec][isuper][ilayer].add(regionMids[isec][isuper/2]);
-
+                    
                     for(int iwire=0; iwire<dbref.nsensewires(); iwire++) {
                         wires[isec][isuper][ilayer][iwire] = new Wire(isec+1, isuper, ilayer+1, iwire+1);
                         //rotate in tilted sector coordinate system
@@ -592,6 +597,10 @@ public final class DCGeant4Factory extends Geant4Factory {
         return layerMids[isec][isuper][ilayer].clone();
     }
 
+    public Vector3d getPlaneNormal(int isec, int isuper) {
+        return norm[isec][isuper].clone();
+    }
+    
     public Vector3d getWireMidpoint(int isuper, int ilayer, int iwire) {
         return wires[0][isuper][ilayer][iwire].mid();
     }
@@ -616,6 +625,10 @@ public final class DCGeant4Factory extends Geant4Factory {
         return wires[0][isuper][ilayer][iwire].dir();
     }
 
+    public Vector3d getPlaneNormal(int isuper) {
+        return norm[0][isuper].clone();
+    }
+    
     private Geant4Basic getRegion(int isec, int ireg) {
         return motherVolume.getChildren().get(ireg*6+isec);
     }
