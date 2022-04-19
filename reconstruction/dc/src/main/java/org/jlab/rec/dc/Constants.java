@@ -18,6 +18,8 @@ import org.jlab.rec.dc.trajectory.TrajectorySurfaces;
  */
 public class Constants {
 
+    public static boolean INITFROMMC = false;
+
     // private constructor for a singleton
     private Constants() {
     }
