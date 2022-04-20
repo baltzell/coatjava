@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="snrtest" default="export" basedir=".">
+	<!-- export -->
+	<target name="export">
+		<echo>${user.dir}</echo>
+		<property name="homedir" value="${user.home}"/>
+		<property name="destdir" value="${user.home}/snrtest"/>
+		<property name="snrdir" value="../../../.."/>
+		
+		
+		<!-- deleted existing dir -->
+		<delete dir="${destdir}"/>
+		
+		<!-- copying  necessary stuff-->
+		
+		<!-- copy shell script -->
+		<copy file="${snrdir}/snr/noisetest.sh" todir="${destdir}"/>
+		
+		
+		<!-- the snr jar-->
+		<jar destfile="${destdir}/snr.jar">
+			<fileset dir="cnuphys/bin">
+				<include name="**/*.class"/>
+			</fileset>
+			
+						
+			<!-- make it executable -->
+		    <manifest>
+		        <attribute name="Main-Class" value="cnuphys.snr.test.NoiseTest"/>
+		    </manifest>
+		</jar>
+		
+
+
+	</target>
+	
+</project>
+
