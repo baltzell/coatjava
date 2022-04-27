@@ -268,8 +268,8 @@ public class KFitterDoca {
                 signMeas = Math.signum(h);
                 sign = Math.signum(h);
             }
-            //if(this.interNum>1)
-            //    signMeas = Math.signum(h);
+            if(this.interNum>1)
+                signMeas = Math.signum(h);
             double c2 = ((signMeas*Math.abs(mv.measurements.get(k).doca[0]) - sign*Math.abs(h)) 
                     * (signMeas*Math.abs(mv.measurements.get(k).doca[0]) - sign*Math.abs(h)) / V);
             //if(signMeas!=Math.signum(h) && this.interNum>1) LOGGER.log(Level.FINE, sv.trackTraj.get(k).printInfo()+" h "+(float)h);
@@ -315,8 +315,8 @@ public class KFitterDoca {
                     mv.measurements.get(k).wirePlaneD[1]);
                 signMeas = Math.signum(mv.measurements.get(k).doca[1]);
                 sign = Math.signum(h);
-                //if(this.interNum>1)
-                //    signMeas = Math.signum(h);
+                if(this.interNum>1)
+                    signMeas = Math.signum(h);
                 
                 x_filt += K[0] * (signMeas*Math.abs(mv.measurements.get(k).doca[1]) - sign*Math.abs(h));
                 y_filt += K[1] * (signMeas*Math.abs(mv.measurements.get(k).doca[1]) - sign*Math.abs(h));

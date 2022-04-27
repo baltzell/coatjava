@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
+import org.jlab.clas.swimtools.Swim;
 import org.jlab.detector.geant4.v2.DCGeant4Factory;
 import org.jlab.geom.prim.Line3D;
 import org.jlab.geom.prim.Plane3D;
@@ -75,8 +76,21 @@ public class MeasVecsDoca {
             if(Math.abs(tB)>0)
                 s = -tC/tB;
         }
-        
-        return h(new double[]{x + tx*s + Q*v*Ax*s*s/2,y + ty*s + Q*v*Ay*s*s/2}, z+s, wire);
+        double h = 9999;
+        double del = s/10;
+        double sj=0;
+        if(s!=0)
+            for(int j = 0; j<11; j++) {
+               sj = (double) j *del;
+               double hj = h(new double[]{x + tx*sj + Q*v*Ax*sj*sj/2,y + ty*sj + Q*v*Ay*sj*sj/2}, z+sj, wire);
+               if(Math.abs(hj)<Math.abs(h)) {
+                   h = hj;
+               }
+            }
+        double hstepper = h(new double[]{x + tx*s + Q*v*Ax*s*s/2,y + ty*s + Q*v*Ay*s*s/2}, z+s, wire);
+        if(h==9999)
+            h = hstepper;
+        return h;
     }
     
     public double h(double[] stateV, double Z, Line3D wireLine) {

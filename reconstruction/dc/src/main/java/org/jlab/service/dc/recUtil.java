@@ -27,9 +27,9 @@ class recUtil {
         
         // fills the arrays corresponding to the variables
         if(bank!=null) {
-            value[0] = (double) bank.getFloat("vx", 0)*10;
-            value[1] = (double) bank.getFloat("vy", 0)*10;
-            value[2] = (double) bank.getFloat("vz", 0)*10;
+            value[0] = (double) bank.getFloat("vx", 0);
+            value[1] = (double) bank.getFloat("vy", 0);
+            value[2] = (double) bank.getFloat("vz", 0);
             value[3] = (double) bank.getFloat("px", 0);
             value[4] = (double) bank.getFloat("py", 0);
             value[5] = (double) bank.getFloat("pz", 0);
@@ -37,16 +37,23 @@ class recUtil {
         
         double[] swimVal = new double[8];
        
-        sw.SetSwimParameters(value[0], value[1], value[2], value[3], value[4], value[4], q);
+        sw.SetSwimParameters(value[0], value[1], value[2], value[3], value[4], value[5], q);
         swimVal = sw.SwimToPlaneLab(175.);
-
+        //System.out.println("Zref "+ Zref);
+       // System.out.println("trk vtx "+new Point3D(value[0], value[1], value[2]).toString()
+        //+ " trk p "+new Point3D(value[3], value[4], value[5]).toString());
+        //System.out.println("-->trk vtx "+new Point3D(swimVal[0], swimVal[1], swimVal[2]).toString()
+        //+ " trk p "+new Point3D(swimVal[3], swimVal[4], swimVal[5]).toString());
         //Point3D rotatedP = tw.rotateToTiltedCoordSys(new Point3D(px, py, pz));
         Point3D rotatedP = rotateToTiltedCoordSys(new Point3D(swimVal[3], swimVal[4], swimVal[5]));
         Point3D rotatedX = rotateToTiltedCoordSys(new Point3D(swimVal[0], swimVal[1], swimVal[2]));
+        //System.out.println("trk rvtx "+rotatedX.toString()+" rp "+rotatedP.toString());
         int sector = getSector(swimVal[0], swimVal[1], swimVal[2]);
+        //System.out.println("sector "+sector);
         sw.SetSwimParameters(rotatedX.x(), rotatedX.y(), rotatedX.z(), rotatedP.x(), rotatedP.y(), rotatedP.z(), q);
         double[] trk = sw.SwimToPlaneTiltSecSys(sector, Zref); 
-        
+        //System.out.println("trk nvtx "+new Point3D(trk[0], trk[1], trk[2]).toString());
+        //System.out.println("...............");
         return trk;
     }
     
