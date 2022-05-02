@@ -37,12 +37,13 @@ class recUtil {
         
         double[] swimVal = new double[8];
        
-        sw.SetSwimParameters(value[0], value[1], value[2], value[3], value[4], value[4], q);
+        sw.SetSwimParameters(value[0], value[1], value[2], value[3], value[4], value[5], q);
         swimVal = sw.SwimToPlaneLab(175.);
 
         //Point3D rotatedP = tw.rotateToTiltedCoordSys(new Point3D(px, py, pz));
         Point3D rotatedP = rotateToTiltedCoordSys(new Point3D(swimVal[3], swimVal[4], swimVal[5]));
         Point3D rotatedX = rotateToTiltedCoordSys(new Point3D(swimVal[0], swimVal[1], swimVal[2]));
+
         int sector = getSector(swimVal[0], swimVal[1], swimVal[2]);
         sw.SetSwimParameters(rotatedX.x(), rotatedX.y(), rotatedX.z(), rotatedP.x(), rotatedP.y(), rotatedP.z(), q);
         double[] trk = sw.SwimToPlaneTiltSecSys(sector, Zref); 
