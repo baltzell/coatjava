@@ -19,7 +19,7 @@ class recUtil {
     
     static double[] mcTrackPars(DataEvent event, Swim sw, double Zref) {
         double[] value = new double[6];
-        int q = -1;
+         double[] trk = null;
         if (event.hasBank("MC::Particle") == false) {
             return value;
         }
@@ -27,27 +27,28 @@ class recUtil {
         
         // fills the arrays corresponding to the variables
         if(bank!=null) {
-            value[0] = (double) bank.getFloat("vx", 0)*10;
-            value[1] = (double) bank.getFloat("vy", 0)*10;
-            value[2] = (double) bank.getFloat("vz", 0)*10;
+            value[0] = (double) bank.getFloat("vx", 0);
+            value[1] = (double) bank.getFloat("vy", 0);
+            value[2] = (double) bank.getFloat("vz", 0);
             value[3] = (double) bank.getFloat("px", 0);
             value[4] = (double) bank.getFloat("py", 0);
             value[5] = (double) bank.getFloat("pz", 0);
+            int q = getMCPidCharge( bank.getInt("pid", 0)) ;
+        
+            double[] swimVal = new double[8];
+
+            sw.SetSwimParameters(value[0], value[1], value[2], value[3], value[4], value[5], q);
+            swimVal = sw.SwimToPlaneLab(175.);
+
+            //Point3D rotatedP = tw.rotateToTiltedCoordSys(new Point3D(px, py, pz));
+            Point3D rotatedP = rotateToTiltedCoordSys(new Point3D(swimVal[3], swimVal[4], swimVal[5]));
+            Point3D rotatedX = rotateToTiltedCoordSys(new Point3D(swimVal[0], swimVal[1], swimVal[2]));
+
+            int sector = getSector(swimVal[0], swimVal[1], swimVal[2]);
+            sw.SetSwimParameters(rotatedX.x(), rotatedX.y(), rotatedX.z(), rotatedP.x(), rotatedP.y(), rotatedP.z(), q);
+            trk = sw.SwimToPlaneTiltSecSys(sector, Zref); 
         }
-        
-        double[] swimVal = new double[8];
        
-        sw.SetSwimParameters(value[0], value[1], value[2], value[3], value[4], value[5], q);
-        swimVal = sw.SwimToPlaneLab(175.);
-
-        //Point3D rotatedP = tw.rotateToTiltedCoordSys(new Point3D(px, py, pz));
-        Point3D rotatedP = rotateToTiltedCoordSys(new Point3D(swimVal[3], swimVal[4], swimVal[5]));
-        Point3D rotatedX = rotateToTiltedCoordSys(new Point3D(swimVal[0], swimVal[1], swimVal[2]));
-
-        int sector = getSector(swimVal[0], swimVal[1], swimVal[2]);
-        sw.SetSwimParameters(rotatedX.x(), rotatedX.y(), rotatedX.z(), rotatedP.x(), rotatedP.y(), rotatedP.z(), q);
-        double[] trk = sw.SwimToPlaneTiltSecSys(sector, Zref); 
-        
         return trk;
     }
     
@@ -99,5 +100,13 @@ class recUtil {
             System.err.println("Track sector not found....");
         }
         return sector;
+    }
+
+    static int getMCPidCharge(int i) {
+        if((int) (i/100)==0 ) {
+            return (int) -Math.signum(i);
+        } else {
+            return (int) Math.signum(i);
+        }
     }
 }
