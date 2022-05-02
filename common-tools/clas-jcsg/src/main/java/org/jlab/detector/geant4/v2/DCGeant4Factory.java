@@ -466,9 +466,10 @@ public final class DCGeant4Factory extends Geant4Factory {
     private final double microgap = 0.01;
 
     private final Wire[][][][] wires;
+    private final Vector3d[][][][] wireMids; //y = 0 position along the wire
     private final Vector3d[][][] layerMids;
     private final Vector3d[][] regionMids;
-     private final Vector3d[][] norm; //wire plane normal vector
+    private final Vector3d[][] norm; //wire plane normal vector
 
     public static boolean MINISTAGGERON=true;
     public static boolean MINISTAGGEROFF=false;
@@ -505,6 +506,7 @@ public final class DCGeant4Factory extends Geant4Factory {
 
         // define wire and layer points in tilted coordinate frame (z axis is perpendicular to the chamber, y is along the wire)
         wires = new Wire[dbref.nsectors()][dbref.nsuperlayers()][][];
+        wireMids = new Vector3d[dbref.nsectors()][dbref.nsuperlayers()][][];
         layerMids = new Vector3d[dbref.nsectors()][dbref.nsuperlayers()][];
         regionMids = new Vector3d[dbref.nsectors()][dbref.nregions()];
         norm = new Vector3d[dbref.nsectors()][dbref.nsuperlayers()];
@@ -524,7 +526,7 @@ public final class DCGeant4Factory extends Geant4Factory {
 
             for(int isuper=0; isuper<dbref.nsuperlayers(); isuper++) {
                 layerMids[isec][isuper]  = new Vector3d[dbref.nsenselayers(isuper)];
-
+                wireMids[isec][isuper]  = new Vector3d[dbref.nsenselayers(isuper)][dbref.nsensewires()];
                 for(int ilayer=0; ilayer<dbref.nsenselayers(isuper); ilayer++) {
 /*
                     //define layerMid using wires (produce slight shift compared to GEMC volumes)
@@ -547,13 +549,13 @@ public final class DCGeant4Factory extends Geant4Factory {
                 norm[isec][isuper].rotateX(Math.toRadians(dbref.getAlignmentThetaX(isec, isuper/2)));
                 norm[isec][isuper].rotateY(Math.toRadians(dbref.getAlignmentThetaY(isec, isuper/2)));
                 wires[isec][isuper]   = new Wire[dbref.nsenselayers(isuper)][dbref.nsensewires()];
-                for(int ilayer=0; ilayer<dbref.nsenselayers(isuper); ilayer++) {
+                for(int ilayer=0; ilayer<dbref.nsenselayers(isuper); ilayer++) { 
                     layerMids[isec][isuper][ilayer].add(regionMids[isec][isuper/2].times(-1.0));
                     layerMids[isec][isuper][ilayer].rotateZ(Math.toRadians(dbref.getAlignmentThetaZ(isec, isuper/2)));
                     layerMids[isec][isuper][ilayer].rotateX(Math.toRadians(dbref.getAlignmentThetaX(isec, isuper/2)));
                     layerMids[isec][isuper][ilayer].rotateY(Math.toRadians(dbref.getAlignmentThetaY(isec, isuper/2)));
                     layerMids[isec][isuper][ilayer].add(regionMids[isec][isuper/2]);
-                    
+                   
                     for(int iwire=0; iwire<dbref.nsensewires(); iwire++) {
                         wires[isec][isuper][ilayer][iwire] = new Wire(isec+1, isuper, ilayer+1, iwire+1);
                         //rotate in tilted sector coordinate system
@@ -571,6 +573,11 @@ public final class DCGeant4Factory extends Geant4Factory {
                         wires[isec][isuper][ilayer][iwire].rotateX(Math.toRadians(dbref.getAlignmentThetaX(isec, isuper/2)));
                         wires[isec][isuper][ilayer][iwire].rotateY(Math.toRadians(dbref.getAlignmentThetaY(isec, isuper/2)));
                         wires[isec][isuper][ilayer][iwire].translate(regionMids[isec][isuper/2]);
+                        
+                        Vector3d u = wires[isec][isuper][ilayer][iwire].dir().normalized();
+                        Vector3d x1 = wires[isec][isuper][ilayer][iwire].left();
+                        double t = -x1.y/u.y;
+                        wireMids[isec][isuper][ilayer][iwire] = new Vector3d(x1.x + t*u.x, x1.y + t*u.y, x1.z + t*u.z);
                    }
                 }
 
@@ -579,7 +586,7 @@ public final class DCGeant4Factory extends Geant4Factory {
     }
 
     public Vector3d getWireMidpoint(int isec, int isuper, int ilayer, int iwire) {
-        return wires[isec][isuper][ilayer][iwire].mid();
+       return wireMids[isec][isuper][ilayer][iwire]; //for a shift in y, wire.mid has a non-zero y component
     }
 
     public Vector3d getWireLeftend(int isec, int isuper, int ilayer, int iwire) {
