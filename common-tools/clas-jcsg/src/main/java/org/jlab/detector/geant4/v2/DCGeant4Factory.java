@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.jlab.detector.geant4.v2;
 
 import eu.mihosoft.vrl.v3d.Vector3d;
@@ -22,6 +17,7 @@ final class DCdatabase {
     private final int nSectors = 6;
     private final int nRegions = 3;
     private final int nSupers = 6;
+    private final int nShifts = 6;
 
     private final double dist2tgt[] = new double[nRegions];
     private final double xdist[] = new double[nRegions];
@@ -39,7 +35,7 @@ final class DCdatabase {
     private final int nguardlayers[] = new int[nSupers];
     private final int nfieldlayers[] = new int[nSupers];
     private final double superwidth[] = new double[nSupers];
-
+ 
     private final double align_dx[][] = new double[nSectors][nRegions];
     private final double align_dy[][] = new double[nSectors][nRegions];
     private final double align_dz[][] = new double[nSectors][nRegions];
@@ -71,8 +67,12 @@ final class DCdatabase {
         return instance;
     }
 
-    public void connect(ConstantProvider cp) {
-
+    public void connect(ConstantProvider cp, double[][] shifts) {
+        
+        if(shifts==null || shifts.length!=nRegions || shifts[0].length!=nShifts) {
+            shifts = new double[nRegions][nShifts];
+        }
+        
         nguardwires = cp.getInteger(dcdbpath + "layer/nguardwires", 0);
         nsensewires = cp.getInteger(dcdbpath + "layer/nsensewires", 0);
         ministagger = cp.getDouble(dcdbpath + "ministagger/ministagger", 0);
@@ -97,19 +97,22 @@ final class DCdatabase {
 
             superwidth[isuper] = wpdist[isuper] * (nsenselayers[isuper] + nguardlayers[isuper] - 1) * cellthickness[isuper];
         }
-        double scaleTest=5;
+        double scaleTest=1;
         int alignrows = cp.length(dcdbpath+"alignment/dx");
         for(int irow = 0; irow< alignrows; irow++) {
                int isec = cp.getInteger(dcdbpath + "alignment/sector",irow)-1;
                int ireg = cp.getInteger(dcdbpath + "alignment/region",irow)-1;
 
-               align_dx[isec][ireg]=scaleTest*cp.getDouble(dcdbpath + "alignment/dx",irow);
-               align_dy[isec][ireg]=scaleTest*cp.getDouble(dcdbpath + "alignment/dy",irow);
-               align_dz[isec][ireg]=scaleTest*cp.getDouble(dcdbpath + "alignment/dz",irow);
-
-               align_dthetax[isec][ireg]=scaleTest*cp.getDouble(dcdbpath + "alignment/dtheta_x",irow);
-               align_dthetay[isec][ireg]=scaleTest*cp.getDouble(dcdbpath + "alignment/dtheta_y",irow);
-               align_dthetaz[isec][ireg]=scaleTest*cp.getDouble(dcdbpath + "alignment/dtheta_z",irow);
+            Vector3d align_delta = new Vector3d(shifts[ireg][0], shifts[ireg][1], shifts[ireg][2]);
+            align_delta = align_delta.rotateZ(isec*Math.toRadians(60));
+            
+            align_dx[isec][ireg]=align_delta.x+scaleTest*cp.getDouble(dcdbpath + "alignment/dx",irow);
+            align_dy[isec][ireg]=align_delta.y+scaleTest*cp.getDouble(dcdbpath + "alignment/dy",irow);
+            align_dz[isec][ireg]=align_delta.z+scaleTest*cp.getDouble(dcdbpath + "alignment/dz",irow);
+            
+            align_dthetax[isec][ireg]=shifts[ireg][3]+scaleTest*cp.getDouble(dcdbpath + "alignment/dtheta_x",irow);
+            align_dthetay[isec][ireg]=shifts[ireg][4]+scaleTest*cp.getDouble(dcdbpath + "alignment/dtheta_y",irow);
+            align_dthetaz[isec][ireg]=shifts[ireg][5]+scaleTest*cp.getDouble(dcdbpath + "alignment/dtheta_z",irow);
         }
         
         int endplatesrows = cp.length(dcdbpath+"endplatesbow/coefficient");
@@ -479,18 +482,24 @@ public final class DCGeant4Factory extends Geant4Factory {
 
     ///////////////////////////////////////////////////
     public DCGeant4Factory(ConstantProvider provider) {
-        this(provider, MINISTAGGEROFF, ENDPLATESBOWOFF);
+        this(provider, MINISTAGGEROFF, ENDPLATESBOWOFF, null);
     }
 
     ///////////////////////////////////////////////////
     public DCGeant4Factory(ConstantProvider provider, boolean ministaggerStatus,
             boolean endplatesStatus) {
+        this(provider, ministaggerStatus, endplatesStatus, null);
+    }
+    
+    ///////////////////////////////////////////////////
+    public DCGeant4Factory(ConstantProvider provider, boolean ministaggerStatus,
+            boolean endplatesStatus, double[][] shifts) {
         dbref.setMinistaggerStatus(ministaggerStatus);
         dbref.setEndPlatesStatus(endplatesStatus);
         
         motherVolume = new G4World("fc");
 
-        dbref.connect(provider);
+        dbref.connect(provider, shifts);
         nsgwires = dbref.nsensewires() + dbref.nguardwires();
 
         for (int iregion = 0; iregion < 3; iregion++) {
