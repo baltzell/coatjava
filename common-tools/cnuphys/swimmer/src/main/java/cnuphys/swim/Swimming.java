@@ -290,8 +290,6 @@ public class Swimming {
 
 		System.out.println("Active Field Description: " + MagneticFields.getInstance().getActiveFieldDescription());
 
-		FastMath.setMathLib(FastMath.MathLib.SUPERFAST);
-
 		testSwim(1);
 
 		for (int i = 0; i < 100; i++) {

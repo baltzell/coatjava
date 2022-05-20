@@ -146,7 +146,7 @@ public class AdaptiveTests {
 //					adaptiveSwimmer.swim(revIv.charge, revIv.xo, revIv.yo, revIv.zo, revIv.p, revIv.theta, revIv.phi, result.getFinalS(), stepsizeAdaptive, eps, result);
 					adaptiveSwimmer.swimS(revIv.charge, revIv.xo, revIv.yo, revIv.zo, revIv.p, revIv.theta, revIv.phi, accuracy, result.getFinalS(), stepsizeAdaptive, eps, result);
 
-					double dr = FastMath.sqrt(uf[0]*uf[0] + uf[1]*uf[1] + uf[2]*uf[2]);
+					double dr = Math.sqrt(uf[0]*uf[0] + uf[1]*uf[1] + uf[2]*uf[2]);
 					
 					if (i == 711) {
 						System.out.println("BACKWARD " + revIv);

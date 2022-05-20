@@ -300,7 +300,7 @@ public abstract class MagneticField implements IMagField {
 		double sum = 0.0;
 
 		for (int i = 0; i < numFieldPoints; i++) {
-			double fm = FastMath.sqrt(squareMagnitude(i));
+			double fm = Math.sqrt(squareMagnitude(i));
 			sum += fm;
 
 			if (fm > maxf) {
@@ -507,7 +507,7 @@ public abstract class MagneticField implements IMagField {
 		float B1 = field.get(i);
 		float B2 = field.get(i + 1);
 		float B3 = field.get(i + 2);
-		return FastMath.sqrt(B1 * B1 + B2 * B2 + B3 * B3);
+		return Math.sqrt(B1 * B1 + B2 * B2 + B3 * B3);
 	}
 
 	/**

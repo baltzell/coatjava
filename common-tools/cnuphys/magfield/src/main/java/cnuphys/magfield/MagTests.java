@@ -260,8 +260,8 @@ public class MagTests {
 				float rho = 600 * rand.nextFloat();
 				double phi = Math.toRadians(30 * rand.nextFloat());
 
-				x[i] = (float) (rho * FastMath.cos(phi));
-				y[i] = (float) (rho * FastMath.sin(phi));
+				x[i] = (float) (rho * Math.cos(phi));
+				y[i] = (float) (rho * Math.sin(phi));
 			}
 		} else if (option == 1) {
 			double dT = 1. / (num - 1);

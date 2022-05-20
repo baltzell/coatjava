@@ -46,7 +46,6 @@ public class SwimZTest {
 
 		System.out.println("Active Field Description: " + MagneticFields.getInstance().getActiveFieldDescription());
 		
-		FastMath.setMathLib(FastMath.MathLib.SUPERFAST);
 		int numTest = 20000;
 //		testParabolicApproximation(numTest);
 //		testOldUniform(numTest);

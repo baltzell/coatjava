@@ -95,7 +95,7 @@ public class TorusProbe extends FieldProbe {
 		y -= _torus.getShiftY();
 		z -= _torus.getShiftZ();
 
-		double rho = FastMath.sqrt(x * x + y * y);
+		double rho = Math.sqrt(x * x + y * y);
 		double phi = FastMath.atan2Deg(y, x);
 		fieldCylindrical(_cell, phi, rho, z, result);
 	}

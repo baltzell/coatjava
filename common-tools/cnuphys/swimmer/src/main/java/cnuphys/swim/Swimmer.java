@@ -1015,7 +1015,7 @@ public final class Swimmer {
 		}
 		
 		//have we already stopped because of maxRad?
-		if (FastMath.sqrt(xo*xo + yo*yo + zo*zo) > maxRad) {
+		if (Math.sqrt(xo*xo + yo*yo + zo*zo) > maxRad) {
 			//System.err.println("Starting point of trajectory is outside maxRad of stopper (C)");
 			return null;
 		}
@@ -1283,7 +1283,7 @@ public final class Swimmer {
 		}
 		
 		//have we already stopped because of maxRad?
-		if (FastMath.sqrt(xo*xo + yo*yo + zo*zo) > maxRad) {
+		if (Math.sqrt(xo*xo + yo*yo + zo*zo) > maxRad) {
 			//System.err.println("Starting point of trajectory is outside maxRad of stopper (C)");
 			return null;
 		}
@@ -1663,8 +1663,8 @@ public final class Swimmer {
 			// System.err.println("Skipping neutral or no field swim (D)");
 			// just has to be proportional to velocity
 			SwimTrajectory traj = new SwimTrajectory(charge, xo, yo, zo, momentum, theta, phi);
-			double vz = momentum * FastMath.cos(Math.toRadians(theta));
-			double vp = momentum * FastMath.sin(Math.toRadians(theta));
+			double vz = momentum * Math.cos(Math.toRadians(theta));
+			double vp = momentum * Math.sin(Math.toRadians(theta));
 			double vx = vp * Math.cos(Math.toRadians(phi));
 			double vy = vp * Math.sin(Math.toRadians(phi));
 			double time = plane.timeToPlane(xo, yo, zo, vx, vy, vz);
@@ -1883,10 +1883,10 @@ public final class Swimmer {
 			// System.err.println("Skipping neutral or no field swim (D)");
 			// just has to be proportional to velocity
 			SwimTrajectory traj = new SwimTrajectory(charge, xo, yo, zo, momentum, theta, phi);
-			double vz = momentum * FastMath.cos(Math.toRadians(theta));
+			double vz = momentum * Math.cos(Math.toRadians(theta));
 
 			if (Math.abs(vz) > 1.0e-10) {
-				double vp = momentum * FastMath.sin(Math.toRadians(theta));
+				double vp = momentum * Math.sin(Math.toRadians(theta));
 				double vx = vp * Math.cos(Math.toRadians(phi));
 				double vy = vp * Math.sin(Math.toRadians(phi));
 				

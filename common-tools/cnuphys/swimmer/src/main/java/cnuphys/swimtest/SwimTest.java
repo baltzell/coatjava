@@ -566,7 +566,7 @@ public class SwimTest {
 						y[0], y[1], y[2], R, P * y[3], P * y[4], P * y[5], P));
 
 		// now in cylindrical
-		double phi = FastMath.atan2(y[1], y[0]);
+		double phi = Math.atan2(y[1], y[0]);
 		double rho = FastMath.hypot(y[0], y[1]);
 		System.out.println(String.format("[phi, rho, z] = [%9.6f, %9.6f, %9.6f]", Math.toDegrees(phi), rho, y[2]));
 
@@ -1275,67 +1275,7 @@ public class SwimTest {
 	   // System.err.println("\n\nLast swim: " + result);
 	}
 
-	/**
-	 * main program
-	 * 
-	 * @param arg command line arguments (ignored)
-	 */
-	public static void Xmain(String arg[]) {
-		final MagneticFields mf = MagneticFields.getInstance();
-		FastMath.setMathLib(FastMath.MathLib.FAST);
 
-
-		// test specific load
-		File mfdir = new File(System.getProperty("user.home"), "magfield");
-		System.out.println("mfdir exists: " + (mfdir.exists() && mfdir.isDirectory()));
-		try {
-			mf.initializeMagneticFields(mfdir.getPath(), "Symm_torus_r2501_phi16_z251_24Apr2018.dat",
-					"Symm_solenoid_r601_phi1_z1201_13June2018.dat");
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			System.exit(1);
-		} catch (MagneticFieldInitializationException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-		
-		//test the swim to a fixed rho
-		//swimToRhoTest(10000, 33557799);
-		
-		//test the swim to a cylinder
-		//swimToCylinderTest(93450, 33557799);
-		
-		//gemcTrackTest();
-		
-		//uniformSwimToRhoTest(20, 33557799);
-		interpolateToPlaneTest(20, 33557799);
-
-
-		// write out data file
-//		String path = (new File(_homeDir, "swimTestData")).getPath();
-//
-//		generateTestData(path, 1000, 19923456L);
-//		
-//		
-//		//look for the file
-//		
-//		
-//		File file = new File(_currentWorkingDirectory, "swimTestData");
-//		if (!file.exists()) {
-//			file = new File(_homeDir, "swimTestData");
-//			if (!file.exists()) {
-//				System.err.println("FATAL ERROR Could not find test data file.");
-//			}
-//		}
-//		
-//		System.err.println("Will test on data file: [" + file.getPath() + "]");
-//
-//		testTestData(file.getPath());
-
-
-		System.err.println("\ndone");
-	}
-	
 	/**
 	 * main program
 	 * 
@@ -1359,7 +1299,6 @@ public class SwimTest {
 
 		System.out.println("Active Field Description: " + MagneticFields.getInstance().getActiveFieldDescription());
 
-		FastMath.setMathLib(FastMath.MathLib.SUPERFAST);
 		// MagneticField.setMathLib(MagneticField.MathLib.DEFAULT);
 		int numTest = 10000;
 
