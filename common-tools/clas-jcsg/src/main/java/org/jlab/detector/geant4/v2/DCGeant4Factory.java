@@ -103,12 +103,16 @@ final class DCdatabase {
                int isec = cp.getInteger(dcdbpath + "alignment/sector",irow)-1;
                int ireg = cp.getInteger(dcdbpath + "alignment/region",irow)-1;
 
-            Vector3d align_delta = new Vector3d(shifts[ireg][0], shifts[ireg][1], shifts[ireg][2]);
-            align_delta = align_delta.rotateZ(isec*Math.toRadians(60));
-            
-            align_dx[isec][ireg]=align_delta.x+scaleTest*cp.getDouble(dcdbpath + "alignment/dx",irow);
-            align_dy[isec][ireg]=align_delta.y+scaleTest*cp.getDouble(dcdbpath + "alignment/dy",irow);
-            align_dz[isec][ireg]=align_delta.z+scaleTest*cp.getDouble(dcdbpath + "alignment/dz",irow);
+            Vector3d align_delta    = new Vector3d(shifts[ireg][0], shifts[ireg][1], shifts[ireg][2]);
+            Vector3d align_position = new Vector3d(scaleTest*cp.getDouble(dcdbpath + "alignment/dx",irow),
+                                                   scaleTest*cp.getDouble(dcdbpath + "alignment/dy",irow),
+                                                   scaleTest*cp.getDouble(dcdbpath + "alignment/dy",irow));
+            align_position = align_position.rotateZ(-isec*Math.toRadians(60));
+            align_position = align_position.add(align_delta);
+            align_position = align_position.rotateZ(isec*Math.toRadians(60));
+            align_dx[isec][ireg]=align_position.x;
+            align_dy[isec][ireg]=align_position.y;
+            align_dz[isec][ireg]=align_position.z;
             
             align_dthetax[isec][ireg]=shifts[ireg][3]+scaleTest*cp.getDouble(dcdbpath + "alignment/dtheta_x",irow);
             align_dthetay[isec][ireg]=shifts[ireg][4]+scaleTest*cp.getDouble(dcdbpath + "alignment/dtheta_y",irow);
