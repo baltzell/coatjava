@@ -106,7 +106,7 @@ final class DCdatabase {
             Vector3d align_delta    = new Vector3d(shifts[ireg][0], shifts[ireg][1], shifts[ireg][2]);
             Vector3d align_position = new Vector3d(scaleTest*cp.getDouble(dcdbpath + "alignment/dx",irow),
                                                    scaleTest*cp.getDouble(dcdbpath + "alignment/dy",irow),
-                                                   scaleTest*cp.getDouble(dcdbpath + "alignment/dy",irow));
+                                                   scaleTest*cp.getDouble(dcdbpath + "alignment/dz",irow));
             align_position = align_position.rotateZ(-isec*Math.toRadians(60));
             align_position = align_position.add(align_delta);
             align_position = align_position.rotateZ(isec*Math.toRadians(60));
