@@ -2,6 +2,8 @@ package cnuphys.adaptiveSwim;
 
 import java.io.PrintStream;
 
+import cnuphys.adaptiveSwim.geometry.AGeometric;
+import cnuphys.adaptiveSwim.geometry.Point;
 import cnuphys.adaptiveSwim.test.InitialValues;
 import cnuphys.magfield.FastMath;
 import cnuphys.swim.SwimTrajectory;
@@ -25,6 +27,10 @@ public class AdaptiveSwimResult {
 	
 	//the initial values
 	private InitialValues _initialValues;
+	
+	//some stoppers (e.g. plane) will use this when they interpolate to an intersection
+	private AdaptiveSwimIntersection _intersection;
+	
 	
 	/**
 	 * Create a container for the swim results for default of 6D state vector
@@ -460,4 +466,30 @@ public class AdaptiveSwimResult {
 		return Math.sqrt(sum);
 		
 	}
+	
+	public void computeIntersection(AGeometric geom) {
+		getIntersection().computeIntersection(geom);
+	}
+	
+	public double getIntersectDistance() {
+		return getIntersection().getIntersectDistance();
+	}
+	
+	public Point getIntersectionPoint() {
+		return getIntersection().getIntersectionPoint();
+	}
+	
+	/**
+	 * Not all swim methods use this. It is fr those (e.g. planes) that
+	 * want an estimate of the intersection. This will create the object
+	 * if necessary.
+	 * @return the intersection object
+	 */
+	public AdaptiveSwimIntersection getIntersection() {
+		if (_intersection == null) {
+			_intersection = new AdaptiveSwimIntersection();
+		}
+		return _intersection;
+	}
+
 }

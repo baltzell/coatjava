@@ -1,5 +1,7 @@
 package cnuphys.adaptiveSwim.geometry;
 
+import java.util.Random;
+
 /**
  * A plane is defined by the equation (r - ro).norm = 0 Where r is an arbitrary
  * point on the plane, ro is a given point on the plane and norm is the normal
@@ -8,7 +10,7 @@ package cnuphys.adaptiveSwim.geometry;
  * @author heddle
  *
  */
-public class Plane {
+public class Plane extends AGeometric {
 
 	// unit vector normal to plane
 	public final Vector norm;
@@ -53,38 +55,20 @@ public class Plane {
 				new Point(point[0], point[1], point[2]));
 	}
 
-
+	
 	/**
-	 * Distance from a point to the plane
-	 * 
-	 * @param p the point in question
-	 * @return the distance to the plane
+	 * Create a line from two points and then get the intersection with the plane
+	 * @param p1 one point
+	 * @param p2 another point
+	 * @param p will hold the intersetion, NaNs if no intersection
+	 * @return the t parameter. If NaN it means the line is parallel to the plane.
+	 *         If t [0,1] then the segment intersects the plane. If t outside [0, 1]
+	 *         the infinite line intersects the plane, but not the segment
 	 */
-	public double distance(Point p) {
-		return distance(p.x, p.y, p.z);
-	}
-
-	/**
-	 * Distance from a point to the plane
-	 * 
-	 * @param x the x coordinate
-	 * @param y the y coordinate
-	 * @param z the z coordinate
-	 * @return the distance to the plane
-	 */
-	public double distance(double x, double y, double z) {
-		return Math.abs(signedDistance(x, y, z));
-	}
-
-	/**
-	 * Signed distance from a point to the plane
-	 * 
-	 * @param p the point in question
-	 * @return the signed distance (indicates which side you are on where norm
-	 *         defines positive side)
-	 */
-	public double signedDistance(Point p) {
-		return signedDistance(p.x, p.y, p.z);
+	@Override
+	public double interpolate(Point p1, Point p2, Point p) {
+		Line line = new Line(p1, p2);
+		return lineIntersection(line, p);
 	}
 
 	/**
@@ -96,6 +80,7 @@ public class Plane {
 	 * @return the signed distance (indicates which side you are on where norm
 	 *         defines positive side)
 	 */
+	@Override
 	public double signedDistance(double x, double y, double z) {
 		if (Double.isNaN(_denom)) {
 			_denom = Math.sqrt(a * a + b * b + c * c);
@@ -109,7 +94,7 @@ public class Plane {
 	 * @param line         the line
 	 * @param intersection will hold the point of intersection
 	 * @return the t parameter. If NaN it means the line is parallel to the plane.
-	 *         If t [0,1] then the segment intersects the line. If t outside [0, 1]
+	 *         If t [0,1] then the segment intersects the plane. If t outside [0, 1]
 	 *         the infinite line intersects the plane, but not the segment
 	 */
 	public double lineIntersection(Line line, Point intersection) {
@@ -386,6 +371,7 @@ public class Plane {
 	}
 
 	public static void main(String arg[]) {
+		Random rand = new Random(6437248);
 //		Plane p = constantPhiPlane(30);
 
 		Point zero = new Point(0, 0, 0);
@@ -415,6 +401,7 @@ public class Plane {
 
 		Point po = new Point(2, 4, -7);
 		Point p1 = new Point(0, 2, 5);
+		Point p2 = new Point();
 		Point intersection = new Point();
 		System.out.println("distance to ((2, 4, -7)): " + plane.distance(po));
 
@@ -439,6 +426,26 @@ public class Plane {
 		Plane pp1 = constantPhiPlane(57);
 		Plane pp2 = constantPhiPlane(99);
 		System.out.println("Intersection of two phi planes: " + pp1.planeIntersection(pp2));
+		
+		System.out.println("\nLine intersection tests");
+		for (int i = 0; i < 10; i++) {
+			double f1 = 0.01;
+			double f2 = 20;
+			p1.set(f1*rand.nextDouble(), f1*rand.nextDouble(), f1*rand.nextDouble());
+			p2.set(f2*rand.nextDouble(), f2*rand.nextDouble(), f2*rand.nextDouble());
+			
+			t = plane.interpolate(p1, p2, intersection);
+			double dist = Double.NaN;
+			
+			if (!Double.isNaN(t)) {
+				dist =plane.distance(intersection);
+			}
+			
+			String s = String.format("t: %9.5f  dist: %9.5e", t, dist);
+			System.out.println(s);
+		}
+
+
 	}
 
 }

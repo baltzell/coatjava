@@ -482,18 +482,19 @@ public class AdaptiveTests {
 
 		System.out.println("swim to a plane");
 		
-		long seed = 9459363;
+		long seed = 94549363;
 		Random rand = new Random(seed);
-		int num = 1000;
+		int num = 100;
 //		num = 1;
 		int n0 = 0;
 
-		int status[] = new int[num];
+		int status;
 		InitialValues[] ivals = InitialValues.getInitialValues(rand, num, -1, false, 0., 0., 0., 0., 0., 0., 0.5, 5.0, 10., 25., -30., 30.);
 
 		MagneticFields.getInstance().setActiveField(FieldType.COMPOSITE);
 		AdaptiveSwimmer adaptiveSwimmer = new AdaptiveSwimmer();
-		AdaptiveSwimResult result = new AdaptiveSwimResult(true);
+	//	AdaptiveSwimResult result1 = new AdaptiveSwimResult(true);
+		AdaptiveSwimResult result2 = new AdaptiveSwimResult(true);
 
 		double stepsizeAdaptive = 0.01; // starting
 
@@ -511,37 +512,63 @@ public class AdaptiveTests {
 		Vector v = new Vector(-x1, 0, -z1);
 		Plane plane = new Plane(v, p1);
 		
+		
 
 		try {
 			
 			InitialValues iv = null;
-			double[] uf = null;
+	//		double[] uf1 = null;
+			double[] uf2 = null;
 			
-			for (int i = n0; i < num; i++) {
-				iv = ivals[i];
+	//		double dist1 = 0;
+			double dist2 = 0;
 
-//				if (i == 54) {
-//					System.out.println();
-//					System.out.println(iv);
-//				}
-				
-				adaptiveSwimmer.swimPlane(iv.charge, iv.xo, iv.yo, iv.zo, iv.p, iv.theta, iv.phi, plane, accuracy,
-						maxPathLength, stepsizeAdaptive, eps, result);
-				
-				uf = result.getUf();
-				status[i] = result.getStatus();
-				if (status[i] == AdaptiveSwimmer.SWIM_SUCCESS) {
+			
+			System.out.println("Accuracy:" +  accuracy);
+
+				for (int i = n0; i < num; i++) {
+					iv = ivals[i];
+
+					//no interp
+//					adaptiveSwimmer.swimPlane(iv.charge, iv.xo, iv.yo, iv.zo, iv.p, iv.theta, iv.phi, plane,
+//							accuracy, maxPathLength, stepsizeAdaptive, eps, result1);
 					
+					//interp
+					adaptiveSwimmer.swimPlaneInterp(iv.charge, iv.xo, iv.yo, iv.zo, iv.p, iv.theta, iv.phi, plane,
+							accuracy, maxPathLength, stepsizeAdaptive, eps, result2);
+
+
+//					uf1 = result1.getUf();
+//					status = result1.getStatus();
+//					if (status == AdaptiveSwimmer.SWIM_SUCCESS) {
+//						dist1 = plane.signedDistance(uf1[0], uf1[1], uf1[2]);
+//						String s1 = String.format("NO (%-10.6f, %-10.6f, %-10.6f) ", uf1[0], uf1[1], uf1[2]);
+//						String s2 = String.format("Dist: %-7.3e m", dist1);
+//						System.out.print(s1 + s2);
+//					} else {
+//					System.out.println("Bad swim to plane for i = " + i + "  final pathlength = " + result.getFinalS());
+//					}
+					
+					uf2 = result2.getUf();
+					status = result2.getStatus();
+					if (status == AdaptiveSwimmer.SWIM_SUCCESS) {
+						dist2 = plane.distance(uf2[0], uf2[1], uf2[2]);
+						String s1 = String.format("Last (%-10.6f, %-10.6f, %-10.6f) ", uf2[0], uf2[1], uf2[2]);
+						String s2 = String.format("D: %-6.2e m", dist2);
+						String s3 = result2.getIntersection().toString();
+						
+						System.out.print(s1 + s2 + s3);
+						
+						
+					} else {
+//					System.out.println("Bad swim to plane for i = " + i + "  final pathlength = " + result.getFinalS());
+					}
+					System.out.println();
 				}
-				else {
-					System.out.println("Bad swim to plane for i = " + i + "  final pathlength = " + result.getFinalS());
-				}
 
 
-			}
-
-			result.printOut(System.out, "Swim to plane");
-			System.out.println(String.format("Distance to plane: %-8.6f m" , Math.abs(plane.distance(uf[0], uf[1], uf[2]))));
+//			result.printOut(System.out, "Swim to plane");
+//.out.println(String.format("Distance to plane: %-8.6f m" , Math.abs(plane.distance(uf[0], uf[1], uf[2]))));
 		} catch (AdaptiveSwimException e) {
 			e.printStackTrace();
 		}

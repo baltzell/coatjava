@@ -11,11 +11,10 @@ import cnuphys.swim.SwimTrajectory;
 public class AdaptivePlaneStopper extends AAdaptiveStopper {
 
 	//the plane you want to swim to
-	private Plane _targetPlane;
-
+	protected Plane _targetPlane;
 
 	//is the starting rho bigger or smaller than the target
-	private int _startSign;
+	protected int _startSign;
 			
 	/**
 	 * Rho  stopper  (does check max path length)
@@ -36,7 +35,7 @@ public class AdaptivePlaneStopper extends AAdaptiveStopper {
 	 * @param u the state vector
 	 * @return the signed distance from a state vector to a point on the target plane in meters
 	 */
-	private double signedDistance(double u[]) {
+	protected double signedDistance(double u[]) {
 		return _targetPlane.signedDistance(u[0], u[1], u[2]);
 	}
 	
@@ -44,27 +43,25 @@ public class AdaptivePlaneStopper extends AAdaptiveStopper {
 	public boolean stopIntegration(double snew, double[] unew) {
 		
 		double newSignedDist = signedDistance(unew);
-
-		// within accuracy?
-		//note this could also result with s > smax
-		if (Math.abs(newSignedDist) < _accuracy) {
+		
+		// if within accuracy or exceeded smax we are done
+		if (((snew > _sf) || Math.abs(newSignedDist) < _accuracy)) {
 			accept(snew, unew);
   			return true;
 		}
 
-		//stop and don't accept new data. We crossed the boundary or exceeded smax
-		if ((snew > _sf) || (sign(newSignedDist) != _startSign)) {
-			return true;
+        // not within accuracy
+		//is still on start side, accept the point
+		if (sign(newSignedDist) == _startSign) {
+			accept(snew, unew);
 		}
-				
-		//accept new data and continue
-		accept(snew, unew);
+
 		return false;
 	}
 	
 	
 	//get the sign based on the signed distance
-	private int sign(double dist) {
+	protected int sign(double dist) {
 		return ((dist < 0) ? -1 : 1);
 	}
 	
