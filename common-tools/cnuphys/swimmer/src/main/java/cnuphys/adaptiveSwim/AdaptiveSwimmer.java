@@ -689,6 +689,9 @@ public class AdaptiveSwimmer {
 
 		// bail if below minimum momentum
 		if (belowMinimumMomentum(momentum, result)) {
+			result.setNStep(0);
+			result.setFinalS(0);
+			result.setStatus(AdaptiveSwimmer.SWIM_BELOW_MIN_P);
 			return;
 		}
 
@@ -744,9 +747,7 @@ public class AdaptiveSwimmer {
 			// don't reduce if haven't crossed don't want to get stuck on start side
 			if (stopper.everCrossed()) {
 				h /= 2;
-			} else {
-				System.out.println("Skipped reducing h");
-			}
+			} 
 		}
 		
 		result.computeIntersection(targetPlane);

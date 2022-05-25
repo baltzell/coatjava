@@ -4,7 +4,12 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import cnuphys.adaptiveSwim.AdaptivePlaneInterpStopper;
+import cnuphys.adaptiveSwim.AdaptiveSwimException;
+import cnuphys.adaptiveSwim.AdaptiveSwimIntersection;
 import cnuphys.adaptiveSwim.AdaptiveSwimResult;
+import cnuphys.adaptiveSwim.AdaptiveSwimUtilities;
+import cnuphys.adaptiveSwim.AdaptiveSwimmer;
 import cnuphys.adaptiveSwim.geometry.Cylinder;
 import cnuphys.adaptiveSwim.geometry.Point;
 import cnuphys.adaptiveSwim.geometry.Vector;
@@ -212,7 +217,7 @@ public final class Swimmer {
 			System.err.println("Skipping low momentum fixed rho swim (A)");
 			result.setNStep(0);
 			result.setFinalS(0);
-			result.setStatus(-2);
+			result.setStatus(AdaptiveSwimmer.SWIM_BELOW_MIN_P);
 			return;
 		}
 				
@@ -267,9 +272,9 @@ public final class Swimmer {
 		result.setNStep(ns);
 		result.setFinalS(sFinal);
 		if (del < accuracy) {
-			result.setStatus(0);
+			result.setStatus(AdaptiveSwimmer.SWIM_SUCCESS);
 		} else {
-			result.setStatus(-1);
+			result.setStatus(AdaptiveSwimmer.SWIM_TARGET_MISSED);
 		}
 	}
 	   
@@ -327,7 +332,7 @@ public final class Swimmer {
 			System.err.println("Skipping low momentum fixed rho swim (A)");
 			result.setNStep(0);
 			result.setFinalS(0);
-			result.setStatus(-2);
+			result.setStatus(AdaptiveSwimmer.SWIM_BELOW_MIN_P);
 			return;
 		}
 		
@@ -392,9 +397,9 @@ public final class Swimmer {
 		result.setFinalS(sFinal);
 
 		if (del < accuracy) {
-			result.setStatus(0);
+			result.setStatus(AdaptiveSwimmer.SWIM_SUCCESS);
 		} else {
-			result.setStatus(-1);
+			result.setStatus(AdaptiveSwimmer.SWIM_TARGET_MISSED);
 		}
 	}
 	
@@ -453,7 +458,7 @@ public final class Swimmer {
 			System.err.println("Skipping low momentum fixed rho swim (A)");
 			result.setNStep(0);
 			result.setFinalS(0);
-			result.setStatus(-2);
+			result.setStatus(AdaptiveSwimmer.SWIM_BELOW_MIN_P);
 			return;
 		}
 				
@@ -558,7 +563,7 @@ public final class Swimmer {
 			System.err.println("Skipping low momentum fixed rho swim (A)");
 			result.setNStep(0);
 			result.setFinalS(0);
-			result.setStatus(-2);
+			result.setStatus(AdaptiveSwimmer.SWIM_BELOW_MIN_P);
 			return;
 		}
 		
@@ -612,79 +617,65 @@ public final class Swimmer {
 		result.setNStep(ns);
 		result.setFinalS(sFinal);
 		
-//		//cutoff value of s with tolerance 
-//		double sCutoff = sMax - SMAX_TOLERANCE;
-//	
-//		double del = Double.POSITIVE_INFINITY;
-//		int maxtry = 25;
-//		int count = 0;
-//		double sFinal = 0;
-//		int ns = 0;
-//
-//		while ((count < maxtry) && (del > accuracy)) {
-//			
-//			uf = result.getUf();
-//			if (count > 0) {
-//				px = uf[3];
-//				py = uf[4];
-//				pz = uf[5];
-//				theta = FastMath.acos2Deg(pz);
-//				phi = FastMath.atan2Deg(py, px);
-//			}
-//			
-//			double rhoCurr = Math.hypot(uf[0], uf[1]);
-//			
-//			DefaultRhoStopper stopper = new DefaultRhoStopper(uf, sFinal, sMax, rhoCurr, fixedRho, accuracy);
-//			
-//			if ((sFinal + stepSize) > sMax) {
-//				stepSize = sMax-sFinal;
-//				
-//				if (stepSize < 0) {
-//					break;
-//				}
-//			}
-//			
-//
-//
-//			ns += swim(charge, uf[0], uf[1], uf[2], momentum, theta, phi, stopper, null, sMax-sFinal, stepSize);
-//			
-//			System.arraycopy(stopper.getFinalU(), 0, result.getUf(), 0, result.getUf().length);
-//			
-//			sFinal = stopper.getFinalT();	
-//			
-//			
-//			double rholast = Math.hypot(result.getUf()[0], result.getUf()[1]);
-//			del = Math.abs(rholast - fixedRho);
-//
-//
-//			if ((sFinal) > sCutoff) {
-//				break;
-//			}
-//						
-//			count++;
-//			stepSize = Math.min(stepSize, (sMax-sFinal)/4);
-//
-////			stepSize /= 2;
-//
-//		} // while
-//
-//		result.setNStep(ns);
-//		result.setFinalS(sFinal);
-//
-//		if (del < accuracy) {
-//			result.setStatus(0);
-//		} else {
-//			result.setStatus(-1);
-//		}
-	}
 
+	}
+	
+	/**
+	 * 
+	 * @param charge               the charge: -1 for electron, 1 for proton, etc
+	 * @param xo                   the x vertex position in meters
+	 * @param yo                   the y vertex position in meters
+	 * @param zo                   the z vertex position in meters
+	 * @param momentum             initial momentum in GeV/c
+	 * @param theta                initial polar angle in degrees
+	 * @param phi                  initial azimuthal angle in degrees
+	 * @param normX                x component of the normal to the plane
+	 * @param normY                y component of the normal to the plane
+	 * @param normZ                z component of the normal to the plane
+	 * @param pointX               x coordinate of point in plane
+	 * @param pointY               y coordinate of point in plane
+	 * @param pointZ               z coordinate of point in plane
+	 * @param accuracy             the accuracy of the fixed rho termination, in
+	 *                             meters
+	 * @param sMax
+	 * @param stepSize
+	 * @param relTolerance
+	 * @param result
+	 * @throws RungeKuttaException
+	 */
 	public void swimPlane(int charge, double xo, double yo, double zo, double momentum, double theta, double phi,
 			double normX, double normY, double normZ, double pointX, double pointY, double pointZ,
 			double accuracy, double sMax, double stepSize, double relTolerance[], AdaptiveSwimResult result)
 			throws RungeKuttaException {
-		
 		cnuphys.adaptiveSwim.geometry.Plane targetPlane = new cnuphys.adaptiveSwim.geometry.Plane(new Vector(normX,normY,normZ), new Point(pointX,pointY,pointZ));
-//                System.out.println(targetPlane.toString());
+
+		swimPlane(charge, xo, yo, zo, momentum, theta, phi, targetPlane, 
+				accuracy, sMax, stepSize, relTolerance, result);
+	}
+	
+
+	/**
+	 * 
+	 * @param charge               the charge: -1 for electron, 1 for proton, etc
+	 * @param xo                   the x vertex position in meters
+	 * @param yo                   the y vertex position in meters
+	 * @param zo                   the z vertex position in meters
+	 * @param momentum             initial momentum in GeV/c
+	 * @param theta                initial polar angle in degrees
+	 * @param phi                  initial azimuthal angle in degrees
+	 * @param targetPlane
+	 * @param accuracy
+	 * @param sMax
+	 * @param stepSize
+	 * @param relTolerance
+	 * @param result
+	 * @throws RungeKuttaException
+	 */
+	public void swimPlane(int charge, double xo, double yo, double zo, double momentum, double theta, double phi,
+			cnuphys.adaptiveSwim.geometry.Plane targetPlane,
+			double accuracy, double sMax, double stepSize, double relTolerance[], AdaptiveSwimResult result)
+			throws RungeKuttaException {
+		
 		result.setInitialValues(charge, xo, yo, zo, momentum, theta, phi);
 
 		// set u to the starting state vector
@@ -708,7 +699,7 @@ public final class Swimmer {
 			System.err.println("Skipping low momentum fixed rho swim (A)");
 			result.setNStep(0);
 			result.setFinalS(0);
-			result.setStatus(-2);
+			result.setStatus(AdaptiveSwimmer.SWIM_BELOW_MIN_P);
 			return;
 		}
 				
@@ -741,7 +732,6 @@ public final class Swimmer {
 			sFinal = stopper.getFinalT();
 									
 			del = Math.abs(targetPlane.signedDistance(stopper.getFinalU()[0], stopper.getFinalU()[1], stopper.getFinalU()[2]));
-//			System.out.println(del + " " + stopper.getFinalU()[0] + " " + stopper.getFinalU()[1] + " " + stopper.getFinalU()[2]);
 			// succeed?
 			if (del < accuracy) {
 				break;
@@ -764,6 +754,68 @@ public final class Swimmer {
 		result.setFinalS(sFinal);
 
 	}
+	
+	/**
+	 * 
+	 * @param charge               the charge: -1 for electron, 1 for proton, etc
+	 * @param xo                   the x vertex position in meters
+	 * @param yo                   the y vertex position in meters
+	 * @param zo                   the z vertex position in meters
+	 * @param momentum             initial momentum in GeV/c
+	 * @param theta                initial polar angle in degrees
+	 * @param phi                  initial azimuthal angle in degrees
+	 * @param normX                x component of the normal to the plane
+	 * @param normY                y component of the normal to the plane
+	 * @param normZ                z component of the normal to the plane
+	 * @param pointX               x coordinate of point in plane
+	 * @param pointY               y coordinate of point in plane
+	 * @param pointZ               z coordinate of point in plane
+	 * @param accuracy             the accuracy of the fixed rho termination, in
+	 *                             meters
+	 * @param sMax
+	 * @param stepSize
+	 * @param relTolerance
+	 * @param result
+	 * @throws AdaptiveSwimException
+	 */
+	public void swimPlaneInterp(int charge, double xo, double yo, double zo, double momentum, double theta, double phi,
+			double normX, double normY, double normZ, double pointX, double pointY, double pointZ,
+			double accuracy, double sMax, double stepSize, double eps, AdaptiveSwimResult result)
+			throws AdaptiveSwimException {
+		cnuphys.adaptiveSwim.geometry.Plane targetPlane = new cnuphys.adaptiveSwim.geometry.Plane(new Vector(normX,normY,normZ), new Point(pointX,pointY,pointZ));
+
+		swimPlaneInterp(charge, xo, yo, zo, momentum, theta, phi, targetPlane, 
+				accuracy, sMax, stepSize, eps, result);
+	}
+
+	/**
+	 * 
+	 * @param charge               the charge: -1 for electron, 1 for proton, etc
+	 * @param xo                   the x vertex position in meters
+	 * @param yo                   the y vertex position in meters
+	 * @param zo                   the z vertex position in meters
+	 * @param momentum             initial momentum in GeV/c
+	 * @param theta                initial polar angle in degrees
+	 * @param phi                  initial azimuthal angle in degrees
+	 * @param targetPlane
+	 * @param accuracy
+	 * @param sMax
+	 * @param stepSize
+	 * @param relTolerance
+	 * @param result
+	 * @throws RungeKuttaException
+	 */
+	public void swimPlaneInterp(int charge, double xo, double yo, double zo, double momentum, double theta, double phi,
+			cnuphys.adaptiveSwim.geometry.Plane targetPlane,
+			double accuracy, double sf, double h0, double eps, AdaptiveSwimResult result)
+			throws AdaptiveSwimException {
+		
+		AdaptiveSwimmer newSwimmer = new AdaptiveSwimmer();
+		newSwimmer.swimPlaneInterp(charge, xo, yo, zo,
+				momentum, theta, phi, targetPlane, accuracy, sf, h0, eps, result);
+	
+	}
+	
      
 	/**
 	 * Get the tolerance used by the CLAS_Toleance array

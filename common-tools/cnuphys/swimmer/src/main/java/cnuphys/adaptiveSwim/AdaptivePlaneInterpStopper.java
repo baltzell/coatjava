@@ -20,7 +20,7 @@ public class AdaptivePlaneInterpStopper extends AdaptivePlaneStopper {
 	
 			
 	/**
-	 * Rho  stopper  (does check max path length)
+	 * Plane  stopper  (does check max path length)
 	 * @param u0           initial state vector
 	 * @param sf           the maximum value of the path length in meters
 	 * @param targetPlane  the target plane
@@ -57,7 +57,7 @@ public class AdaptivePlaneInterpStopper extends AdaptivePlaneStopper {
 		_everCrossed = _everCrossed || crossed;
 
 		// if within accuracy and have ever crossed  or exceeded smax we are done
-		if (((snew > _sf) || (_everCrossed && newAbsDist < _accuracy))) {
+		if (((snew > _sf) || (_everCrossed && (newAbsDist < _accuracy)))) {
 			accept(snew, unew);
   			return true;
 		}
