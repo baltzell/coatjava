@@ -1,0 +1,369 @@
+https://rtyley.github.io/bfg-repo-cleaner/
+
+mini> git clone --mirror https://github.com/baltzell/coatjava                
+Cloning into bare repository 'coatjava.git'...
+remote: Enumerating objects: 81180, done.
+remote: Total 81180 (delta 0), reused 0 (delta 0), pack-reused 81180
+Receiving objects: 100% (81180/81180), 432.97 MiB | 5.60 MiB/s, done.
+Resolving deltas: 100% (39546/39546), done.
+mini> history
+ 1162  git push --mirror https://github.com/baltzell/coatjava
+ 1163  pwd
+ 1164  cd ..
+ 1165  rm -rf clas12-offline-software.git
+ 1166  git clone https://github.com/baltzell/coatjava
+ 1167  cd coatjava
+ 1168  java -jar ~/Downloads/bfg-1.14.0.jar --strip-blobs-bigger-than 128K
+ 1169  git reflog expire --expire=now --all && git gc --prune=now --aggressive
+ 1170  du -sh .git
+ 1171  vim bfg.log
+ 1172  ls
+ 1173  history | grep clone
+ 1174  pwd
+ 1175  cd ..
+ 1176  rm -rf coatjava
+ 1177  git clone --mirror https://github.com/baltzell/coatjava
+mini> cd coatjava.
+mini> rm -rf coatjava.bfg-report 
+mini> ls -lhtr
+total 6131440
+drwxr-xr-x  23 baltzell  staff   736B Mar 11  2021 eb-matching
+drwxr-xr-x  25 baltzell  staff   800B Oct 14  2021 iss718-ebcnd-ORIGINAL
+drwxr-xr-x  10 baltzell  staff   320B Dec 15 09:00 grapes
+drwxr-xr-x  17 baltzell  staff   544B Dec 15 10:34 ccdb
+drwxr-xr-x  22 baltzell  staff   704B Dec 15 10:34 rcdb
+drwxr-xr-x  23 baltzell  staff   736B Feb 16 13:48 iss718-ebcnd-2
+drwxr-xr-x  24 baltzell  staff   768B Feb 16 14:17 iss718-ebcnd-redux
+drwxr-xr-x  21 baltzell  staff   672B Mar  9 08:54 jnp
+-rw-r--r--   1 baltzell  staff   984M Mar 16 07:25 iss718-ebcnd-2.tgz
+-rw-r--r--   1 baltzell  staff   1.1G Mar 16 07:26 iss718-ebcnd-redux.tgz
+-rw-r--r--   1 baltzell  staff   929M Mar 16 07:27 iss718-ebcnd-ORIGINAL.tgz
+drwxr-xr-x  13 baltzell  staff   416B Apr  3 09:29 j4ml
+drwxr-xr-x  24 baltzell  staff   768B May 15 18:08 nab
+-rw-r--r--   1 baltzell  staff    52B May 21 16:16 test.groovy
+drwxr-xr-x  24 baltzell  staff   768B May 21 16:43 iss843-redux
+drwxr-xr-x  23 baltzell  staff   736B May 23 15:50 clara-java
+drwxr-xr-x  23 baltzell  staff   736B May 26 11:19 iss729-eb-ft
+drwxr-xr-x  24 baltzell  staff   768B May 28 11:04 iss704-utrack
+drwxr-xr-x  23 baltzell  staff   736B May 28 11:07 dev
+drwxr-xr-x  23 baltzell  staff   736B May 28 11:11 dev-resize
+drwxr-xr-x  25 baltzell  staff   800B May 28 11:32 dev-bfg
+drwxr-xr-x  10 baltzell  staff   320B May 28 13:06 coatjava.git
+mini> cd coatjava.git 
+mini> java -jar ~/Downloads/bfg-1.14.0.jar --strip-blobs-bigger-than 128K
+
+Using repo : /Users/baltzell/cos/coatjava.git
+
+Scanning packfile for large blobs: 81180
+Scanning packfile for large blobs completed in 299 ms.
+Found 228 blob ids for large blobs - biggest=91477532 smallest=131924
+Total size (unpacked)=977971631
+Found 2421 objects to protect
+Found 172 commit-pointing refs : HEAD, refs/heads/Alert, refs/heads/CVTAlignment-hipo4, ...
+Found 13 tag-pointing refs : refs/tags/6.5.6.3, refs/tags/6b.0.1, refs/tags/6b.3.2, ...
+
+Protected commits
+-----------------
+
+These are your protected commits, and so their contents will NOT be altered:
+
+ * commit d6c76cd9 (protected by 'HEAD') - contains 12 dirty files : 
+	- common-tools/clas-jcsg/src/main/resources/rich/cad/Aluminum.stl (3.1 MB)
+	- common-tools/clas-jcsg/src/main/resources/rich/cad/CFRP.stl (1.1 MB)
+	- ...
+
+WARNING: The dirty content above may be removed from other commits, but as
+the *protected* commits still use it, it will STILL exist in your repository.
+
+Details of protected dirty content have been recorded here :
+
+/Users/baltzell/cos/coatjava.git.bfg-report/2022-05-28/13-07-55/protected-dirt/
+
+If you *really* want this content gone, make a manual commit that removes it,
+and then run the BFG on a fresh copy of your repo.
+       
+
+Cleaning
+--------
+
+Found 5068 commits
+Cleaning commits:       100% (5068/5068)
+Cleaning commits completed in 4,100 ms.
+
+Updating 184 Refs
+-----------------
+
+	Ref                                      Before     After   
+	------------------------------------------------------------
+	refs/heads/Alert                       | f37ca841 | 7f629415
+	refs/heads/CVTAlignment-hipo4          | 02656743 | d12caf48
+	refs/heads/CVTAlignment-swim           | 21457842 | 79b25dca
+	refs/heads/InterpolateToPlane          | a36cf2a0 | 0e27786a
+	refs/heads/SNRStreamTest               | 5714cb90 | febf8cad
+	refs/heads/T2D-DeltaDoca               | 7b95bb72 | 1de83b36
+	refs/heads/bonusKalmanFilter           | da1d6e19 | 304049ce
+	refs/heads/dev-align3                  | 5e513394 | 08377aa2
+	refs/heads/development                 | d6c76cd9 | bbf64992
+	refs/heads/hipo3                       | f37e1894 | afd7ed0c
+	refs/heads/iss510-dc-covmatlab-details | 2f150233 | d1982b83
+	refs/heads/iss540_iss731               | 8253e686 | 8819d564
+	refs/heads/iss618-statuses-alt2        | bb2308ff | ac276db2
+	refs/heads/iss641-cndclustering        | 896c28b7 | e46a46d5
+	refs/heads/iss641-cndclustering-devmrg | f4efe2b2 | 568e51a1
+	...
+
+Updating references:    100% (184/184)
+...Ref update completed in 101 ms.
+
+Commit Tree-Dirt History
+------------------------
+
+	Earliest                                              Latest
+	|                                                          |
+	..DDDDD.DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
+
+	D = dirty commits (file tree fixed)
+	m = modified commits (commit message or parents changed)
+	. = clean commits (no changes to file tree)
+
+	                        Before     After   
+	-------------------------------------------
+	First modified commit | b90d838b | 80a3239e
+	Last dirty commit     | b7b5995e | 3b9c85a8
+
+Deleted files
+-------------
+
+	Filename                                        Git id                                                       
+	-------------------------------------------------------------------------------------------------------------
+	Aluminum.stl                                  | ae7dcd80 (3.1 MB), 07f90a2d (2.0 MB)                         
+	BMT.table                                     | 41185071 (377.3 KB)                                          
+	CFRP.stl                                      | a82b82a8 (1.1 MB), 59ef1ffa (3.2 MB)                         
+	CLAS6_BOS_Dictionary.xml                      | 606bbe7a (148.9 KB), 8aea94f7 (148.9 KB)                     
+	EC.table                                      | 6f81f072 (167.6 KB)                                          
+	JEventViewer-1.1.jar                          | 9b6db002 (1.2 MB)                                            
+	KPP-Plots-2.0.jar                             | 03d30416 (132.1 KB)                                          
+	KPP-Plots-3.0.jar                             | 3d5ca4ab (143.9 KB), 66ce6aac (139.0 KB)                     
+	KPP-Plots-3.1.jar                             | 6f5c02e9 (142.8 KB), d2b7f138 (142.8 KB), abd33748 (142.7 KB)
+	KPP-Plots-3.2.jar                             | aa7d6ead (154.2 KB), b4978e4f (154.7 KB), 594a8cf9 (154.1 KB)
+	MirrorSupport.stl                             | c8b4ff88 (1.2 MB)                                            
+	NEWsect1wires.dat                             | 24b87854 (364.1 KB)                                          
+	OLDsect1wires.dat                             | 85823e75 (344.6 KB)                                          
+	PCAL.table                                    | 323f94a7 (153.5 KB)                                          
+	RICHTool.java                                 | 842d1358 (134.5 KB), 606c7d16 (135.0 KB), ...                
+	...
+
+
+In total, 13896 object ids were changed. Full details are logged here:
+
+	/Users/baltzell/cos/coatjava.git.bfg-report/2022-05-28/13-07-55
+
+BFG run is complete! When ready, run: git reflog expire --expire=now --all && git gc --prune=now --aggressive
+mini> git reflog expire --expire=now --all && git gc --prune=now --aggressive
+
+Enumerating objects: 81207, done.
+Counting objects: 100% (81207/81207), done.
+Delta compression using up to 4 threads
+Compressing objects: 100% (61994/61994), done.
+Writing objects: 100% (81207/81207), done.
+Selecting bitmap commits: 4974, done.
+Building bitmaps: 100% (154/154), done.
+Total 81207 (delta 41114), reused 32281 (delta 0), pack-reused 0
+Removing duplicate objects: 100% (256/256), done.
+mini> du -sh .git
+du: .git: No such file or directory
+mini> pwd
+/Users/baltzell/cos/coatjava.git
+mini> du -sh .gi
+mini> git push
+Enumerating objects: 81207, done.
+Writing objects: 100% (81207/81207), 26.87 MiB | 5.96 MiB/s, done.
+Total 81207 (delta 0), reused 0 (delta 0), pack-reused 81207
+remote: Resolving deltas: 100% (41114/41114), done.
+To https://github.com/baltzell/coatjava
+ + f37ca8415...7f6294150 Alert -> Alert (forced update)
+ + 026567433...d12caf48d CVTAlignment-hipo4 -> CVTAlignment-hipo4 (forced update)
+ + 214578421...79b25dcac CVTAlignment-swim -> CVTAlignment-swim (forced update)
+ + a36cf2a0e...0e27786a0 InterpolateToPlane -> InterpolateToPlane (forced update)
+ + 5714cb909...febf8cad9 SNRStreamTest -> SNRStreamTest (forced update)
+ + 7b95bb723...1de83b36c T2D-DeltaDoca -> T2D-DeltaDoca (forced update)
+ + da1d6e192...304049ceb bonusKalmanFilter -> bonusKalmanFilter (forced update)
+ + 5e5133945...08377aa2f dev-align3 -> dev-align3 (forced update)
+ + d6c76cd95...bbf64992f development -> development (forced update)
+ + f37e18947...afd7ed0c8 hipo3 -> hipo3 (forced update)
+ + 2f150233f...d1982b835 iss510-dc-covmatlab-details -> iss510-dc-covmatlab-details (forced update)
+ + 8253e6860...8819d564f iss540_iss731 -> iss540_iss731 (forced update)
+ + bb2308ff2...ac276db2b iss618-statuses-alt2 -> iss618-statuses-alt2 (forced update)
+ + 896c28b7c...e46a46d56 iss641-cndclustering -> iss641-cndclustering (forced update)
+ + f4efe2b27...568e51a19 iss641-cndclustering-devmrg -> iss641-cndclustering-devmrg (forced update)
+ + 62aca1608...73094f90e iss642-fttrkDev -> iss642-fttrkDev (forced update)
+ + c8d856112...c0c144b33 iss643-rich -> iss643-rich (forced update)
+ + 38854031f...261766292 iss646-helflip -> iss646-helflip (forced update)
+ + a76bf629b...38068f017 iss718-ebcnd -> iss718-ebcnd (forced update)
+ + c54635020...c7e58b261 iss718-ebcnd-redux -> iss718-ebcnd-redux (forced update)
+ + 5b73d0138...5e35745b8 iss729-FTneutrals -> iss729-FTneutrals (forced update)
+ + 35f75b554...b36e29493 iss729-eb-ft -> iss729-eb-ft (forced update)
+ + ed12a0603...b3ca59a35 iss773-dcDigi -> iss773-dcDigi (forced update)
+ + dee47ec82...2d1c19e04 iss774-detachedVtx -> iss774-detachedVtx (forced update)
+ + 8dbea5a71...88ec730fc iss775-roads -> iss775-roads (forced update)
+ + 713ec75da...5bf919fcc iss777-decodeJlabTDC -> iss777-decodeJlabTDC (forced update)
+ + 97df047e5...efd111655 iss784-uRwell -> iss784-uRwell (forced update)
+ + 4f48e0ca1...21e0e82c0 iss784-uRwellRecon -> iss784-uRwellRecon (forced update)
+ + 0968d1584...ae6588890 iss785-CVTSmoothingEloss -> iss785-CVTSmoothingEloss (forced update)
+ + 209af9688...1190921bd iss786-cvtElossSplitServs -> iss786-cvtElossSplitServs (forced update)
+ + 6f970a9eb...757dea083 iss786-cvtElossTarget -> iss786-cvtElossTarget (forced update)
+ + 7beb7d9f8...446517c93 iss788-SVTlorentz -> iss788-SVTlorentz (forced update)
+ + fa0fcaad9...764b25a0a iss790-rtpcDisentangler -> iss790-rtpcDisentangler (forced update)
+ + 7f449737b...adc807f55 iss797-raster -> iss797-raster (forced update)
+ + 5785f861a...e234d565e iss797-rasterEff -> iss797-rasterEff (forced update)
+ + fe15ac2ea...7acd03934 iss805-DCTrkToMisAlPlns -> iss805-DCTrkToMisAlPlns (forced update)
+ + d4aff21c2...45f770b78 iss824-DeltaDoca -> iss824-DeltaDoca (forced update)
+ + de34708b4...cfccad9e9 iss827-CVTTrackEff -> iss827-CVTTrackEff (forced update)
+ + 62c2d54e3...cc10b2f12 iss830-ctofHpos -> iss830-ctofHpos (forced update)
+ + 72358c981...006a4088f iss843 -> iss843 (forced update)
+ + 07a5ab4f9...811f11165 iss845-utrack -> iss845-utrack (forced update)
+ + a4311128d...99f9b1dbf java8 -> java8 (forced update)
+ + 27f005582...fa5efe523 master -> master (forced update)
+ + f24b1aaa3...ffbcd8ec8 tag-6.5.6 -> tag-6.5.6 (forced update)
+ + 3a3ea71fe...e40857b16 tag-6.5.6.1 -> tag-6.5.6.1 (forced update)
+ + 96ed11abb...e74686765 tag-6.5.6.2 -> tag-6.5.6.2 (forced update)
+ + def3b2c9a...38ec3323b tag-6.5.6.3 -> tag-6.5.6.3 (forced update)
+ + 35d43f5c4...98556de5c 4a.4.0 -> 4a.4.0 (forced update)
+ + a5162e479...f7bd27567 4a.4.1 -> 4a.4.1 (forced update)
+ + 80add0ba0...72a909043 4a.5.0 -> 4a.5.0 (forced update)
+ + 36f3637e8...75793bd0e 4a.5.1 -> 4a.5.1 (forced update)
+ + 04be3fb98...9384ab7a4 4a.5.2 -> 4a.5.2 (forced update)
+ + de189dd21...5367e7841 4a.5.3 -> 4a.5.3 (forced update)
+ + 1fbe28d49...29c1f2375 4a.5.4 -> 4a.5.4 (forced update)
+ + 917cb8f4d...ba98d1066 4a.5.5 -> 4a.5.5 (forced update)
+ + 9edb2646d...6121bccb9 4a.6.0 -> 4a.6.0 (forced update)
+ + a768d2d04...1adbf5e0c 4a.7.0 -> 4a.7.0 (forced update)
+ + b8dc52008...fbf978513 4a.7.1 -> 4a.7.1 (forced update)
+ + 2602d38d4...c65050734 4a.7.2 -> 4a.7.2 (forced update)
+ + 01ff88de2...11d0d8ec4 4a.7.3 -> 4a.7.3 (forced update)
+ + 08c6a1ef9...aa47e8c48 4a.7.4 -> 4a.7.4 (forced update)
+ + c45be19d1...0e9fd1882 4a.7.5 -> 4a.7.5 (forced update)
+ + 44a66412d...ec9050c6b 4a.7.6 -> 4a.7.6 (forced update)
+ + 20e758839...211b6ebc3 4a.8.1 -> 4a.8.1 (forced update)
+ + 992e9e0bb...10ef97b18 4a.8.2 -> 4a.8.2 (forced update)
+ + 160ad261d...501fc14e3 4a.8.3 -> 4a.8.3 (forced update)
+ + beb37bbd2...2d145e890 4a.8.4 -> 4a.8.4 (forced update)
+ + 4b9fb890e...68fb2c284 4a.8.5 -> 4a.8.5 (forced update)
+ + d5e8f9b62...b3d49d23d 4a.8.6 -> 4a.8.6 (forced update)
+ + f8a7e0708...73f167cd5 5.6.1 -> 5.6.1 (forced update)
+ + 0d9db647e...4e2caeb0c 5.6.2 -> 5.6.2 (forced update)
+ + 30b52c765...91c9c397c 5.7.4 -> 5.7.4 (forced update)
+ + 971301813...bf0eba8bc 5.9.0 -> 5.9.0 (forced update)
+ + d1a9a663e...21344d165 5a.0.0 -> 5a.0.0 (forced update)
+ + 774e06022...77dabdd5d 5a.0.1 -> 5a.0.1 (forced update)
+ + 43c0b0003...6592dc7a9 5a.0.10 -> 5a.0.10 (forced update)
+ + 882c3b7be...5caf2026f 5a.0.11 -> 5a.0.11 (forced update)
+ + 33790c791...31a7742eb 5a.0.12 -> 5a.0.12 (forced update)
+ + 7abad05ba...299648c5f 5a.0.13 -> 5a.0.13 (forced update)
+ + afecc964c...b680870b6 5a.0.14 -> 5a.0.14 (forced update)
+ + 79ee81af3...5c3c20200 5a.0.15 -> 5a.0.15 (forced update)
+ + dac6c0a1b...ec7d6f35b 5a.0.16 -> 5a.0.16 (forced update)
+ + d66b0fa7c...bb62549c9 5a.0.17 -> 5a.0.17 (forced update)
+ + df2a74a4e...b9a8c0d8f 5a.0.18 -> 5a.0.18 (forced update)
+ + c9d41ac14...d164b490c 5a.0.19 -> 5a.0.19 (forced update)
+ + 57c76a935...4056f2013 5a.0.2 -> 5a.0.2 (forced update)
+ + 25217db94...43504301e 5a.0.3 -> 5a.0.3 (forced update)
+ + 6eb471639...ec0ae7c62 5a.0.4 -> 5a.0.4 (forced update)
+ + 59ad67de1...980fc681d 5a.0.5 -> 5a.0.5 (forced update)
+ + a4a2bd5ba...0a39212f3 5a.0.6 -> 5a.0.6 (forced update)
+ + 3390c31e3...40de58fa1 5a.0.7 -> 5a.0.7 (forced update)
+ + 84398357d...5c4aad180 5a.0.8 -> 5a.0.8 (forced update)
+ + 357dc16e7...35a8a77f1 5a.0.9 -> 5a.0.9 (forced update)
+ + d1ef48983...458738596 5a.1.0 -> 5a.1.0 (forced update)
+ + c7b321983...77d2478ab 5a.1.1 -> 5a.1.1 (forced update)
+ + f70ac85fc...071b1da07 5a.1.2 -> 5a.1.2 (forced update)
+ + 3ae3f84d2...1919dfbde 5a.1.3 -> 5a.1.3 (forced update)
+ + 3f565a780...cf62f5132 5a.2.0 -> 5a.2.0 (forced update)
+ + fd6a4c631...179cb2934 5a.3.3 -> 5a.3.3 (forced update)
+ + 74eefbf20...a70952cec 5b.2.1 -> 5b.2.1 (forced update)
+ + 18dbb4640...387e3d3e9 5b.3.0 -> 5b.3.0 (forced update)
+ + 74dd6714c...05960a744 5b.3.1 -> 5b.3.1 (forced update)
+ + 085549946...8414d1c75 5b.3.2 -> 5b.3.2 (forced update)
+ + fd6a4c631...179cb2934 5b.3.3 -> 5b.3.3 (forced update)
+ + 8dc3d5fbf...13686d39d 5b.4.0 -> 5b.4.0 (forced update)
+ + 283de3bd7...ea647acdf 5b.5.0 -> 5b.5.0 (forced update)
+ + 2efb6526b...15c44890b 5b.5.1 -> 5b.5.1 (forced update)
+ + bd8e01433...47fa02a2a 5b.5.2 -> 5b.5.2 (forced update)
+ + 75c6c947c...ce4f5ba9e 5b.6.0 -> 5b.6.0 (forced update)
+ + c96ce0b9c...7f4b2b62d 5b.6.1 -> 5b.6.1 (forced update)
+ + f625ea8db...4570dd5b6 5b.6.2 -> 5b.6.2 (forced update)
+ + 2181177a5...707dd90c4 5b.7.1 -> 5b.7.1 (forced update)
+ + 9e6b2b860...27b6e96b4 5b.7.4 -> 5b.7.4 (forced update)
+ + f7935298b...4def8f604 5b.7.6 -> 5b.7.6 (forced update)
+ + 9a0b2d0b3...04b7f0919 5b.7.7 -> 5b.7.7 (forced update)
+ + 0b95d375f...f71ce9d13 5b.7.8 -> 5b.7.8 (forced update)
+ + a62c2d055...fdcb32614 5b.7.9 -> 5b.7.9 (forced update)
+ + 86bca939c...6fbb09bf2 5c.2.2 -> 5c.2.2 (forced update)
+ + 41535ec21...2d2fbe1b9 5c.2.3 -> 5c.2.3 (forced update)
+ + 9a2290be0...e5d923c63 5c.2.4 -> 5c.2.4 (forced update)
+ + 0ae8451f1...80c787907 5c.3.10 -> 5c.3.10 (forced update)
+ + b253ef888...47db7b12b 5c.3.11 -> 5c.3.11 (forced update)
+ + 9e2bcf774...6569f019f 5c.3.4 -> 5c.3.4 (forced update)
+ + 94424aac4...814a20585 5c.3.5 -> 5c.3.5 (forced update)
+ + 0af8330e5...ad8e2bf60 5c.3.6 -> 5c.3.6 (forced update)
+ + d2cdd6ff8...084bf4f26 5c.3.7 -> 5c.3.7 (forced update)
+ + 36c5e2d39...b8a907c9f 5c.3.8 -> 5c.3.8 (forced update)
+ + 477d9c798...eecb095fb 5c.3.9 -> 5c.3.9 (forced update)
+ + 368499665...29e956b21 5c.6.10 -> 5c.6.10 (forced update)
+ + 937d33fb1...0cd9f5fd3 5c.6.3 -> 5c.6.3 (forced update)
+ + 2108bafb9...ee918dba0 5c.6.4 -> 5c.6.4 (forced update)
+ + f5ca26fea...4bb01aa9d 5c.6.5 -> 5c.6.5 (forced update)
+ + 64df7e01d...9ab0d3105 5c.6.6 -> 5c.6.6 (forced update)
+ + 64df7e01d...9ab0d3105 5c.6.7 -> 5c.6.7 (forced update)
+ + 0c4a091cf...b1ddcb1c1 5c.6.8 -> 5c.6.8 (forced update)
+ + fb6d5b205...e539c3b10 5c.6.9 -> 5c.6.9 (forced update)
+ + ad06d6034...99123205d 5c.7.0 -> 5c.7.0 (forced update)
+ + eaac3fb1a...029771e3e 5c.7.2 -> 5c.7.2 (forced update)
+ + 2181177a5...707dd90c4 5c.7.3 -> 5c.7.3 (forced update)
+ + e749127bd...93a8f321f 5c.7.5 -> 5c.7.5 (forced update)
+ + 3f9e635d9...600d22a1b 5c.8.0 -> 5c.8.0 (forced update)
+ + a5a59a342...b354c1e68 6.3.1 -> 6.3.1 (forced update)
+ + 57f2cd039...3c636026c 6.5.11 -> 6.5.11 (forced update)
+ + 0b35a02e4...fd336abc0 6.5.12 -> 6.5.12 (forced update)
+ + bc9876256...3519db1d5 6.5.13 -> 6.5.13 (forced update)
+ + 72578b8f3...81a71e558 6.5.3 -> 6.5.3 (forced update)
+ + f24b1aaa3...ffbcd8ec8 6.5.6 -> 6.5.6 (forced update)
+ + 3a3ea71fe...e40857b16 6.5.6.1 -> 6.5.6.1 (forced update)
+ + 96ed11abb...e74686765 6.5.6.2 -> 6.5.6.2 (forced update)
+ + f5b5624e7...c39b46a08 6.5.6.3 -> 6.5.6.3 (forced update)
+ + 98dcc6891...84da32c12 6.5.8 -> 6.5.8 (forced update)
+ + b3da11a3f...245ac609c 6.5.9 -> 6.5.9 (forced update)
+ + 304cfb9f1...e44715105 6.6.0 -> 6.6.0 (forced update)
+ + f2a6105da...a1dbbdcf4 6.6.1 -> 6.6.1 (forced update)
+ + a4b1024b4...4fd7b6b53 6.6.2 -> 6.6.2 (forced update)
+ + 956b57cbc...3c857ff54 6.6.4 -> 6.6.4 (forced update)
+ + f83fa9c15...1c0aae456 6.6.5 -> 6.6.5 (forced update)
+ + 9390cdb0e...1e189f44c 6b.0.0 -> 6b.0.0 (forced update)
+ + eaa6240bc...1c9c740b7 6b.0.1 -> 6b.0.1 (forced update)
+ + cc56c0438...550f9b966 6b.1.0 -> 6b.1.0 (forced update)
+ + 1db865a89...bfee2a6ce 6b.1.1 -> 6b.1.1 (forced update)
+ + 873abdc10...7d10ffe21 6b.2.0 -> 6b.2.0 (forced update)
+ + 7dadf79e8...824aea757 6b.3.0 -> 6b.3.0 (forced update)
+ + 361ae4119...8f1c62a31 6b.3.2 -> 6b.3.2 (forced update)
+ + 2089bf6d2...336c866fe 6b.4.0 -> 6b.4.0 (forced update)
+ + 6cd369e00...ef4f63924 6b.4.1 -> 6b.4.1 (forced update)
+ + 52715d833...f8297340b 6b.5.0 -> 6b.5.0 (forced update)
+ + c5fbdb7a7...c34e92fd7 6b.5.1 -> 6b.5.1 (forced update)
+ + 169a12b51...2d0524797 6b.5.2 -> 6b.5.2 (forced update)
+ + f8cc697f8...e8840f907 6b.5.9 -> 6b.5.9 (forced update)
+ + 7b21e113c...a91ac5485 6c.2.1 -> 6c.2.1 (forced update)
+ + 4b1bca19b...01c6e7f3d 6c.3.3 -> 6c.3.3 (forced update)
+ + ccd356f61...8f0e4283f 6c.3.4 -> 6c.3.4 (forced update)
+ + 0acc8fcc6...1bfc00894 6c.3.5 -> 6c.3.5 (forced update)
+ + c841c08fa...5730f15c7 6c.3.6 -> 6c.3.6 (forced update)
+ + d99f5c660...f90978512 6c.5.10 -> 6c.5.10 (forced update)
+ + ae474b374...a24269229 6c.5.4 -> 6c.5.4 (forced update)
+ + a11136629...3b48479b9 6c.5.5 -> 6c.5.5 (forced update)
+ + 8f8f84abf...e790acd8c 6c.5.7 -> 6c.5.7 (forced update)
+ + b97e5667b...f8714ae6d 6c.6.3 -> 6c.6.3 (forced update)
+ + 50f999701...28cd55eb1 7.0.0 -> 7.0.0 (forced update)
+ + be8353e28...56f64cd24 7.0.1 -> 7.0.1 (forced update)
+ + 7b46ce03d...5e3c0f4c8 7.1.0 -> 7.1.0 (forced update)
+ + 27f005582...fa5efe523 8.0.0 -> 8.0.0 (forced update)
+mini> 
+
