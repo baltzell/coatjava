@@ -1,4 +1,27 @@
+Note, the "--bare" and "--mirror" options below are important ...
+
+###################################################
+###################################################
+
+1. To duplicate a repo, e.g. for testing BFG:
+
+git clone --bare https://github.com/exampleuser/old-repository.git
+cd old-repository.git
+git push --mirror https://github.com/exampleuser/new-repository.git
+cd ..
+rm -rf old-repository.git
+
+###################################################
+###################################################
+
+2. Get BFG:
+
 https://rtyley.github.io/bfg-repo-cleaner/
+
+###################################################
+###################################################
+
+3. Run BFG: (here with an aggressive 128KB threshold)
 
 mini> git clone --mirror https://github.com/baltzell/coatjava                
 Cloning into bare repository 'coatjava.git'...
@@ -6,49 +29,7 @@ remote: Enumerating objects: 81180, done.
 remote: Total 81180 (delta 0), reused 0 (delta 0), pack-reused 81180
 Receiving objects: 100% (81180/81180), 432.97 MiB | 5.60 MiB/s, done.
 Resolving deltas: 100% (39546/39546), done.
-mini> history
- 1162  git push --mirror https://github.com/baltzell/coatjava
- 1163  pwd
- 1164  cd ..
- 1165  rm -rf clas12-offline-software.git
- 1166  git clone https://github.com/baltzell/coatjava
- 1167  cd coatjava
- 1168  java -jar ~/Downloads/bfg-1.14.0.jar --strip-blobs-bigger-than 128K
- 1169  git reflog expire --expire=now --all && git gc --prune=now --aggressive
- 1170  du -sh .git
- 1171  vim bfg.log
- 1172  ls
- 1173  history | grep clone
- 1174  pwd
- 1175  cd ..
- 1176  rm -rf coatjava
- 1177  git clone --mirror https://github.com/baltzell/coatjava
-mini> cd coatjava.
-mini> rm -rf coatjava.bfg-report 
-mini> ls -lhtr
-total 6131440
-drwxr-xr-x  23 baltzell  staff   736B Mar 11  2021 eb-matching
-drwxr-xr-x  25 baltzell  staff   800B Oct 14  2021 iss718-ebcnd-ORIGINAL
-drwxr-xr-x  10 baltzell  staff   320B Dec 15 09:00 grapes
-drwxr-xr-x  17 baltzell  staff   544B Dec 15 10:34 ccdb
-drwxr-xr-x  22 baltzell  staff   704B Dec 15 10:34 rcdb
-drwxr-xr-x  23 baltzell  staff   736B Feb 16 13:48 iss718-ebcnd-2
-drwxr-xr-x  24 baltzell  staff   768B Feb 16 14:17 iss718-ebcnd-redux
-drwxr-xr-x  21 baltzell  staff   672B Mar  9 08:54 jnp
--rw-r--r--   1 baltzell  staff   984M Mar 16 07:25 iss718-ebcnd-2.tgz
--rw-r--r--   1 baltzell  staff   1.1G Mar 16 07:26 iss718-ebcnd-redux.tgz
--rw-r--r--   1 baltzell  staff   929M Mar 16 07:27 iss718-ebcnd-ORIGINAL.tgz
-drwxr-xr-x  13 baltzell  staff   416B Apr  3 09:29 j4ml
-drwxr-xr-x  24 baltzell  staff   768B May 15 18:08 nab
--rw-r--r--   1 baltzell  staff    52B May 21 16:16 test.groovy
-drwxr-xr-x  24 baltzell  staff   768B May 21 16:43 iss843-redux
-drwxr-xr-x  23 baltzell  staff   736B May 23 15:50 clara-java
-drwxr-xr-x  23 baltzell  staff   736B May 26 11:19 iss729-eb-ft
-drwxr-xr-x  24 baltzell  staff   768B May 28 11:04 iss704-utrack
-drwxr-xr-x  23 baltzell  staff   736B May 28 11:07 dev
-drwxr-xr-x  23 baltzell  staff   736B May 28 11:11 dev-resize
-drwxr-xr-x  25 baltzell  staff   800B May 28 11:32 dev-bfg
-drwxr-xr-x  10 baltzell  staff   320B May 28 13:06 coatjava.git
+
 mini> cd coatjava.git 
 mini> java -jar ~/Downloads/bfg-1.14.0.jar --strip-blobs-bigger-than 128K
 
@@ -159,6 +140,12 @@ In total, 13896 object ids were changed. Full details are logged here:
 	/Users/baltzell/cos/coatjava.git.bfg-report/2022-05-28/13-07-55
 
 BFG run is complete! When ready, run: git reflog expire --expire=now --all && git gc --prune=now --aggressive
+
+###################################################
+###################################################
+
+4. Make git take the BFG changes and push:
+
 mini> git reflog expire --expire=now --all && git gc --prune=now --aggressive
 
 Enumerating objects: 81207, done.
@@ -170,11 +157,7 @@ Selecting bitmap commits: 4974, done.
 Building bitmaps: 100% (154/154), done.
 Total 81207 (delta 41114), reused 32281 (delta 0), pack-reused 0
 Removing duplicate objects: 100% (256/256), done.
-mini> du -sh .git
-du: .git: No such file or directory
-mini> pwd
-/Users/baltzell/cos/coatjava.git
-mini> du -sh .gi
+
 mini> git push
 Enumerating objects: 81207, done.
 Writing objects: 100% (81207/81207), 26.87 MiB | 5.96 MiB/s, done.
